@@ -1,0 +1,203 @@
+﻿@model doan3.Models.BaoCaoDoanhThuViewModel
+@{
+    ViewBag.Title = "Báo cáo doanh thu hệ thống";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<style>
+    :root {
+        --bg-dark: #0b0f25;
+        --bg-card: rgba(255,255,255,0.05);
+        --border-gold: #ffeb00;
+        --text-light: #ffffff;
+        --text-gold: #ffeb00;
+        --text-gray: #aaaaaa;
+        --radius: 10px;
+    }
+
+    body {
+        background: var(--bg-dark);
+    }
+
+    .report-wrapper {
+        padding: 50px 0;
+        color: var(--text-light);
+        min-height: 80vh;
+    }
+
+    .report-title {
+        color: var(--text-gold);
+        font-weight: 700;
+        text-align: center;
+        margin-bottom: 40px;
+    }
+
+    .stat-box {
+        background: var(--bg-card);
+        border: 1px solid var(--border-gold);
+        border-left: 6px solid var(--border-gold);
+        border-radius: var(--radius);
+        padding: 25px 20px;
+        text-align: center;
+        height: 100%;
+    }
+
+    .stat-label {
+        color: var(--text-gray);
+        font-size: 0.95rem;
+    }
+
+    .stat-value {
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: var(--text-gold);
+        margin-top: 10px;
+    }
+
+    .card-report {
+        background: var(--bg-card);
+        border: 1px solid var(--border-gold);
+        border-radius: var(--radius);
+        padding: 25px;
+        margin-bottom: 35px;
+    }
+
+    table {
+        color: var(--text-light);
+        margin-bottom: 0;
+    }
+
+    thead {
+        color: var(--text-gold);
+        border-bottom: 1px solid var(--border-gold);
+    }
+
+    tbody tr:hover {
+        background: rgba(255,255,255,0.06);
+    }
+
+    .rank {
+        font-weight: 700;
+        color: var(--text-gold);
+    }
+
+    .link-detail {
+        color: var(--text-gold);
+        font-weight: 600;
+        text-decoration: none;
+    }
+
+        .link-detail:hover {
+            text-decoration: underline;
+        }
+</style>
+
+<div class="container report-wrapper">
+
+    ```
+    <h2 class="report-title">BÁO CÁO DOANH THU HỆ THỐNG MOVANA</h2>
+
+    <div class="row g-4 mb-5">
+        <div class="col-md-4">
+            <div class="stat-box">
+                <div class="stat-label">Tổng doanh thu</div>
+                <div class="stat-value">
+                    @(Model != null ? Model.TongDoanhThu.ToString("N0") : "0") ₫
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="stat-box">
+                <div class="stat-label">Tổng vé đã bán</div>
+                <div class="stat-value">
+                    @(Model != null ? Model.TongVeDaBan.ToString("N0") : "0")
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="stat-box">
+                <div class="stat-label">Phim đang chiếu</div>
+                <div class="stat-value">
+                    @(Model != null ? Model.SoPhim.ToString() : "0")
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card-report">
+        <h5 class="mb-3" style="color:var(--text-gold)">Top phim doanh thu cao nhất</h5>
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th style="width:6%">#</th>
+                    <th>Phim</th>
+                    <th class="text-center" style="width:15%">Vé bán</th>
+                    <th class="text-end" style="width:20%">Doanh thu</th>
+                    <th class="text-end" style="width:10%">Tỷ lệ</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model != null && Model.TopPhim != null && Model.TopPhim.Count > 0)
+                {
+                    for (int i = 0; i < Model.TopPhim.Count; i++)
+                    {
+                        var item = Model.TopPhim[i];
+                        <tr>
+                            <td class="rank">@(i + 1)</td>
+                            <td>@item.TenPhim</td>
+                            <td class="text-center">@item.VeBan.ToString("N0")</td>
+                            <td class="text-end">@item.DoanhThu.ToString("N0") ₫</td>
+                            <td class="text-end">@item.TyLe %</td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="5" class="text-center text-muted">Chưa có dữ liệu</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <div class="card-report">
+        <h5 class="mb-3" style="color:var(--text-gold)">Doanh thu theo rạp</h5>
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>Rạp</th>
+                    <th class="text-center">Suất chiếu</th>
+                    <th class="text-center">Vé bán</th>
+                    <th class="text-end">Doanh thu</th>
+                    <th class="text-center">Chi tiết</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model != null && Model.TheoRap != null && Model.TheoRap.Count > 0)
+                {
+                    foreach (var rap in Model.TheoRap)
+                    {
+                        <tr>
+                            <td>@rap.TenRap</td>
+                            <td class="text-center">@rap.SuatChieu</td>
+                            <td class="text-center">@rap.VeBan.ToString("N0")</td>
+                            <td class="text-end">@rap.DoanhThu.ToString("N0") ₫</td>
+                            <td class="text-center">
+                                <a class="link-detail" href="@Url.Action("ChiTietTheoRap", "BaoCaoDoanhThu", new { id = rap.RapID })">Xem</a>
+                            </td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="5" class="text-center text-muted">Chưa có dữ liệu</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    ```
+
+</div>

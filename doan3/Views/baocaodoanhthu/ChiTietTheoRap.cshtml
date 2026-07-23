@@ -1,0 +1,182 @@
+﻿@model List<doan3.Models.ChiTietDoanhThuRapVM>
+
+@{
+    ViewBag.Title = "Chi tiết doanh thu rạp";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+
+    string tenRap = ViewBag.TenRap != null ? ViewBag.TenRap.ToString() : "";
+    decimal tongDoanhThu = ViewBag.TongDoanhThuRap != null ? (decimal)ViewBag.TongDoanhThuRap : 0;
+    int tongVeBan = ViewBag.TongVeBan != null ? (int)ViewBag.TongVeBan : 0;
+    string type = ViewBag.Type != null ? ViewBag.Type.ToString() : "day";
+}
+
+<style>
+    :root {
+        --bg-dark: #0b0f25;
+        --bg-card: rgba(255,255,255,0.05);
+        --border-gold: #ffeb00;
+        --text-light: #ffffff;
+        --text-gold: #ffeb00;
+        --radius: 10px;
+    }
+
+    body {
+        background: var(--bg-dark);
+        color: var(--text-light);
+    }
+
+    .box {
+        background: var(--bg-card);
+        border: 1px solid var(--border-gold);
+        border-radius: var(--radius);
+        padding: 20px;
+        margin-bottom: 25px;
+    }
+
+    h3, h5 {
+        color: var(--text-gold);
+    }
+
+    table th {
+        color: var(--text-gold);
+    }
+
+    .stat-value {
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: var(--text-gold);
+    }
+</style>
+
+<div class="container mt-4">
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3>CHI TIẾT DOANH THU RẠP @tenRap</h3>
+        <a href="@Url.Action("ThongKeTong", "BaoCaoDoanhThu")"
+           class="btn btn-outline-warning">
+            ← Quay lại
+        </a>
+    </div>
+
+    <!-- ===== LỌC THỜI GIAN ===== -->
+    <div class="box">
+        <h5>Lọc doanh thu theo thời gian</h5>
+
+        <form method="get">
+            <input type="hidden" name="id" value="@Request["id"]" />
+
+            <div class="row g-3 align-items-end">
+                <div class="col-md-3">
+                    <label>Loại lọc</label>
+                    <select name="type" class="form-select" onchange="onTypeChange(this.value)">
+                        <option value="day" @(type == "day" ? "selected" : "")>Theo ngày</option>
+                        <option value="month" @(type == "month" ? "selected" : "")>Theo tháng</option>
+                        <option value="year" @(type == "year" ? "selected" : "")>Theo năm</option>
+                    </select>
+                </div>
+
+                <!-- THEO NGÀY -->
+                <div class="col-md-3" id="blockDay">
+                    <label>Ngày</label>
+                    <input type="date" name="date" class="form-control" />
+                </div>
+
+                <!-- THEO THÁNG -->
+                <div class="col-md-2" id="blockMonth">
+                    <label>Tháng</label>
+                    <input type="number" name="month" min="1" max="12"
+                           class="form-control" placeholder="1 - 12" />
+                </div>
+
+                <!-- THEO NĂM -->
+                <div class="col-md-2" id="blockYear">
+                    <label>Năm</label>
+                    <input type="number" name="year" min="2000"
+                           class="form-control" placeholder="2024" />
+                </div>
+
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-warning w-100">
+                        Lọc báo cáo
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- ===== TỔNG THEO THỜI GIAN ===== -->
+    <div class="box">
+        <div class="row text-center">
+            <div class="col-md-6">
+                <div>Tổng doanh thu</div>
+                <div class="stat-value">@tongDoanhThu.ToString("N0") đ</div>
+            </div>
+            <div class="col-md-6">
+                <div>Tổng vé bán</div>
+                <div class="stat-value">@tongVeBan</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== DOANH THU THEO PHIM (KHÔNG PHỤ THUỘC THỜI GIAN) ===== -->
+    <div class="box">
+        <h5>Doanh thu theo phim (toàn bộ dữ liệu của rạp)</h5>
+
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Phim</th>
+                    <th class="text-center">Vé bán</th>
+                    <th class="text-end">Doanh thu</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model != null && Model.Count > 0)
+                {
+                    int i = 1;
+                    foreach (var item in Model)
+                    {
+                        <tr>
+                            <td>@i</td>
+                            <td>@item.TenPhim</td>
+                            <td class="text-center">@item.VeBan</td>
+                            <td class="text-end">@item.DoanhThu.ToString("N0") đ</td>
+                        </tr>
+                        i++;
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="4" class="text-center">
+                            Không có dữ liệu
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+</div>
+
+<script>
+    function onTypeChange(type) {
+        document.getElementById("blockDay").style.display = "none";
+        document.getElementById("blockMonth").style.display = "none";
+        document.getElementById("blockYear").style.display = "none";
+
+        if (type === "day") {
+            document.getElementById("blockDay").style.display = "block";
+        }
+        else if (type === "month") {
+            document.getElementById("blockMonth").style.display = "block";
+            document.getElementById("blockYear").style.display = "block";
+        }
+        else if (type === "year") {
+            document.getElementById("blockYear").style.display = "block";
+        }
+    }
+
+    onTypeChange("@type");
+</script>

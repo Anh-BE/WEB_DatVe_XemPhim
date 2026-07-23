@@ -1,0 +1,144 @@
+﻿@Html.Partial("_BannerPartial")
+
+@using doan3.Models; 
+
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewBag.Title = "Trang chủ";
+
+    // 1. Lấy thông tin User từ Session
+    var session = Session["USER_SESSION"] as doan3.Models.UserLogin;
+
+    // 2. Kiểm tra quyền Admin (Giả sử GroupID == 1 là Admin)
+    bool isAdmin = (session != null && session.GroupID == "1");
+}
+
+<div class="content-wrapper">
+    <div class="phim-container">
+        @foreach (Phim s in Model)
+        {
+            <div class="phim-card">
+                <img src="@Url.Content("~/Content/HinhAnhSP/" + s.Poster)" alt="@s.TenPhim" />
+
+                <div class="phim-info">
+                    <p class="phim-title">
+                        @(s.TenPhim.Length > 25 ? s.TenPhim.Substring(0, 25) + "..." : s.TenPhim)
+                    </p>
+
+                    <div class="phim-buttons">
+                        @Html.ActionLink("Chi Tiết", "ChiTietPhim", "Home", new { id = s.PhimID }, new { @class = "btn-movana" })
+
+                        @* --- LOGIC KIỂM TRA QUYỀN --- *@
+                        @if (isAdmin)
+                        {
+                            // Nếu là ADMIN -> Nút Xem Lịch (Dẫn đến trang quản lý lịch chiếu của phim đó)
+                            @Html.ActionLink("Xem Lịch", "ChonSuat", "DatVe", new { idPhim = s.PhimID }, new { @class = "btn-movana" })
+                        }
+                        else
+                        {
+                            // Nếu là USER THƯỜNG -> Nút Đặt Vé
+                            @Html.ActionLink("Đặt Vé", "ChonSuat", "DatVe", new { idPhim = s.PhimID }, new { @class = "btn-movana" })
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+<style>
+    /* ... (Giữ nguyên phần CSS cũ của bạn) ... */
+
+    .content-wrapper {
+        max-width: 1300px;
+        margin: 0 auto;
+        padding: 0 20px;
+    }
+
+    .phim-container {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 25px;
+    }
+
+    .phim-card {
+        background-color: #1a1a2e;
+        border-radius: 12px;
+        overflow: hidden;
+        color: #fff;
+        text-align: center;
+        transition: 0.3s ease;
+        border: 1px solid rgba(255,255,255,0.05);
+    }
+
+        .phim-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 12px 24px rgba(0,0,0,0.5);
+            border-color: #ffeb00;
+        }
+
+        .phim-card img {
+            width: 100%;
+            height: 320px;
+            object-fit: cover;
+        }
+
+    .phim-info {
+        padding: 15px;
+    }
+
+    .phim-title {
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 700;
+        margin-bottom: 15px;
+        font-size: 1rem;
+        height: 2.4rem;
+        overflow: hidden;
+    }
+
+    .phim-buttons {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        margin-top: 10px;
+    }
+
+    .btn-movana {
+        position: relative;
+        display: inline-block;
+        padding: 8px 15px;
+        font-family: 'Montserrat', sans-serif;
+        font-size: 13px;
+        font-weight: 700;
+        color: #000 !important;
+        background: #ffeb00;
+        border-radius: 8px;
+        text-decoration: none !important;
+        overflow: hidden;
+        z-index: 1;
+        transition: color 0.3s ease;
+        border: none;
+        flex: 1;
+        text-transform: uppercase;
+    }
+
+        .btn-movana::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(90deg, #7f00ff, #3a7bd5);
+            transform: translateX(-105%);
+            transition: transform 0.4s ease-in-out;
+            z-index: -1;
+            border-radius: 8px;
+        }
+
+        .btn-movana:hover::before {
+            transform: translateX(0);
+        }
+
+        .btn-movana:hover {
+            color: #fff !important;
+            box-shadow: 0 4px 12px rgba(127, 0, 255, 0.3);
+        }
+</style>

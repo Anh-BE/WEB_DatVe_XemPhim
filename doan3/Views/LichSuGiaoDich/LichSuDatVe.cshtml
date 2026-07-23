@@ -1,0 +1,426 @@
+﻿@model IEnumerable<doan3.Models.Don_Dat_Ve>
+@using System.Web
+
+@{
+    ViewBag.Title = "Lịch Sử Giao Dịch";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<style>
+    /* --- GENERAL STYLE --- */
+    .movana-font {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    .history-container {
+        max-width: 900px;
+        margin: 50px auto;
+        padding-bottom: 50px;
+    }
+
+    /* TIÊU ĐỀ TRANG */
+    .page-title {
+        color: #f9e000;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        margin-bottom: 40px;
+        font-size: 2rem;
+        border-bottom: 2px solid rgba(249, 224, 0, 0.2);
+        padding-bottom: 15px;
+    }
+
+    /* --- TICKET CARD (PREMIUM) --- */
+    .ticket-card {
+        background: #15183c;
+        border: 1px solid rgba(249, 224, 0, 0.15);
+        border-radius: 16px;
+        margin-bottom: 30px;
+        overflow: hidden;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        transition: transform 0.3s ease;
+    }
+
+        .ticket-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(249, 224, 0, 0.1);
+            border-color: rgba(249, 224, 0, 0.4);
+        }
+
+    /* HEADER CARD */
+    .card-header-custom {
+        background: rgba(0, 0, 0, 0.2);
+        padding: 15px 25px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .order-label {
+        color: #8899a6;
+        font-size: 0.85rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .order-id {
+        color: #fff;
+        font-weight: 800;
+        font-size: 1.1rem;
+        margin-left: 5px;
+    }
+
+    .order-time {
+        color: #8899a6;
+        font-size: 0.85rem;
+        margin-left: 15px;
+        font-style: italic;
+    }
+
+    /* BODY CARD */
+    .card-body-custom {
+        padding: 25px;
+    }
+
+    .movie-title {
+        font-size: 1.4rem;
+        font-weight: 900;
+        color: #f9e000;
+        margin-bottom: 15px;
+        letter-spacing: 1px;
+    }
+
+    .info-row {
+        margin-bottom: 10px;
+        color: #e0e0e0;
+        font-size: 0.95rem;
+    }
+
+        .info-row i {
+            color: #f9e000;
+            width: 25px;
+            text-align: center;
+            margin-right: 5px;
+        }
+
+    .info-highlight {
+        color: #fff;
+        font-weight: 700;
+    }
+
+    /* --- GHẾ NGỒI (ĐÃ SỬA: CHỮ TRẮNG) --- */
+    .seat-badge {
+        background: rgba(255, 255, 255, 0.15); /* Nền trắng trong suốt */
+        color: #fff; /* Chữ trắng */
+        padding: 5px 12px;
+        border-radius: 6px;
+        font-size: 0.9rem;
+        margin-right: 5px;
+        font-weight: 700;
+        border: 1px solid rgba(255, 255, 255, 0.3); /* Viền trắng mờ */
+    }
+
+    /* GIÁ TIỀN */
+    .price-label {
+        font-size: 0.8rem;
+        color: #8899a6;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        display: block;
+    }
+
+    .total-price {
+        font-size: 1.5rem;
+        font-weight: 900;
+        color: #fff;
+        text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+    }
+
+    /* NÚT CHI TIẾT */
+    .btn-detail {
+        background: transparent;
+        color: #f9e000;
+        border: 1px solid #f9e000;
+        padding: 6px 20px;
+        font-weight: 700;
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        border-radius: 20px;
+        transition: 0.3s;
+        cursor: pointer;
+        letter-spacing: 1px;
+    }
+
+        .btn-detail:hover {
+            background: #f9e000;
+            color: #060922;
+        }
+
+    /* --- MODAL DARK MODE --- */
+    .modal-backdrop {
+        z-index: 10000 !important;
+    }
+
+    .modal {
+        z-index: 10001 !important;
+    }
+
+    .modal-content {
+        background-color: #15183c;
+        border: 1px solid #f9e000;
+        border-radius: 16px;
+        box-shadow: 0 0 50px rgba(249, 224, 0, 0.2);
+    }
+
+    .modal-header {
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+        background: rgba(0,0,0,0.2);
+    }
+
+    .modal-title {
+        color: #f9e000;
+        font-weight: 900;
+        letter-spacing: 2px;
+    }
+
+    .close {
+        color: #fff;
+        text-shadow: none;
+        opacity: 1;
+        outline: none;
+    }
+
+        .close:hover {
+            color: #f9e000;
+        }
+
+    .modal-body {
+        padding: 30px;
+        color: #fff;
+    }
+
+    .qr-box {
+        background: #fff;
+        padding: 10px;
+        border-radius: 10px;
+        display: inline-block;
+        margin: 20px 0;
+        box-shadow: 0 0 20px rgba(249, 224, 0, 0.2);
+    }
+
+    .qr-img {
+        width: 180px;
+        height: 180px;
+    }
+
+    .ticket-info-box {
+        background: rgba(255,255,255,0.05);
+        border-radius: 10px;
+        padding: 20px;
+        margin-top: 20px;
+        border: 1px dashed rgba(255,255,255,0.2);
+    }
+
+    .ticket-info-row {
+        margin-bottom: 12px;
+        font-size: 0.95rem;     
+        padding-bottom: 8px;
+    }
+
+        .ticket-info-row:last-child {
+            border-bottom: none;
+        }
+
+    .ticket-label {
+       
+        width: 100px;
+        display: inline-block;
+        font-weight: 600;
+    }
+
+    .ticket-value {
+        color: #fff;
+        font-weight: 700;
+    }
+
+    .modal-footer {
+        border-top: none;
+        padding-bottom: 30px;
+    }
+
+    .btn-close-modal {
+        background: #2c3e50;
+        color: #fff;
+        border: none;
+        padding: 10px 30px;
+        border-radius: 8px;
+        font-weight: 700;
+        text-transform: uppercase;
+        cursor: pointer;
+    }
+
+        .btn-close-modal:hover {
+            background: #34495e;
+            color: #f9e000;
+        }
+</style>
+
+<div class="container history-container movana-font">
+    <h2 class="page-title"><i class="fa fa-history mr-3"></i> Lịch Sử Giao Dịch</h2>
+
+    @if (Model == null || !Model.Any())
+    {
+        <div class="alert text-center p-5" style="background: rgba(255,255,255,0.05); border: 1px dashed rgba(255,255,255,0.2); border-radius: 16px;">
+            <i class="fa fa-film fa-3x text-muted mb-3"></i>
+            <h4 class="text-white mb-3">BẠN CHƯA CÓ GIAO DỊCH NÀO</h4>
+            <a href="@Url.Action("PhimDangChieu", "Home")" class="btn btn-warning font-weight-bold px-4 rounded-pill">
+                ĐẶT VÉ NGAY
+            </a>
+        </div>
+    }
+    else
+    {
+        foreach (var order in Model)
+        {
+            var firstTicket = order.Chi_Tiet_Ve != null ? order.Chi_Tiet_Ve.FirstOrDefault() : null;
+            string tenPhim = "Không xác định";
+            string tenRap = "N/A";
+            string tenPhong = "N/A";
+            string gioChieu = "N/A";
+
+            if (firstTicket != null && firstTicket.Lich_Chieu != null)
+            {
+                if (firstTicket.Lich_Chieu.Phim != null) { tenPhim = firstTicket.Lich_Chieu.Phim.TenPhim; }
+                if (firstTicket.Lich_Chieu.ThoiGianBatDau != null) { gioChieu = firstTicket.Lich_Chieu.ThoiGianBatDau.Value.ToString("HH:mm dd/MM/yyyy"); }
+                if (firstTicket.Lich_Chieu.Phong_Chieu != null)
+                {
+                    tenPhong = firstTicket.Lich_Chieu.Phong_Chieu.TenPhong;
+                    if (firstTicket.Lich_Chieu.Phong_Chieu.Rap_Chieu != null) { tenRap = firstTicket.Lich_Chieu.Phong_Chieu.Rap_Chieu.TenRap; }
+                }
+            }
+
+            var listGhe = new List<string>();
+            if (order.Chi_Tiet_Ve != null)
+            {
+                foreach (var ve in order.Chi_Tiet_Ve)
+                {
+                    if (ve.Ghe_Ngoi != null) { listGhe.Add(ve.Ghe_Ngoi.MaGhe); }
+                }
+            }
+            string strGhe = string.Join(", ", listGhe);
+            string tongTien = order.TongTienDonHang.HasValue ? order.TongTienDonHang.Value.ToString("#,##0") : "0";
+
+            string qrContent = "VÉ:" + order.DonDatVeID + "|PHIM:" + tenPhim + "|GHẾ:" + strGhe;
+            string qrUrl = "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=" + Server.UrlEncode(qrContent);
+
+            <div class="ticket-card">
+                <div class="card-header-custom">
+                    <div>
+                        <span class="order-label">MÃ VÉ:</span>
+                        <span class="order-id">#@order.DonDatVeID</span>
+                        <span class="order-time">
+                            @(order.ThoiGianDat.HasValue ? order.ThoiGianDat.Value.ToString("dd/MM/yyyy HH:mm") : "")
+                        </span>
+                    </div>
+
+                    <button type="button" class="btn-detail" onclick="showTicketDetail(
+                        '#@order.DonDatVeID',
+                        '@tenPhim',
+                        '@tenRap - @tenPhong',
+                        '@gioChieu',
+                        '@strGhe',
+                        '@tongTien',
+                        '@qrUrl'
+                    )">
+                        <i class="mr-1"></i> CHI TIẾT
+                    </button>
+                </div>
+
+                <div class="card-body-custom">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <div class="movie-title text-uppercase">@tenPhim</div>
+                            <div class="info-row"><i class="fa fa-map-marker"></i> <span class="info-highlight">@tenRap</span> - @tenPhong</div>
+                            <div class="info-row"><i class="fa fa-clock-o"></i> Suất chiếu: <span class="info-highlight">@gioChieu</span></div>
+                            <div class="info-row mt-3">
+                                <i class="fa fa-th"></i> Ghế:
+                                @foreach (var ghe in listGhe)
+                                {
+                                    <span class="">@ghe</span>
+                                }
+                            </div>
+                        </div>
+                        <div class="col-md-4 text-right">
+                            <span class="price-label">TỔNG THANH TOÁN</span>
+                            <div class="total-price ">
+                                @tongTien <small style="font-size: 1rem; font-weight: 500;">VNĐ</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    }
+</div>
+
+<div class="modal fade" id="ticketModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalTitle">CHI TIẾT VÉ</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body text-center">
+                <h4 class="font-weight-bold text-white text-uppercase mb-3" id="modalMovieName" style="letter-spacing: 1px;"></h4>
+
+                <div class="qr-box">
+                    <img src="" id="modalQrImage" class="qr-img" alt="QR Code" />
+                </div>
+                <p class="small text-muted mb-4">Vui lòng đưa mã này cho nhân viên soát vé</p>
+
+                <div class="ticket-info-box text-left">
+                    <div class="ticket-info-row">
+                        <span class="ticket-label"><i class=" text-warning mr-2"></i> Rạp:</span>
+                        <span id="modalCinema" class="ticket-value text-white"></span>
+                    </div>
+
+                    <div class="ticket-info-row">
+                        <span class="ticket-label"><i class="text-warning mr-2"></i> Suất:</span>
+                        <span id="modalTime" class="ticket-value text-white"></span>
+                    </div>
+
+                    <div class="ticket-info-row">
+                        <span class="ticket-label"><i class="text-warning mr-2"></i> Ghế:</span>
+                        <span id="modalSeats" class="ticket-value text-white"></span>
+                    </div>
+
+                    <div class="ticket-info-row border-0 pt-2 mt-2" style="border-top: 1px dashed rgba(255,255,255,0.2) !important;">
+                        <span class="ticket-label text-custom-warning">TỔNG:</span>
+                        <span id="modalPrice" class="ticket-value" style="font-size: 1.2rem; color: #f9e000;"></span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer justify-content-center">
+                <button type="button" class="btn-close-modal" data-dismiss="modal">Đóng</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function showTicketDetail(orderId, movieName, cinema, time, seats, price, qrUrl) {
+        document.getElementById('modalTitle').innerText = "MÃ VÉ " + orderId;
+        document.getElementById('modalMovieName').innerText = movieName;
+        document.getElementById('modalCinema').innerText = cinema;
+        document.getElementById('modalTime').innerText = time;
+        document.getElementById('modalSeats').innerText = seats;
+        document.getElementById('modalPrice').innerText = price + " VNĐ";
+        document.getElementById('modalQrImage').src = qrUrl;
+
+        $('#ticketModal').modal('show');
+    }
+</script>

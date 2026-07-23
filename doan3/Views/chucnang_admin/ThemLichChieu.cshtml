@@ -1,0 +1,285 @@
+﻿@model doan3.Models.ThemLichChieuViewModel
+@{
+    ViewBag.Title = "Thêm lịch chiếu";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
+
+<style>
+    body, .container-custom, h4, button, input, select, table {
+        font-family: 'Montserrat', sans-serif !important;
+    }
+
+    .container-custom {
+        padding: 50px 15px;
+        max-width: 1000px;
+        margin: 0 auto;
+    }
+
+    .box {
+        border: 2px solid #ffeb00;
+        border-radius: 20px;
+        padding: 45px;
+        margin-bottom: 60px;
+        background: linear-gradient(145deg, #0b0f25, #12173b);
+        color: #fff;
+        box-shadow: 0 15px 35px rgba(0,0,0,0.5);
+    }
+
+        .box h4 {
+            color: #ffeb00;
+            margin-bottom: 40px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-size: 1.4rem;
+            border-left: 6px solid #ffeb00;
+            padding-left: 20px;
+        }
+
+    label {
+        font-weight: 600;
+        font-size: 0.9rem;
+        margin-bottom: 10px;
+        color: #ddd;
+        display: block;
+    }
+
+    .form-control-custom {
+        background: #0b0f25 !important;
+        color: #fff !important;
+        border: 1px solid #ffeb00 !important;
+        border-radius: 12px;
+        height: 55px;
+        margin-bottom: 30px;
+        padding: 10px 20px;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+    }
+
+        .form-control-custom:focus {
+            box-shadow: 0 0 15px rgba(255, 235, 0, 0.2);
+            outline: none;
+        }
+
+    .btn-main {
+        border: 2px solid #ffeb00;
+        color: #ffeb00;
+        border-radius: 40px;
+        padding: 15px 50px;
+        background: transparent;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+
+        .btn-main:hover {
+            background: #ffeb00;
+            color: #000;
+            box-shadow: 0 8px 20px rgba(255, 235, 0, 0.4);
+        }
+
+    .table-custom {
+        margin-top: 30px;
+        border-collapse: separate;
+        border-spacing: 0 12px;
+    }
+
+        .table-custom thead th {
+            border: none;
+            color: #ffeb00;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 1px;
+            padding: 15px 20px;
+        }
+
+        .table-custom tbody tr {
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .table-custom tbody td {
+            padding: 25px 20px;
+            vertical-align: middle;
+            border: none;
+        }
+
+    .alert-success {
+        background-color: #1a2a1a;
+        border: 1px solid #28a745;
+        color: #fff;
+        border-radius: 15px;
+        padding: 20px;
+        margin-bottom: 40px;
+        font-weight: 600;
+    }
+</style>
+
+<div class="container-custom">
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success text-center">
+            @TempData["Success"]
+        </div>
+    }
+
+    @Html.ValidationSummary(true, "", new { @class = "text-danger text-center mb-4" })
+
+    <!-- ================== XEM LỊCH CHIẾU ================== -->
+    <div class="box">
+        <h4>PHIM VÀ LỊCH CHIẾU HIỆN TẠI</h4>
+
+        @using (Html.BeginForm("XemLichChieu", "ChucNang_Admin", FormMethod.Post, new { @class = "row align-items-end" }))
+        {
+            <div class="col-md-8">
+                <label>Chọn phim</label>
+                @Html.DropDownListFor(
+                    m => m.PhimID,
+                    new SelectList(Model.DanhSachPhim, "PhimID", "TenPhim", Model.PhimID),
+                    "-- chọn phim --",
+                    new { @class = "form-control form-control-custom mb-0" })
+            </div>
+            <div class="col-md-4 text-right">
+                <button type="submit" class="btn-main w-100">XEM LỊCH</button>
+            </div>
+        }
+
+        <div class="table-responsive">
+            <table class="table table-dark table-custom">
+                <thead>
+                    <tr>
+                        <th>Rạp</th>
+                        <th>Phòng</th>
+                        <th>Thời gian</th>
+                        <th>Định dạng</th>
+                        <th class="text-right">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.LichChieuHienTai != null && Model.LichChieuHienTai.Any())
+                    {
+                        foreach (var lc in Model.LichChieuHienTai)
+                        {
+                            <tr>
+                                <td>@lc.Phong_Chieu.Rap_Chieu.TenRap</td>
+                                <td>
+                                    <span class="badge" style="background:#ffeb00;color:#000;padding:8px 12px">
+                                        @lc.Phong_Chieu.TenPhong
+                                    </span>
+                                </td>
+                                <td>@lc.ThoiGianBatDau.Value.ToString("dd/MM/yyyy HH:mm")</td>
+                                <td><strong>@lc.DinhDang</strong></td>
+                                <td class="text-right">
+                                    @using (Html.BeginForm("XoaLichChieu", "ChucNang_Admin", FormMethod.Post))
+                                    {
+                                        @Html.AntiForgeryToken()
+                                        @Html.Hidden("lichChieuId", lc.LichChieuID)
+                                        @Html.Hidden("phimId", Model.PhimID)
+
+                                        <button type="submit"
+                                                class="btn btn-sm btn-outline-danger"
+                                                style="border-radius:20px;padding:6px 18px"
+                                                onclick="return confirm('Xóa lịch chiếu này?')">
+                                            Xóa
+                                        </button>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="5" class="text-center text-muted" style="padding:40px">
+                                Vui lòng chọn phim để hiển thị lịch chiếu
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- ================== THÊM LỊCH CHIẾU ================== -->
+    <div class="box">
+        <h4>THÊM LỊCH CHIẾU MỚI</h4>
+
+        @using (Html.BeginForm("ThemLichChieuPost", "ChucNang_Admin", FormMethod.Post))
+        {
+            @Html.AntiForgeryToken()
+            @Html.HiddenFor(m => m.PhimID)
+
+            <div class="row">
+                <div class="col-md-6">
+                    <label>Rạp chiếu</label>
+                    @Html.DropDownListFor(
+                        m => m.RapID,
+                        new SelectList(Model.DanhSachRap, "RapID", "TenRap"),
+                        "-- chọn rạp --",
+                        new { @class = "form-control form-control-custom", id = "RapID" })
+                </div>
+
+                <div class="col-md-6">
+                    <label>Phòng chiếu</label>
+                    <select id="PhongID" name="PhongID" class="form-control form-control-custom">
+                        <option>-- chọn phòng --</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <label>Thời gian bắt đầu</label>
+                    @Html.TextBoxFor(
+                        m => m.ThoiGianBatDau,
+                        new
+                        {
+                            type = "datetime-local",
+                            min = DateTime.Now.ToString("yyyy-MM-ddTHH:mm"),
+                            @class = "form-control form-control-custom"
+                        })
+                </div>
+
+                <div class="col-md-6">
+                    <label>Định dạng</label>
+                    @Html.DropDownListFor(
+                        m => m.DinhDang,
+                        new SelectList(new[] { "2D", "3D" }),
+                        new { @class = "form-control form-control-custom" })
+                </div>
+            </div>
+
+            <div class="text-center mt-5">
+                <button type="submit" class="btn-main">
+                    XÁC NHẬN THÊM LỊCH
+                </button>
+            </div>
+        }
+    </div>
+</div>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<script>
+    $('#RapID').change(function () {
+        const rapId = $(this).val();
+        const phong = $('#PhongID');
+        phong.empty();
+
+        if (rapId) {
+            $.get('@Url.Action("GetPhongTheoRap","ChucNang_Admin")',
+                { rapId: rapId },
+                function (data) {
+                    phong.append('<option>-- chọn phòng --</option>');
+                    $.each(data, function (i, p) {
+                        phong.append(`<option value="${p.PhongID}">${p.TenPhong}</option>`);
+                    });
+                });
+        } else {
+            phong.append('<option>-- chọn phòng --</option>');
+        }
+    });
+</script>

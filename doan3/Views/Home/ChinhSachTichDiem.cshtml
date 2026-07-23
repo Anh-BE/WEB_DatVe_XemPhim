@@ -1,0 +1,290 @@
+﻿@{
+    ViewBag.Title = "Chính Sách Tích Điểm - Movana Cinema";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<style>
+    /* --- GENERAL THEME --- */
+    .movana-policy-section {
+        background-color: #060922;
+        color: #fff;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        padding-bottom: 80px;
+        min-height: 100vh;
+    }
+
+    /* --- HERO SECTION --- */
+    .policy-hero {
+        text-align: center;
+        padding: 60px 20px 40px;
+        position: relative;
+    }
+
+    .brand-title {
+        font-size: 3.5rem;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 5px;
+        margin-bottom: 15px;
+        color: #f9e000;
+        text-shadow: 0 0 10px rgba(249, 224, 0, 0.5), 0 0 20px rgba(249, 224, 0, 0.3), 2px 2px 0px #000;
+    }
+
+    .brand-slogan {
+        color: #8899a6;
+        font-size: 1.1rem;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        margin-bottom: 40px;
+        position: relative;
+        display: inline-block;
+        border-bottom: 2px solid #f9e000;
+        padding-bottom: 10px;
+    }
+
+    /* --- POLICY CARDS --- */
+    .policy-card {
+        background: #15183c;
+        border-radius: 20px;
+        padding: 40px;
+        border: 1px solid rgba(249, 224, 0, 0.15);
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+        margin-bottom: 40px;
+        transition: transform 0.3s;
+    }
+
+        .policy-card:hover {
+            transform: translateY(-5px);
+            border-color: #f9e000;
+        }
+
+    .card-header-custom {
+        display: flex;
+        align-items: center;
+        margin-bottom: 30px;
+        border-bottom: 1px dashed rgba(255,255,255,0.1);
+        padding-bottom: 15px;
+    }
+
+    .header-icon {
+        font-size: 2.5rem;
+        color: #f9e000;
+        margin-right: 20px;
+    }
+
+    .header-text h3 {
+        margin: 0;
+        color: #fff;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .header-text p {
+        margin: 0;
+        color: #8899a6;
+        font-size: 0.9rem;
+    }
+
+    /* --- TABLE STYLE --- */
+    .table-custom {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0 15px;
+    }
+
+        .table-custom th {
+            text-align: left;
+            color: #8899a6;
+            font-weight: 700;
+            text-transform: uppercase;
+            padding: 0 20px;
+            border: none;
+        }
+
+        .table-custom td {
+            background: rgba(10, 13, 41, 0.6);
+            padding: 20px;
+            vertical-align: middle;
+            border: none;
+            color: #fff;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .table-custom tr td:first-child {
+            border-top-left-radius: 12px;
+            border-bottom-left-radius: 12px;
+        }
+
+        .table-custom tr td:last-child {
+            border-top-right-radius: 12px;
+            border-bottom-right-radius: 12px;
+            text-align: right;
+        }
+
+    .point-badge {
+        background: linear-gradient(45deg, #f9e000, #ffdb4d);
+        color: #060922;
+        font-weight: 800;
+        padding: 8px 20px;
+        border-radius: 30px;
+        box-shadow: 0 0 15px rgba(249, 224, 0, 0.4);
+        display: inline-block;
+        min-width: 120px;
+        text-align: center;
+    }
+
+    /* --- RULES LIST --- */
+    .rule-item {
+        display: flex;
+        align-items: flex-start;
+        margin-bottom: 25px;
+        background: rgba(10, 13, 41, 0.4);
+        padding: 20px;
+        border-radius: 12px;
+        border-left: 4px solid #f9e000;
+    }
+
+    .rule-icon-small {
+        font-size: 1.5rem;
+        color: #f9e000;
+        margin-right: 20px;
+        margin-top: 5px;
+    }
+
+    .rule-content h5 {
+        color: #f9e000;
+        font-weight: 700;
+        margin-bottom: 5px;
+        text-transform: uppercase;
+        font-size: 1.1rem;
+    }
+
+    .rule-content p {
+        margin: 0;
+        color: #d1d1d1;
+        line-height: 1.6;
+    }
+
+    /* --- CTA BUTTON --- */
+    .about-cta {
+        text-align: center;
+        margin-top: 60px;
+    }
+
+    .btn-explore {
+        background: transparent;
+        color: #f9e000;
+        border: 2px solid #f9e000;
+        padding: 15px 50px;
+        font-size: 1.2rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        border-radius: 50px;
+        text-decoration: none;
+        display: inline-block;
+        transition: 0.3s;
+        letter-spacing: 1px;
+    }
+
+        .btn-explore:hover {
+            background: #f9e000;
+            color: #060922;
+            box-shadow: 0 0 25px rgba(249, 224, 0, 0.6);
+            transform: scale(1.05);
+        }
+</style>
+
+<div class="movana-policy-section">
+    <div class="container">
+
+        <div class="policy-hero">
+            <h1 class="brand-title">CHÍNH SÁCH TÍCH ĐIỂM</h1>
+            <p class="brand-slogan">Đặc quyền dành riêng cho thành viên MOVANA</p>
+        </div>
+
+        <div class="row">
+            <div class="col-lg-7">
+                <div class="policy-card h-100">
+                    <div class="card-header-custom">
+                        <i class="fa fa-gem header-icon"></i>
+                        <div class="header-text">
+                            <h3>Tỷ Lệ Tích Lũy</h3>
+                            <p>Điểm thưởng được cộng ngay sau khi thanh toán thành công</p>
+                        </div>
+                    </div>
+
+                    <table class="table-custom">
+                        <thead>
+                            <tr>
+                                <th>Loại Ghế</th>
+                                <th class="text-right">Điểm Nhận Được</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><i class="fa fa-couch text-secondary mr-3"></i> Ghế Thường</td>
+                                <td><span class="point-badge">+1 ĐIỂM</span></td>
+                            </tr>
+                            <tr>
+                                <td><i class="fa fa-crown text-warning mr-3"></i> Ghế VIP</td>
+                                <td><span class="point-badge">+2 ĐIỂM</span></td>
+                            </tr>
+                            <tr>
+                                <td><i class="fa fa-heart text-danger mr-3"></i> Ghế Đôi (Couple)</td>
+                                <td><span class="point-badge">+3 ĐIỂM</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="col-lg-5">
+                <div class="policy-card h-100">
+                    <div class="card-header-custom">
+                        <i class="fa fa-gift header-icon"></i>
+                        <div class="header-text">
+                            <h3>Quy Tắc Sử Dụng</h3>
+                            <p>Đổi điểm lấy vé xem phim hoặc giảm giá trực tiếp</p>
+                        </div>
+                    </div>
+
+                    <div class="rule-list">
+                        <div class="rule-item">
+                            <i class="fa fa-lock rule-icon-small"></i>
+                            <div class="rule-content">
+                                <h5>Điều Kiện Kích Hoạt</h5>
+                                <p>Bạn cần tích lũy tối thiểu <strong>20 ĐIỂM</strong> trong tài khoản để bắt đầu sử dụng tính năng đổi điểm.</p>
+                            </div>
+                        </div>
+
+                        <div class="rule-item">
+                            <i class="fa fa-exchange-alt rule-icon-small"></i>
+                            <div class="rule-content">
+                                <h5>Giá Trị Quy Đổi</h5>
+                                <p>1 ĐIỂM tương đương <strong style="color: #f9e000; font-size: 1.1rem;">1.000 VNĐ</strong>. Điểm được trừ trực tiếp vào tổng hóa đơn thanh toán.</p>
+                            </div>
+                        </div>
+
+                        <div class="rule-item">
+                            <i class="fa fa-history rule-icon-small"></i>
+                            <div class="rule-content">
+                                <h5>Thời Hạn Sử Dụng</h5>
+                                <p>Điểm tích lũy có giá trị vĩnh viễn và không bị hết hạn theo năm.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="about-cta">
+            <h3 style="color: #fff; margin-bottom: 25px; font-weight: 300;">Bạn đã sẵn sàng tích điểm chưa?</h3>
+            <a href="@Url.Action("PhimDangChieu", "Home")" class="btn-explore">
+                ĐẶT VÉ NGAY <i class="fa fa-ticket-alt ml-2"></i>
+            </a>
+        </div>
+
+    </div>
+</div>

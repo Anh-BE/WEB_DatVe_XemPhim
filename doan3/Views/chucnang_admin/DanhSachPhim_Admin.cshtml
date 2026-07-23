@@ -1,0 +1,165 @@
+﻿@model IEnumerable<doan3.Models.Phim>
+
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewBag.Title = "Danh sách phim (Admin)";
+}
+
+<div class="content-wrapper">
+
+    <h2 class="text-center mt-4 mb-3" style="color:#ffeb00; font-weight:bold;">
+        DANH SÁCH PHIM ADMIN
+    </h2>
+
+    <!-- NÚT THÊM PHIM -->
+    <div style="margin-bottom:20px;">
+        <a href="@Url.Action("ThemPhim", "ChucNang_Admin")"
+           class="btn-movana">
+            + Thêm phim
+        </a>
+    </div>
+
+    <!-- DANH SÁCH PHIM -->
+    <div class="phim-container">
+        @foreach (var s in Model)
+        {
+            <div class="phim-card">
+                <img src="@Url.Content("~/Content/HinhAnhSP/" + s.Poster)"
+                     alt="@s.TenPhim"
+                     onerror="this.onerror=null;this.src='@Url.Content("~/Content/HinhAnhSP/no-image.png")';" />
+
+                <div class="phim-info">
+                    <p class="phim-title">
+                        @(s.TenPhim.Length > 25
+                            ? s.TenPhim.Substring(0, 25) + "..."
+                            : s.TenPhim)
+                    </p>
+
+                    <div class="phim-buttons">
+                        <a href="@Url.Action("Edit", "ChucNang_Admin", new { id = s.PhimID })"
+                           class="btn-movana">
+                            Sửa
+                        </a>
+
+                        @using (Html.BeginForm("Xoa", "ChucNang_Admin", FormMethod.Post, new { style = "display:inline" }))
+                        {
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@s.PhimID" />
+
+                            <button type="submit"
+                                    class="btn-movana"
+                                    onclick="return confirm('bạn có chắc muốn ngưng chiếu phim này không?');">
+                                Xóa
+                            </button>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+<style>
+    /* ===== LAYOUT ===== */
+    .content-wrapper {
+        max-width: 1300px;
+        margin: 0 auto;
+        padding: 0 20px;
+    }
+
+    .phim-container {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 25px;
+    }
+
+    /* ===== CARD ===== */
+    .phim-card {
+        background-color: #1a1a2e;
+        border-radius: 10px;
+        overflow: hidden;
+        color: #fff;
+        text-align: center;
+        transition: 0.3s ease;
+    }
+
+        .phim-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.35);
+        }
+
+        .phim-card img {
+            width: 100%;
+            height: 280px;
+            object-fit: cover;
+            background: #111;
+        }
+
+    .phim-info {
+        padding: 10px;
+    }
+
+    .phim-title {
+        font-weight: 600;
+        margin: 10px 0 8px;
+        font-size: 1rem;
+        color: #ffeb00;
+    }
+
+    .phim-buttons {
+        display: flex;
+        justify-content: center;
+        gap: 12px;
+        margin-bottom: 12px;
+    }
+
+    /* ===== NÚT MOVANA (VÀNG + HOVER QUÉT) ===== */
+    .btn-movana {
+        position: relative;
+        display: inline-block;
+        padding: 9px 20px;
+        font-size: 14px;
+        font-weight: 700;
+        color: #000;
+        background: #ffeb00;
+        border-radius: 10px;
+        text-decoration: none !important;
+        overflow: hidden;
+        cursor: pointer;
+        transition: color .35s ease;
+        border: none;
+        z-index: 1;
+    }
+
+        .btn-movana::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(90deg, #7f00ff, #3a7bd5); /* <-- MOVANA */
+            transform: translateX(-100%);
+            transition: transform .45s ease-in-out;
+            z-index: -1;
+            border-radius: 10px;
+        }
+
+        .btn-movana:hover::before {
+            transform: translateX(0);
+        }
+
+        .btn-movana:hover {
+            color: #fff;
+        }
+
+    /* ===== RESPONSIVE ===== */
+    @@media (max-width: 992px) {
+        .phim-container {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    @@media (max-width: 576px) {
+        .phim-container {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>

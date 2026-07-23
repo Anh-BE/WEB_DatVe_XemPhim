@@ -1,0 +1,258 @@
+﻿@{
+    ViewBag.Title = "Đăng Nhập";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<style>
+    /* --- FONT & GENERAL --- */
+    .movana-font {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    .login-wrapper {
+        max-width: 500px; /* Form đăng nhập nhỏ gọn */
+        margin: 80px auto;
+    }
+
+    /* --- PREMIUM CARD --- */
+    .premium-card {
+        background: #15183c; /* Nền xanh tối */
+        border: 1px solid rgba(249, 224, 0, 0.15); /* Viền vàng mờ */
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5); /* Bóng đổ sâu */
+        padding: 40px;
+        position: relative;
+        border-radius: 16px;
+    }
+
+    /* TIÊU ĐỀ */
+    .section-title {
+        color: #f9e000;
+        font-weight: 900;
+        font-size: 2rem;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        margin-bottom: 10px;
+        text-align: center;
+        border-bottom: 2px solid rgba(249, 224, 0, 0.1);
+        padding-bottom: 20px;
+    }
+
+    .sub-text {
+        text-align: center;
+        color: #8899a6;
+        margin-bottom: 30px;
+        font-size: 0.9rem;
+    }
+
+    /* FORM ELEMENTS */
+    .form-group {
+        margin-bottom: 25px;
+    }
+
+    .label-custom {
+        color: #fff;
+        font-size: 0.85rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 10px;
+        display: block;
+    }
+
+    /* INPUT STYLE */
+    .input-group-premium {
+        position: relative;
+        display: flex;
+        align-items: center;
+    }
+
+    .input-icon {
+        position: absolute;
+        left: 15px;
+        color: #f9e000;
+        font-size: 1.1rem;
+        z-index: 10;
+    }
+
+    .input-premium {
+        background: #0a0d29;
+        border: 1px solid #2a2d55;
+        color: #fff;
+        height: 50px;
+        border-radius: 10px;
+        padding: 0 15px 0 45px; /* Padding trái 45px để chừa chỗ cho icon */
+        font-weight: 500;
+        font-size: 1rem;
+        width: 100%;
+        transition: all 0.3s;
+    }
+
+        .input-premium:focus {
+            background: #0a0d29;
+            border-color: #f9e000;
+            color: #f9e000;
+            box-shadow: 0 0 15px rgba(249, 224, 0, 0.15);
+            outline: none;
+        }
+
+    /* CHECKBOX */
+    .checkbox-custom {
+        display: flex;
+        align-items: center;
+        color: #ccc;
+        font-size: 0.9rem;
+        cursor: pointer;
+    }
+
+        .checkbox-custom input {
+            width: 18px;
+            height: 18px;
+            margin-right: 8px;
+            accent-color: #f9e000;
+            cursor: pointer;
+        }
+
+    /* BUTTONS */
+    .btn-action-group {
+        margin-top: 30px;
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .btn-gold {
+        background: #f9e000;
+        color: #060922;
+        border: none;
+        height: 50px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        border-radius: 10px;
+        transition: all 0.3s;
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+        .btn-gold:hover {
+            background: #e0c900;
+            transform: translateY(-2px);
+            color: #000;
+            box-shadow: 0 5px 15px rgba(249, 224, 0, 0.3);
+        }
+
+    .btn-register {
+        background: transparent;
+        color: #fff;
+        border: 1px solid #444;
+        height: 50px;
+        font-weight: 700;
+        text-transform: uppercase;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-decoration: none !important;
+        transition: all 0.3s;
+        width: 100%;
+    }
+
+        .btn-register:hover {
+            border-color: #f9e000;
+            color: #f9e000;
+            background: rgba(249, 224, 0, 0.05);
+        }
+
+    /* ERROR ALERT */
+    .alert-custom {
+        background: rgba(220, 53, 69, 0.1);
+        border: 1px solid #dc3545;
+        color: #ff6b6b;
+        padding: 12px;
+        border-radius: 10px;
+        font-size: 0.9rem;
+        margin-top: 20px;
+        display: flex;
+        align-items: center;
+    }
+</style>
+
+<div class="container movana-font">
+    <div class="login-wrapper">
+        <div class="premium-card">
+
+            <h2 class="section-title"><i class="fa fa-user-circle mr-2"></i> ĐĂNG NHẬP</h2>
+            <p class="sub-text">Chào mừng bạn đã đến với MOVANA Cinema</p>
+
+            <form action="~/Login/Login" method="post">
+
+                @if (TempData["SuccessMessage"] != null)
+                {
+                    // Đã sửa rounded-0 thành border-radius: 10px
+                    <div class="alert alert-success border-0 mb-4" style="background: rgba(40, 167, 69, 0.2); color: #28a745; border-radius: 10px;">
+                        <i class="fa fa-check-circle mr-2"></i> @TempData["SuccessMessage"]
+                    </div>
+                }
+                @if (ViewBag.Error != null)
+                {
+                    <div class="alert-custom" role="alert" style="margin-bottom: 25px;">
+                        <i class="fa fa-exclamation-circle mr-2" style="font-size: 1.2rem;"></i>
+                        <span>@ViewBag.Error</span>
+                    </div>
+                }
+
+                @* TÊN ĐĂNG NHẬP *@
+                <div class="form-group">
+                    <label class="label-custom">TÊN TÀI KHOẢN</label>
+                    <div class="input-group-premium">
+                        <i class="fa fa-user input-icon"></i>
+                        <input type="text"
+                               value="@ViewBag.username"
+                               class="input-premium"
+                               required
+                               name="username"
+                               placeholder="Nhập tên đăng nhập..."
+                               autocomplete="off" />
+                    </div>
+                </div>
+
+                @* MẬT KHẨU *@
+                <div class="form-group">
+                    <label class="label-custom">MẬT KHẨU</label>
+                    <div class="input-group-premium">
+                        <i class="fa fa-lock input-icon"></i>
+                        <input type="password"
+                               value="@ViewBag.password"
+                               class="input-premium"
+                               required
+                               name="password"
+                               placeholder="Nhập mật khẩu..." />
+                    </div>
+                </div>
+
+                @* GHI NHỚ & QUÊN MẬT KHẨU (NẾU CÓ) *@
+                <div class="d-flex justify-content-between align-items-center">
+                    <label class="checkbox-custom">
+                        <input type="checkbox" name="ghinho" /> Ghi nhớ đăng nhập
+                    </label>
+                </div>
+
+                @* NÚT BẤM *@
+                <div class="btn-action-group">
+                    <button type="submit" class="btn-gold">
+                        ĐĂNG NHẬP
+                    </button>
+
+
+                    <a href="/Register/Index_DangKy" class="btn-register">
+                        <i class="fa fa-user-plus mr-2"></i> ĐĂNG KÝ TÀI KHOẢN
+                    </a>
+                </div>
+
+
+            </form>
+        </div>
+    </div>
+</div>

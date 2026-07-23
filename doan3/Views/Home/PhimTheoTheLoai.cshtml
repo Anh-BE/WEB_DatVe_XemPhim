@@ -1,0 +1,164 @@
+﻿@using doan3.Models;
+@model IEnumerable<Phim>
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewBag.Title = "Phim Theo Thể Loại";
+}
+
+<div class="genre-page-wrapper">
+    <div class="section-header-genre">
+        <h2 class="title-silver-genre">@ViewBag.Title</h2>
+    </div>
+
+    <div class="phim-grid-container">
+        @foreach (var s in Model)
+        {
+            <div class="phim-card-item">
+                <div class="img-container">
+                    <img src="@Url.Content("~/Content/HinhAnhSP/" + s.Poster)" alt="@s.TenPhim" />
+                </div>
+
+                <div class="phim-content">
+                    <p class="phim-name-text">
+                        @(s.TenPhim.Length > 25 ? s.TenPhim.Substring(0, 25) + "..." : s.TenPhim)
+                    </p>
+
+                    <div class="phim-action-group">
+                        @* Đã sửa: Dùng PhimID thay vì MaPhim *@
+                        <a href="@Url.Action("ChiTietPhim", "Home", new { id = s.PhimID })" class="btn-movana-sm">Chi Tiết</a>
+                        <a href="@Url.Action("ChonSuat", "DatVe", new { idPhim = s.PhimID })" class="btn-movana-sm">Đặt Vé</a>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+<style>
+    /* 1. Fix lỗi che khuất: Đẩy nội dung xuống dưới Header */
+    .genre-page-wrapper {
+        max-width: 1300px;
+        margin: 0 auto;
+        padding: 60px 20px 40px 20px; /* Tăng padding-top để tránh Header che tiêu đề */
+    }
+
+    /* 2. Tiêu đề chuẩn Movana (Xanh bạc + Gạch vàng) */
+    .section-header-genre {
+        margin-bottom: 50px;
+        text-align: center;
+    }
+
+    .title-silver-genre {
+        font-family: 'Montserrat', sans-serif !important;
+        font-weight: 700 !important;
+        font-size: 28px !important;
+        color: #adc1ff !important;
+        text-transform: uppercase !important;
+        letter-spacing: 2px !important;
+        display: inline-block !important;
+        position: relative !important;
+        padding-bottom: 15px !important;
+        text-shadow: 0 0 10px rgba(173, 193, 255, 0.3) !important;
+    }
+
+    .title-silver-genre::after {
+        content: "";
+        position: absolute;
+        bottom: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 70px;
+        height: 3px;
+        background-color: #ffeb00 !important;
+        border-radius: 2px;
+    }
+
+    /* 3. Grid phim chuẩn 4 cột */
+    .phim-grid-container {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 30px;
+    }
+
+    .phim-card-item {
+        background-color: #1a1a2e;
+        border-radius: 12px;
+        overflow: hidden;
+        transition: 0.3s ease;
+        border: 1px solid rgba(255,255,255,0.05);
+        text-align: center;
+    }
+
+    .phim-card-item:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 12px 24px rgba(0,0,0,0.6);
+        border-color: #ffeb00;
+    }
+
+    .img-container img {
+        width: 100%;
+        height: 340px;
+        object-fit: cover;
+    }
+
+    .phim-content { padding: 18px; }
+
+    .phim-name-text {
+        font-weight: 600;
+        color: #fff;
+        font-size: 1rem;
+        margin: 0 0 18px 0 !important;
+        height: 2.6rem;
+        overflow: hidden;
+    }
+
+    /* 4. Nút bấm: Xóa gạch chân & Hiệu ứng Quét màu */
+    .phim-action-group {
+        display: flex;
+        gap: 12px;
+    }
+
+    .btn-movana-sm {
+        position: relative !important;
+        display: inline-block !important;
+        flex: 1;
+        padding: 10px 0 !important;
+        background: #ffeb00 !important;
+        color: #000 !important;
+        font-weight: 700 !important;
+        text-decoration: none !important; /* QUAN TRỌNG: Xóa gạch chân */
+        text-transform: uppercase !important;
+        border-radius: 8px !important;
+        overflow: hidden !important;
+        z-index: 1 !important;
+        border: none !important;
+        font-size: 13px !important;
+        transition: color 0.3s ease !important;
+    }
+
+    /* Lớp phủ quét màu Tím -> Xanh */
+    .btn-movana-sm::before {
+        content: "" !important;
+        position: absolute !important;
+        inset: 0 !important;
+        background: linear-gradient(90deg, #7f00ff, #3a7bd5) !important;
+        transform: translateX(-105%) !important;
+        transition: transform 0.45s ease-in-out !important;
+        z-index: -1 !important;
+    }
+
+    .btn-movana-sm:hover::before {
+        transform: translateX(0) !important;
+    }
+
+    .btn-movana-sm:hover {
+        color: #fff !important;
+        text-decoration: none !important;
+        box-shadow: 0 5px 15px rgba(127, 0, 255, 0.4) !important;
+    }
+
+    /* Fix header cho các màn hình nhỏ */
+    @@media (max-width: 992px) {
+        .phim-grid-container { grid-template-columns: repeat(2, 1fr); }
+    }
+</style>

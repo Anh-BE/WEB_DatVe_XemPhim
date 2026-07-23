@@ -1,0 +1,81 @@
+﻿
+<div id="mainBanner" class="carousel slide banner-container" data-ride="carousel" data-interval="4000">
+    <div class="carousel-inner">
+        <div class="carousel-item active">
+            <img src="/Images/banner1.png" alt="Banner 1" class="d-block w-100">
+        </div>
+        <div class="carousel-item">
+            <img src="/Images/banner2.png" alt="Banner 2" class="d-block w-100">
+        </div>
+        <div class="carousel-item">
+            <img src="/Images/banner3.png" alt="Banner 3" class="d-block w-100">
+        </div>
+    </div>
+    <a class="carousel-control-prev" href="#mainBanner" role="button" data-slide="prev">
+        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+    </a>
+    <a class="carousel-control-next" href="#mainBanner" role="button" data-slide="next">
+        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+    </a>
+</div>
+
+<div class="header-clean">
+    <h2 class="title-silver">PHIM ĐANG CHIẾU</h2>
+</div>
+
+<style>
+    /* Bo góc cho Banner */
+    .banner-container {
+        margin-top: 10px;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+    }
+
+    /* Kiểm soát khoảng cách tiêu đề - KHÔNG BỊ LỐ */
+    .header-clean {
+        margin-top: 30px !important; /* Khoảng cách dưới Banner */
+        margin-bottom: 20px !important; /* Khoảng cách trên Danh sách phim (file khác) */
+        text-align: center !important;
+        padding: 0 !important;
+    }
+
+    /* Chữ màu xanh bạc (Silver Blue) giống Footer */
+    .title-silver {
+        font-family: 'Montserrat', sans-serif !important;
+        font-weight: 700 !important;
+        font-size: 26px !important;
+        color: #adc1ff !important;
+        text-transform: uppercase !important;
+        letter-spacing: 2px !important;
+        display: inline-block !important;
+        position: relative !important;
+        padding-bottom: 12px !important;
+        margin: 0 !important;
+        /* Đổ bóng nhẹ tạo hiệu ứng sang trọng */
+        text-shadow: 0 0 10px rgba(173, 193, 255, 0.3) !important;
+    }
+
+        /* Thanh gạch chân màu vàng */
+        .title-silver::after {
+            content: "";
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 3px;
+            background-color: #ffeb00 !important;
+            border-radius: 2px;
+        }
+</style>
+
+@* Đảm bảo Carousel chạy được *@
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    $(document).ready(function () {
+        $('.carousel').carousel({
+            interval: 4000
+        });
+    });
+</script>

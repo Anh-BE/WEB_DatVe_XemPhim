@@ -1,0 +1,90 @@
+﻿@model doan3.Models.NguoiDung
+
+@{
+    ViewBag.Title = "Xác Nhận Xóa Người Dùng";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<style>
+    .card-vip {
+        background-color: #0f172a;
+        color: #ffffff;
+        border: 1px solid #334155;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.7);
+    }
+
+    .icon-warning-big {
+        font-size: 4rem;
+        color: #dc3545;
+        margin-bottom: 15px;
+        animation: pulse 2s infinite;
+    }
+
+    @@keyframes pulse {
+        0% {
+            transform: scale(1);
+            opacity: 1;
+        }
+
+        50% {
+            transform: scale(1.05);
+            opacity: 0.8;
+        }
+
+        100% {
+            transform: scale(1);
+            opacity: 1;
+        }
+    }
+</style>
+
+<div class="container mt-5 mb-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card card-vip rounded-lg text-center">
+                <div class="card-header border-bottom-0 pt-4">
+                    <h4 class="font-weight-bold text-warning text-uppercase">Xóa Tài Khoản</h4>
+                </div>
+
+                <div class="card-body p-4">
+                    <div class="mb-3">
+                        <i class="fas fa-exclamation-triangle icon-warning-big"></i>
+                    </div>
+
+                    <h5 class="text-white mb-4">
+                        Bạn có chắc chắn muốn xóa tài khoản này không?
+                        <br /><span class="text-muted small">Hành động này không thể hoàn tác.</span>
+                    </h5>
+
+                    <div class="text-left bg-dark p-3 rounded border border-secondary mb-4" style="background-color: #1e293b !important;">
+                        <div class="row mb-2">
+                            <div class="col-5 text-right text-warning font-weight-bold">Tên Đăng Nhập:</div>
+                            <div class="col-7 text-white">@Model.UserName</div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-5 text-right text-warning font-weight-bold">Họ Tên:</div>
+                            <div class="col-7 text-white">@Model.Name</div>
+                        </div>
+                        <div class="row mb-0">
+                            <div class="col-5 text-right text-warning font-weight-bold">ID:</div>
+                            <div class="col-7 text-white">@Model.UserID</div>
+                        </div>
+                    </div>
+
+                    @using (Html.BeginForm("XoaUser", "QuanLyNguoiDung", new { id = Model.UserID }, FormMethod.Post))
+                    {
+                        @Html.AntiForgeryToken()
+                        <div class="d-flex justify-content-center">
+                            <button type="submit" class="btn btn-danger btn-lg px-4 font-weight-bold rounded-pill mr-3 shadow">
+                                <i class="fa fa-trash-alt mr-2"></i> XÁC NHẬN XÓA
+                            </button>
+                            <a href="@Url.Action("QuanLyNguoiDung", "QuanLyNguoiDung")" class="btn btn-outline-secondary btn-lg px-4 font-weight-bold rounded-pill">
+                                Hủy Bỏ
+                            </a>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

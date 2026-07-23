@@ -1,0 +1,420 @@
+﻿@model List<doan3.Models.NguoiDungChiTietViewModel>
+
+@{
+    ViewBag.Title = "Hỗ Trợ Khách Hàng";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    long? pendingOrderId = ViewBag.PendingOrderId as long?;
+}
+
+<style>
+    /* --- FONT & GENERAL --- */
+    .movana-font {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    .support-wrapper {
+        max-width: 1200px;
+        margin: 50px auto;
+        padding-bottom: 50px;
+    }
+
+    /* --- PREMIUM CARD --- */
+    .premium-card {
+        background: #15183c;
+        border: 1px solid rgba(249, 224, 0, 0.15);
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+        padding: 40px;
+        position: relative;
+        border-radius: 16px;
+    }
+
+    /* TIÊU ĐỀ */
+    .section-title {
+        color: #f9e000;
+        font-weight: 900;
+        font-size: 2rem;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        margin-bottom: 30px;
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+        padding-bottom: 15px;
+    }
+
+    /* INPUT STYLE PREMIUM */
+    .input-group-premium {
+        position: relative;
+        display: flex;
+        align-items: center;
+        margin-bottom: 30px;
+    }
+
+    .input-icon {
+        position: absolute;
+        left: 20px;
+        color: #f9e000;
+        font-size: 1.2rem;
+        z-index: 10;
+        top: 50%;
+        transform: translateY(-50%);
+    }
+
+    .input-premium {
+        background: #0a0d29 !important;
+        border: 1px solid #2a2d55;
+        color: #fff !important;
+        height: 55px;
+        border-radius: 10px;
+        /* SỬA Ở ĐÂY: Tăng từ 140px lên 180px */
+        padding: 0 180px 0 55px;
+        font-weight: 500;
+        font-size: 1rem;
+        width: 100%;
+        transition: all 0.3s;
+    }
+
+        .input-premium:focus {
+            background: #0a0d29 !important;
+            border-color: #f9e000;
+            color: #fff !important;
+            box-shadow: 0 0 15px rgba(249, 224, 0, 0.15);
+            outline: none;
+        }
+
+    .btn-search-absolute {
+        position: absolute;
+        right: 5px;
+        top: 5px;
+        bottom: 5px;
+        background: #f9e000;
+        color: #060922;
+        border: none;
+        border-radius: 8px;
+        padding: 0 25px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        transition: all 0.2s;
+    }
+
+        .btn-search-absolute:hover {
+            background: #e0c900;
+        }
+
+    .btn-reset {
+        position: absolute;
+        /* SỬA Ở ĐÂY: Tăng từ 130px lên 160px (Càng lớn càng sang trái) */
+        right: 160px;
+        color: #8899a6;
+        background: transparent;
+        border: none;
+        font-size: 1.2rem;
+        transition: color 0.3s;
+        top: 50%;
+        transform: translateY(-50%); /* Căn giữa chiều dọc cho chuẩn */
+    }
+
+        .btn-reset:hover {
+            color: #fff;
+        }
+
+    /* --- TABLE STYLE --- */
+    .table-custom {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0 15px;
+    }
+
+        .table-custom thead th {
+            color: #8899a6;
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 1px;
+            padding: 0 20px 10px 20px;
+            border: none;
+            white-space: nowrap; /* Giữ tiêu đề trên 1 dòng */
+        }
+
+        .table-custom tbody tr {
+            background: rgba(10, 13, 41, 0.6);
+            transition: transform 0.2s, background 0.2s;
+        }
+
+            .table-custom tbody tr:hover {
+                transform: scale(1.01);
+                background: rgba(249, 224, 0, 0.05);
+            }
+
+        .table-custom td {
+            padding: 20px;
+            color: #fff;
+            vertical-align: middle;
+            border: none;
+        }
+
+            .table-custom td:first-child {
+                border-top-left-radius: 12px;
+                border-bottom-left-radius: 12px;
+            }
+
+            .table-custom td:last-child {
+                border-top-right-radius: 12px;
+                border-bottom-right-radius: 12px;
+            }
+
+    /* --- ẨN THANH CUỘN (SCROLLBAR) --- */
+    .table-responsive {
+        overflow-x: auto;
+        -ms-overflow-style: none; /* IE và Edge */
+        scrollbar-width: none; /* Firefox */
+    }
+
+        .table-responsive::-webkit-scrollbar {
+            display: none; /* Chrome, Safari, Opera */
+        }
+
+    /* Text Styles */
+    .user-name {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #f9e000;
+    }
+
+    .user-account {
+        font-size: 1rem;
+        color: #fff;
+        font-weight: 600;
+    }
+
+    .user-phone {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #fff;
+    }
+
+    .user-email {
+        font-size: 0.85rem;
+        color: #8899a6;
+    }
+
+    .pass-tag {
+        font-family: monospace;
+        background: rgba(255,255,255,0.1);
+        padding: 5px 10px;
+        border-radius: 6px;
+        color: #f9e000;
+        font-weight: bold;
+    }
+
+    /* ALERT STYLE */
+    .alert-custom {
+        background: rgba(249, 224, 0, 0.1);
+        border: 1px dashed #f9e000;
+        border-radius: 12px;
+        padding: 15px 25px;
+        margin-bottom: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .alert-text {
+        color: #f9e000;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+    }
+
+    .alert-id {
+        color: #fff;
+        font-weight: 800;
+        font-size: 1.1rem;
+        margin: 0 5px;
+    }
+
+    .btn-cancel {
+        color: #fff;
+        text-decoration: none;
+        font-weight: 700;
+        font-size: 0.9rem;
+        border: 1px solid #444;
+        padding: 8px 20px;
+        border-radius: 8px;
+        transition: all 0.3s;
+    }
+
+        .btn-cancel:hover {
+            border-color: #f9e000;
+            color: #f9e000;
+            text-decoration: none;
+        }
+
+    /* ACTION BUTTON */
+    .btn-action {
+        background: #f9e000;
+        color: #060922;
+        font-weight: 800;
+        padding: 8px 20px;
+        border-radius: 8px;
+        border: none;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-size: 0.8rem;
+        transition: all 0.2s;
+        white-space: nowrap; /* Không cho chữ xuống dòng */
+    }
+
+        .btn-action:hover {
+            background: #fff;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(249, 224, 0, 0.3);
+        }
+
+    .point-badge {
+        font-weight: 800;
+        font-size: 1.1rem;
+        color: #fff;
+    }
+
+    .point-icon {
+        color: #f9e000;
+        margin-right: 5px;
+    }
+</style>
+
+<div class="container movana-font">
+    <div class="support-wrapper">
+        <div class="premium-card">
+
+            <h2 class="section-title"><i class="fa fa-headset mr-3"></i> TRA CỨU KHÁCH HÀNG</h2>
+
+            @if (TempData["SuccessMessage"] != null)
+            {
+                <div class="alert alert-success d-flex align-items-center mb-4" role="alert"
+                     style="background: rgba(40, 167, 69, 0.2); border: 1px solid #28a745; color: #28a745; border-radius: 10px;">
+                    <i class="fa fa-check-circle fa-lg mr-2"></i>
+                    <div style="font-weight: 600;">@TempData["SuccessMessage"]</div>
+                    <button type="button" class="close ml-auto text-success" data-dismiss="alert" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+            }
+
+            @if (pendingOrderId != null)
+            {
+                <div class="alert-custom">
+                    <div class="d-flex align-items-center">
+                        <i class="fa fa-gift fa-2x mr-3" style="color: #f9e000;"></i>
+                        <div>
+                            <div class="alert-text"> TÍCH ĐIỂM KHÁCH HÀNG </div>
+                            <div style="color: #bbb; font-size: 0.9rem;"> Vui lòng chọn khách hàng </div>
+                        </div>
+                    </div>
+                    <a href="@Url.Action("Index", "Home")" class="btn-cancel">
+                        <i class="fa fa-times mr-2"></i> HỦY & THOÁT
+                    </a>
+                </div>
+            }
+
+            <form action="@Url.Action("Index", "HoTroKhachHang")" method="get">
+                @if (pendingOrderId != null)
+                {<input type="hidden" name="pendingOrderId" value="@pendingOrderId" />}
+
+                <div class="input-group-premium">
+                    <i class="fa fa-search input-icon"></i>
+                    <input type="text" name="searchKeyword" class="input-premium"
+                           placeholder="Nhập Số điện thoại hoặc Tên khách hàng..."
+                           value="@ViewBag.CurrentFilter" autocomplete="off">
+
+                    @if (!string.IsNullOrEmpty(ViewBag.CurrentFilter))
+                    {
+                        <a href="@Url.Action("Index", "HoTroKhachHang", new { pendingOrderId = pendingOrderId })" class="btn-reset" title="Xóa tìm kiếm">
+                            <i class="fa fa-times-circle"></i>
+                        </a>
+                    }
+
+                    <button class="btn-search-absolute" type="submit">TÌM KIẾM</button>
+                </div>
+            </form>
+
+            <div class="table-responsive">
+                <table class="table-custom">
+                    <thead>
+                        <tr>
+                            <th style="width: 60px;">ID</th>
+                            <th>HỌ TÊN</th>
+                            <th>TÀI KHOẢN</th>
+                            <th>LIÊN HỆ</th>
+                            <th class="text-center">ĐIỂM</th>
+                            <th>MẬT KHẨU</th>
+                            <th class="text-center">THAO TÁC</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.Count == 0)
+                        {
+                            <tr>
+                                <td colspan="6" class="text-center py-5">
+                                    <i class="fa fa-search text-muted fa-3x mb-3"></i>
+                                    <div class="text-muted font-weight-bold">KHÔNG TÌM THẤY DỮ LIỆU PHÙ HỢP.</div>
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            foreach (var item in Model)
+                            {
+                                <tr>
+                                    <td class="text-muted font-weight-bold">#@item.UserID</td>
+
+                                    <td>
+                                        <div class="user-name">@item.HoTen</div>
+                                    </td>
+
+                                    <td>
+                                        <div class="user-account">@item.UserName</div>
+                                    </td>
+
+                                    <td>
+                                        <div class="user-phone">@item.SoDienThoai</div>
+                                        <div class="user-email">@item.Email</div>
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="point-badge">
+                                            <i class="fa fa-star point-icon"></i>
+                                            @((item.DiemThanhVien ?? 0))
+                                        </div>
+                                    </td>
+
+                                    <td>
+                                        <span class="pass-tag">@item.Password</span>
+                                    </td>
+
+                                    <td class="text-center">
+                                        @if (pendingOrderId != null)
+                                        {
+                                            using (Html.BeginForm("XacNhanTichDiem", "HoTroKhachHang", FormMethod.Post))
+                                            {
+                                                <input type="hidden" name="orderId" value="@pendingOrderId" />
+                                                <input type="hidden" name="targetUserId" value="@item.UserID" />
+
+                                                <button type="submit" class="btn-action"
+                                                        onclick="return confirm('Xác nhận tích điểm cho khách: @item.HoTen?');">
+                                                    <i class="fa fa-gift mr-1"></i> TÍCH ĐIỂM
+                                                </button>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted" style="font-size: 0.8rem; opacity: 0.5;">---</span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+        </div>
+    </div>
+</div>

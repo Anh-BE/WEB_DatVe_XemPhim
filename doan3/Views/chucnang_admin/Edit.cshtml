@@ -1,0 +1,167 @@
+﻿@model doan3.Models.Phim
+@{
+    ViewBag.Title = "Sửa Phim";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<style>
+    :root {
+        --bg-dark: #0b0f25;
+        --bg-card: rgba(255,255,255,0.05);
+        --border-gold: #ffeb00;
+        --text-light: #ffffff;
+        --text-gold: #ffeb00;
+        --radius: 10px;
+    }
+
+    body {
+        background-color: var(--bg-dark);
+    }
+
+    label {
+        color: var(--text-gold);
+        font-weight: bold;
+    }
+
+    .form-control {
+        background: #11182f !important;
+        border: 1px solid #394058 !important;
+        color: white !important;
+    }
+
+        .form-control:focus {
+            border-color: var(--text-gold) !important;
+            box-shadow: 0 0 8px rgba(255, 235, 0, 0.4);
+        }
+
+    /* =============================
+       NÚT MOVANA – KHÔI PHỤC BẢN GỐC
+       ============================= */
+    .btn-movana {
+        position: relative;
+        display: inline-block;
+        padding: 14px 35px;
+        font-size: 20px;
+        font-weight: 700;
+        color: black;
+        background: #ffeb00;
+        border-radius: 10px;
+        text-decoration: none !important;
+        overflow: hidden;
+        cursor: pointer;
+        transition: 0.3s;
+        border: none;
+        z-index: 1;
+    }
+
+        .btn-movana::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(90deg, #7f00ff, #3a7bd5);
+            transform: translateX(-100%);
+            transition: transform 0.45s ease-in-out;
+            z-index: -1;
+            border-radius: 10px;
+        }
+
+        .btn-movana:hover::before {
+            transform: translateX(0);
+        }
+
+        .btn-movana:hover {
+            color: #fff !important;
+        }
+</style>
+
+<div class="container mt-5 text-light" style="max-width:900px;">
+    <h2 class="text-center mb-4" style="color: var(--text-gold); font-weight: 800;">
+        Sửa Thông Tin Phim
+    </h2>
+
+    @using (Html.BeginForm("Edit", "ChucNang_Admin", FormMethod.Post,
+        new { enctype = "multipart/form-data" }))
+    {
+        @Html.AntiForgeryToken()
+        @Html.HiddenFor(m => m.PhimID)
+
+        <div class="mb-3">
+            <label>Tên phim</label>
+            @Html.TextBoxFor(m => m.TenPhim, new { @class = "form-control" })
+        </div>
+
+        <div class="mb-3">
+            <label>Mô tả</label>
+            @Html.TextAreaFor(m => m.MoTa, new { @class = "form-control", rows = 5 })
+        </div>
+
+        <div class="mb-3">
+            <label>Ngày khởi chiếu</label>
+            @Html.TextBoxFor(m => m.NgayKhoiChieu, "{0:yyyy-MM-dd}",
+                new
+                     {
+                    @class = "form-control",
+                    type = "date",
+                    min = DateTime.Today.ToString("yyyy-MM-dd")
+                })
+        </div>
+
+        <div class="mb-3">
+            <label>Thời lượng (phút)</label>
+            @Html.TextBoxFor(m => m.ThoiLuong,
+                new { @class = "form-control", type = "number", min = "1" })
+        </div>
+
+        <div class="mb-3">
+            <label>Đạo diễn</label>
+            @Html.TextBoxFor(m => m.DaoDien, new { @class = "form-control" })
+        </div>
+
+        <div class="mb-3">
+            <label>Độ tuổi</label>
+            <div class="d-flex gap-3">
+                @foreach (var age in new[] { "13-", "13+", "16+", "18+" })
+                {
+                    <label>
+                        <input type="radio" name="PhanLoaiDoTuoi"
+                               value="@age"
+                               @(Model.PhanLoaiDoTuoi == age ? "checked" : "") /> @age
+                        </label>
+                    }
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <label>Poster hiện tại</label><br />
+            <img src="@Url.Content("~/Content/HinhAnhSP/" + Model.Poster)"
+                 style="width:220px"
+                 class="rounded shadow border border-warning" />
+        </div>
+
+        <div class="mb-3">
+            <label>Đổi poster mới</label>
+            <input type="file" name="PosterFile" class="form-control" />
+        </div>
+
+        <div class="mb-3">
+            <label>Thể loại</label>
+            @Html.DropDownListFor(
+                m => m.MaTheLoai,
+                (SelectList)ViewBag.MaTheLoai,
+                new { @class = "form-control" }
+            )
+        </div>
+
+        <div class="mb-4">
+            <label>Trạng thái phim</label>
+            @Html.DropDownList(
+                "TrangThai",
+                (SelectList)ViewBag.TrangThai,
+                new { @class = "form-control" }
+            )
+        </div>
+
+        <!-- NÚT LƯU – GIỮ NGUYÊN STYLE GỐC -->
+        <button type="submit" class="btn-movana">Lưu thay đổi</button>
+    }
+</div>

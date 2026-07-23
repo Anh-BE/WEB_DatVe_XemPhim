@@ -1,0 +1,256 @@
+﻿@using System.Web
+@model doan3.Models.Don_Dat_Ve
+@{
+    ViewBag.Title = "Thanh toán thành công";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+
+    // Kiểm tra Staff
+    var session = Session["USER_SESSION"] as doan3.Models.UserLogin;
+    bool isStaff = (session != null && session.GroupID != null && session.GroupID.ToString() == "3");
+}
+
+<style>
+    /* --- GENERAL --- */
+    .movana-font { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+
+    .success-container {
+        max-width: 600px;
+        margin: 50px auto;
+        padding-bottom: 50px;
+    }
+
+    /* --- PREMIUM CARD MAIN --- */
+    .premium-card {
+        background: #15183c;
+        border: 1px solid rgba(249, 224, 0, 0.15);
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+        border-radius: 16px;
+        overflow: hidden;
+        position: relative;
+    }
+
+    /* --- HEADER SECTION --- */
+    .success-header {
+        padding: 40px 20px 30px 20px; /* Tăng padding dưới */
+        text-align: center;
+        background: rgba(0,0,0,0.2); /* Nền tối hơn chút cho phần header */
+    }
+
+    .icon-box {
+        width: 80px; height: 80px;
+        background: #f9e000;
+        color: #060922;
+        border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 40px;
+        margin: 0 auto 20px auto;
+        box-shadow: 0 0 30px rgba(249, 224, 0, 0.4);
+        animation: popIn 0.5s ease-out;
+    }
+    @@keyframes popIn { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+    .success-title {
+        color: #fff; font-weight: 900; text-transform: uppercase;
+        letter-spacing: 1px; font-size: 1.8rem; margin-bottom: 10px;
+    }
+    .success-subtitle { color: #f9e000; font-size: 1rem; font-weight: 500; margin-bottom: 30px; }
+
+    /* --- QR CODE SECTION (ĐÃ CHỈNH SỬA) --- */
+    .qr-section { margin-bottom: 20px; }
+    .qr-container {
+        padding: 10px;
+        background: #fff;
+        border-radius: 10px;
+        display: inline-block;
+        box-shadow: 0 0 20px rgba(255,255,255,0.1);
+    }
+    .qr-image { width: 180px; height: 180px; }
+    /* Style mới cho dòng chữ dưới QR */
+    .qr-instruction {
+        font-size: 0.85rem;
+        color: #8899a6; /* Màu xám sáng */
+        font-weight: 600;
+        margin-top: 15px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    /* --- ORDER DETAILS SECTION --- */
+    .order-details-container { padding: 30px; }
+
+    /* --- KHUNG THÔNG TIN VÉ (MỚI THÊM) --- */
+    .ticket-info-frame {
+        background: rgba(10, 13, 41, 0.5); /* Nền tối hơn nền chính */
+        border: 1px solid rgba(249, 224, 0, 0.2); /* Viền vàng mờ */
+        border-radius: 12px;
+        padding: 25px;
+        margin-bottom: 25px; /* Khoảng cách với nút bấm */
+    }
+    .frame-title { color: #f9e000; font-weight: 700; text-transform: uppercase; margin-bottom: 20px; font-size: 1.1rem; }
+
+    .detail-row {
+        display: flex; justify-content: space-between;
+        margin-bottom: 15px; color: #ccc; font-size: 1rem;
+        /* Bỏ border bottom cũ đi cho đỡ rối mắt trong khung mới */
+        /* border-bottom: 1px solid rgba(255,255,255,0.05); */
+        padding-bottom: 5px;
+    }
+
+    .label-text { color: #8899a6; font-weight: 600; text-transform: uppercase; font-size: 0.85rem; }
+    .value-text { font-weight: 700; color: #fff; text-align: right; }
+    .value-highlight { color: #f9e000; font-size: 1.2rem; font-weight: 800; }
+
+    /* Dòng tổng tiền nổi bật hơn */
+    .total-row {
+        margin-top: 20px;
+        padding-top: 15px;
+        border-top: 1px dashed rgba(249, 224, 0, 0.3); /* Viền nét đứt vàng */
+        align-items: center;
+    }
+
+    /* --- BUTTONS --- */
+    .btn-group-custom {
+        display: flex; gap: 15px;
+    }
+
+    .btn-home {
+        flex: 1;
+        background: transparent;
+        border: 1px solid #8899a6; /* Viền xám cho đỡ gắt */
+        color: #8899a6;
+        padding: 12px;
+        font-weight: 700;
+        text-transform: uppercase;
+        border-radius: 8px;
+        text-align: center;
+        transition: all 0.3s;
+        text-decoration: none !important;
+    }
+    .btn-home:hover { border-color: #fff; background: rgba(255,255,255,0.1); color: #fff; }
+
+    .btn-history {
+        flex: 1;
+        background: #f9e000;
+        color: #060922;
+        border: none;
+        padding: 12px;
+        font-weight: 800;
+        text-transform: uppercase;
+        border-radius: 8px;
+        text-align: center;
+        transition: all 0.3s;
+        text-decoration: none !important;
+    }
+    .btn-history:hover { background: #e0c900; color: #000; transform: translateY(-2px); box-shadow: 0 5px 15px rgba(249, 224, 0, 0.2); }
+
+    /* --- STAFF BUTTON --- */
+    .btn-staff {
+        display: inline-block; margin-top: 20px; /* Canh giữa */
+        background: rgba(220, 53, 69, 0.1);
+        color: #ff6b6b;
+        border: 1px dashed #ff6b6b;
+        padding: 10px 20px;
+        border-radius: 50px; /* Bo tròn kiểu nút chức năng phụ */
+        font-weight: 700; text-transform: uppercase; font-size: 0.8rem;
+        transition: 0.3s;
+        text-decoration: none !important;
+    }
+    .btn-staff:hover { background: #dc3545; color: #fff; border-color: #dc3545; }
+
+</style>
+
+@{
+    // 1. XỬ LÝ DỮ LIỆU
+    var firstTicket = Model.Chi_Tiet_Ve != null ? Model.Chi_Tiet_Ve.FirstOrDefault() : null;
+    string tenPhim = "Phim";
+    string listGhe = "Chua chon";
+
+    if (firstTicket != null && firstTicket.Lich_Chieu != null && firstTicket.Lich_Chieu.Phim != null)
+    {
+        tenPhim = firstTicket.Lich_Chieu.Phim.TenPhim;
+    }
+
+    if (Model.Chi_Tiet_Ve != null && Model.Chi_Tiet_Ve.Any())
+    {
+        var ghes = new List<string>();
+        foreach (var item in Model.Chi_Tiet_Ve)
+        {
+            if (item.Ghe_Ngoi != null) { ghes.Add(item.Ghe_Ngoi.MaGhe); }
+        }
+        if (ghes.Any()) { listGhe = string.Join(", ", ghes); }
+    }
+
+    // 2. TẠO QR CODE API
+    string rawContent = "MÃ VÉ: #" + Model.DonDatVeID + " | PHIM: " + tenPhim + " | GHẾ: " + listGhe;
+    string qrApiUrl = "https://api.qrserver.com/v1/create-qr-code/?size=250x250&charset-source=UTF-8&data=" + Server.UrlEncode(rawContent);
+}
+
+<div class="container movana-font success-container">
+    <div class="premium-card">
+
+        <div class="success-header">
+            <div class="icon-box"><i class="fa fa-check"></i></div>
+
+            <h2 class="success-title">THANH TOÁN THÀNH CÔNG!</h2>
+            <div class="success-subtitle">Cảm ơn bạn đã sử dụng dịch vụ của MOVANA Cinema</div>
+
+            <div class="qr-section">
+                <div class="qr-container">
+                    <img src="@qrApiUrl" alt="Mã QR Vé" class="qr-image" />
+                </div>
+                <div class="qr-instruction">QUÉT MÃ ĐỂ VÀO RẠP</div>
+            </div>
+
+            @if (isStaff)
+            {
+                <a href="@Url.Action("Index", "HoTroKhachHang", new { pendingOrderId = Model.DonDatVeID })" class="btn-staff">
+                    <i class="fa fa-gift mr-1"></i> NHÂN VIÊN: TÍCH ĐIỂM CHO KHÁCH
+                </a>
+            }
+        </div>
+        <div class="order-details-container">
+
+            <div class="ticket-info-frame">
+                <h4 class="frame-title">CHI TIẾT GIAO DỊCH</h4>
+
+                <div class="detail-row">
+                    <span class="label-text">Mã vé</span>
+                    <span class="value-text">#@Model.DonDatVeID</span>
+                </div>
+
+                <div class="detail-row">
+                    <span class="label-text">Phim</span>
+                    <span class="value-text text-uppercase" style="color: #f9e000;">@tenPhim</span>
+                </div>
+
+                <div class="detail-row">
+                    <span class="label-text">Khách hàng</span>
+                    <span class="value-text">@(Model.Khach_Hang != null ? Model.Khach_Hang.TenDayDu : "Khách vãng lai")</span>
+                </div>
+
+                <div class="detail-row">
+                    <span class="label-text">Thời gian đặt</span>
+                    <span class="value-text">@(Model.ThoiGianDat.HasValue ? Model.ThoiGianDat.Value.ToString("HH:mm dd/MM/yyyy") : "")</span>
+                </div>
+
+                <div class="detail-row">
+                    <span class="label-text">Ghế ngồi</span>
+                    <span class="value-text" style="word-break: break-word; max-width: 60%;">@listGhe</span>
+                </div>
+
+                <div class="detail-row total-row">
+                    <span class="label-text" style="font-size: 1rem; color: #fff;">TỔNG THANH TOÁN</span>
+                    <span class="value-highlight">@(Model.TongTienDonHang.HasValue ? Model.TongTienDonHang.Value.ToString("#,##0") : "0") <small>VNĐ</small></span>
+                </div>
+            </div>
+            <div class="btn-group-custom">
+                <a href="@Url.Action("PhimDangChieu", "Home")" class="btn-home">
+                    <i class="fa fa-home mr-1"></i> Trang chủ
+                </a>
+                <a href="@Url.Action("LichSuDatVe", "LichSuGiaoDich")" class="btn-history">
+                    Xem vé đã đặt <i class="fa fa-arrow-right ml-1"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>

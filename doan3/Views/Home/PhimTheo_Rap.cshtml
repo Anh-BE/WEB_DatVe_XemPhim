@@ -1,0 +1,156 @@
+﻿@using doan3.Models;
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewBag.Title = "Trang chủ";
+}
+
+
+
+<div class="section-header-main">
+    <h2 class="title-silver-main">PHIM ĐANG CHIẾU</h2>
+</div>
+
+<div class="container main-content-wrapper">
+    <div class="row">
+        @foreach (var s in Model)
+        {
+            <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
+                <div class="movie-card-item">
+                    <div class="img-wrapper">
+                        <img src="@Url.Content("~/Content/HinhAnhSP/" + s.Poster)" alt="@s.TenPhim" class="img-fluid" />
+                    </div>
+                    <div class="movie-info-box">
+                        <p class="movie-name-text">
+                            @(s.TenPhim.Length > 20 ? s.TenPhim.Substring(0, 20) + "..." : s.TenPhim)
+                        </p>
+                        <div class="btn-group-movie">
+                            <a href="@Url.Action("ChiTietPhim", "Home", new { id = s.PhimID })" class="btn-movana-sm">Chi Tiết</a>
+                            <a href="@Url.Action("ChonSuat", "DatVe", new { idPhim = s.PhimID })" class="btn-movana-sm">Đặt Vé</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+<style>
+    /* 1. Header & Banner Fix: Ngăn chặn Header phình to và che Banner */
+    header {
+        height: auto !important; /* Trả Header về kích thước tự động */
+    }
+
+    .banner-section {
+        margin-top: 0;
+        padding-top: 10px;
+    }
+
+    .banner-container {
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.5);
+    }
+
+    /* 2. Tiêu đề Xanh Bạc chuẩn Movana */
+    .section-header-main {
+        margin: 40px 0 30px 0 !important;
+        text-align: center !important;
+    }
+
+    .title-silver-main {
+        font-family: 'Montserrat', sans-serif !important;
+        font-weight: 700 !important;
+        font-size: 28px !important;
+        color: #adc1ff !important; /* Màu xanh ánh bạc lấy từ Footer */
+        text-transform: uppercase !important;
+        letter-spacing: 2px !important;
+        position: relative !important;
+        display: inline-block !important;
+        padding-bottom: 12px !important;
+        text-shadow: 0 0 10px rgba(173, 193, 255, 0.3) !important;
+    }
+
+        .title-silver-main::after {
+            content: "";
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 3px;
+            background-color: #ffeb00 !important;
+            border-radius: 2px;
+        }
+
+    /* 3. Card Phim & Nút bấm đồng bộ */
+    .movie-card-item {
+        background-color: #1a1a2e;
+        border-radius: 15px;
+        overflow: hidden;
+        transition: 0.3s ease;
+        border: 1px solid rgba(255,255,255,0.05);
+        height: 100%;
+    }
+
+        .movie-card-item:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.5);
+            border-color: #ffeb00;
+        }
+
+    .img-wrapper img {
+        width: 100%;
+        height: 350px;
+        object-fit: cover;
+    }
+
+    .movie-info-box {
+        padding: 15px;
+        text-align: center;
+    }
+
+    .movie-name-text {
+        font-weight: 600;
+        color: #fff;
+        font-size: 15px;
+        height: 2.4rem;
+        margin-bottom: 15px;
+    }
+
+    .btn-group-movie {
+        display: flex;
+        gap: 8px;
+    }
+
+    .btn-movana-sm {
+        flex: 1;
+        background: #ffeb00 !important;
+        color: #000 !important;
+        font-weight: 700 !important;
+        padding: 8px 0 !important;
+        border-radius: 8px !important;
+        font-size: 13px !important;
+        text-decoration: none !important;
+        position: relative;
+        overflow: hidden;
+        z-index: 1;
+    }
+
+        .btn-movana-sm::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(90deg, #7f00ff, #3a7bd5);
+            transform: translateX(-105%);
+            transition: transform 0.4s ease-in-out;
+            z-index: -1;
+        }
+
+        .btn-movana-sm:hover::before {
+            transform: translateX(0);
+        }
+
+        .btn-movana-sm:hover {
+            color: #fff !important;
+        }
+</style>

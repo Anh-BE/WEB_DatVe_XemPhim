@@ -1,0 +1,97 @@
+﻿@model doan3.Models.Don_Dat_Ve
+
+@{
+    ViewBag.Title = "Thanh toán thành công";
+    Layout = "~/Views/Shared/_Layout.cshtml"; // Đảm bảo bạn có Layout này, nếu không thì để null
+}
+
+<style>
+    .success-container {
+        background-color: #fff;
+        border-radius: 10px;
+        box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        padding: 40px;
+        margin-top: 50px;
+        margin-bottom: 50px;
+        max-width: 700px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .icon-success {
+        color: #28a745;
+        font-size: 80px;
+        margin-bottom: 20px;
+    }
+
+    .order-info {
+        background-color: #f8f9fa;
+        border: 1px dashed #ccc;
+        padding: 20px;
+        border-radius: 5px;
+        margin-top: 20px;
+        text-align: left;
+    }
+
+    .btn-home {
+        background-color: #ffc107; /* Màu vàng giống rạp phim */
+        color: #333;
+        font-weight: bold;
+        padding: 10px 30px;
+        border-radius: 25px;
+        text-decoration: none;
+        transition: all 0.3s;
+    }
+
+        .btn-home:hover {
+            background-color: #e0a800;
+            color: #000;
+            text-decoration: none;
+        }
+</style>
+
+<div class="container">
+    <div class="success-container text-center">
+        <div class="icon-success">
+            <i class="fa fa-check-circle" aria-hidden="true">✔</i>
+        </div>
+
+        <h2 class="text-success font-weight-bold">ĐẶT VÉ THÀNH CÔNG!</h2>
+        <p class="lead">Cảm ơn bạn, <strong>@Model.Khach_Hang.TenDayDu</strong>!</p>
+        <p>Vé của bạn đã được hệ thống ghi nhận.</p>
+
+        <div class="order-info">
+            <h5 class="text-uppercase border-bottom pb-2 mb-3">Thông tin đơn hàng</h5>
+            <div class="row mb-2">
+                <div class="col-6 text-muted">Mã đặt vé:</div>
+                <div class="col-6 font-weight-bold text-right text-primary">@Model.MaDatVe</div>
+            </div>
+            <div class="row mb-2">
+                <div class="col-6 text-muted">Thời gian đặt:</div>
+                <div class="col-6 font-weight-bold text-right">
+                    @(Model.ThoiGianDat.HasValue ? Model.ThoiGianDat.Value.ToString("HH:mm dd/MM/yyyy") : "N/A")
+                </div>
+            </div>
+            <div class="row mb-2">
+                <div class="col-6 text-muted">Trạng thái:</div>
+                <div class="col-6 font-weight-bold text-right text-success">
+                    @Model.TrangThaiDonHang
+                </div>
+            </div>
+            <hr />
+            <div class="row">
+                <div class="col-6 font-weight-bold" style="font-size: 1.2rem;">TỔNG TIỀN:</div>
+                <div class="col-6 font-weight-bold text-right text-danger" style="font-size: 1.2rem;">
+                    @(Model.TongTienDonHang.HasValue ? Model.TongTienDonHang.Value.ToString("#,##0") : "0") VNĐ
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-5">
+            <p class="text-muted small">Vui lòng đưa Mã đặt vé cho nhân viên tại quầy để nhận vé.</p>
+            <a href="@Url.Action("Index", "Home")" class="btn btn-home">
+                <i class="fa fa-home"></i> QUAY VỀ TRANG CHỦ
+            </a>
+        </div>
+    </div>
+</div>

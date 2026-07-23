@@ -1,0 +1,113 @@
+﻿@model string
+@{
+    ViewBag.Title = "Lỗi Thanh Toán";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<style>
+    .error-card {
+        background: #fff;
+        border-radius: 10px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        overflow: hidden;
+        max-width: 600px;
+        margin: 50px auto;
+        border-top: 5px solid #dc3545; /* Viền đỏ */
+    }
+
+    .error-header {
+        background-color: #fff;
+        padding: 40px 20px 20px 20px;
+        text-align: center;
+    }
+         
+    .icon-box-error {
+        width: 80px;
+        height: 80px;
+        background: #fff5f5; /* Nền đỏ nhạt */
+        color: #dc3545; /* Icon đỏ */
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 40px;
+        margin: 0 auto 20px auto;
+        box-shadow: 0 5px 15px rgba(220, 53, 69, 0.1);
+        border: 2px solid #dc3545;
+    }
+
+    .error-body {
+        padding: 30px;
+        background-color: #f8f9fa;
+        border-top: 1px dashed #ddd;
+        text-align: center;
+    }
+
+    .btn-home {
+        border: 2px solid #000;
+        color: #000;
+        font-weight: bold;
+        background: transparent;
+    }
+
+        .btn-home:hover {
+            background: #000;
+            color: #fff;
+        }
+
+    .btn-retry {
+        background: #dc3545;
+        border: 2px solid #dc3545;
+        color: #fff;
+        font-weight: bold;
+    }
+
+        .btn-retry:hover {
+            background: #c82333;
+            border-color: #bd2130;
+        }
+</style>
+
+<div class="container">
+    <div class="error-card">
+        <div class="error-header">
+            <div class="icon-box-error">
+                <i class="fa fa-times"></i>
+            </div>
+            <h2 class="font-weight-bold text-uppercase" style="color: #dc3545;">Thanh toán thất bại</h2>
+            <p class="text-muted">Rất tiếc, đã có lỗi xảy ra trong quá trình xử lý.</p>
+        </div>
+
+        <div class="error-body">
+            <h5 class="mb-4 font-weight-bold text-black">Chi tiết lỗi:</h5>
+
+            <div class="alert alert-danger">
+                @if (Model != null)
+                {
+                    @Model
+                }
+                else if (ViewBag.ErrorMessage != null)
+                {
+                    @ViewBag.ErrorMessage
+                }
+                else
+                {
+                    <span>Lỗi không xác định.</span>
+                }
+            </div>
+
+            <div class="row mt-4">
+                <div class="col-6">
+                    <a href="@Url.Action("Index", "Home")" class="btn btn-home btn-block py-2">
+                        <i class="fa fa-home"></i> Trang chủ
+                    </a>
+                </div>
+                <div class="col-6">
+                    <a href="javascript:history.back()" class="btn btn-retry btn-block py-2">
+                        <i class="fa fa-refresh"></i> Thử lại
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

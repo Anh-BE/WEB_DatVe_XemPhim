@@ -1,0 +1,496 @@
+﻿@model doan3.Models.BookingSummaryViewModel
+
+<style>
+    .ticket-selection-container {
+        background-color: #1a1a2e;
+        padding: 30px 0 100px 0;
+        color: white;
+        border-top: 1px solid #444;
+        animation: slideDown 0.4s ease-out;
+    }
+
+    @@keyframes slideDown {
+        from {
+            opacity: 0;
+            transform: translateY(-15px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .ticket-box {
+        border: 1px solid #444;
+        border-radius: 5px;
+        padding: 15px;
+        margin-bottom: 20px;
+        background: rgba(255,255,255,0.05);
+    }
+
+    .ticket-name {
+        font-weight: bold;
+        font-size: 1.05rem;
+        text-transform: uppercase;
+    }
+
+    .ticket-price {
+        color: #ffeb3b;
+        font-weight: bold;
+        margin: 5px 0 15px 0;
+    }
+
+    .qty-btn {
+        background: #e0e0e0;
+        color: #333;
+        border: none;
+        width: 30px;
+        height: 30px;
+        font-weight: bold;
+        cursor: pointer;
+    }
+
+    .qty-input {
+        width: 40px;
+        text-align: center;
+        border: none;
+        background: transparent;
+        color: white;
+        font-size: 1.1rem;
+    }
+
+    .booking-footer {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        background-color: #0f0f1a;
+        border-top: 1px solid #ffeb3b;
+        padding: 10px 0;
+        z-index: 9999;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        box-shadow: 0 -5px 20px rgba(0,0,0,0.8);
+        color: white;
+    }
+
+    .movie-title {
+        font-weight: 900;
+        font-size: 1.1rem;
+        text-transform: uppercase;
+        margin: 0;
+        font-family: 'Arial', sans-serif;
+    }
+
+    .cinema-info {
+        margin: 0;
+        font-size: 0.9rem;
+        color: #ccc;
+        margin-top: 3px;
+    }
+
+    #ticketSummaryText {
+        color: white;
+        font-weight: bold;
+    }
+</style>
+
+<div class="ticket-selection-container" id="ticketSection">
+    <div class="container">
+        <h3 class="text-center text-uppercase mb-5" style="font-weight: 800; letter-spacing: 2px;">
+            Chọn loại vé
+        </h3>
+
+        <div class="row">
+            @foreach (var item in Model.DanhSachLoaiVe)
+            {
+                <div class="col-md-4">
+                    <div class="ticket-box">
+                        <div class="ticket-name ticket-name-text">@item.TenLoaiVe</div>
+                        <div class="ticket-price" data-price="@((int)item.GiaBan)">
+                            @item.GiaBan.ToString("#,##0") VNĐ
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <button class="qty-btn rounded-left" onclick="updateQty(this, -1)">-</button>
+                            <input type="text" class="qty-input" value="0" readonly />
+                            <button class="qty-btn rounded-right" onclick="updateQty(this, 1)">+</button>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+
+    <div id="seat-map-wrapper"></div>
+</div>
+
+<div class="booking-footer">
+    <div class="container d-flex justify-content-between align-items-center">
+        <div class="text-left">
+            <h5 class="movie-title">@Model.TenPhim <span class="text-white">(@Model.PhanLoai)</span></h5>
+            <p class="cinema-info">
+                @Model.TenRapHienThi
+                <span id="ticketSummaryText"></span>
+            </p>
+        </div>
+
+        <form action="@Url.Action("ConfirmSeats", "DatVe")" method="post" id="bookingForm">
+            <input type="hidden" name="lichChieuId" value="@Model.LichChieuID" />
+
+            <input type="hidden" name="seatIds" id="hiddenSeatIds" value="" />
+
+            <button type="button" id="btnAction" class="btn btn-warning btn-lg font-weight-bold" onclick="submitBookingForm()">
+                TIẾP TỤC
+            </button>
+        </form>
+    </div>
+</div>
+
+<script>
+
+    // ========================
+    // 1) CONFIG & STATE
+    // ========================
+    const CONFIG = {
+        isUserLoggedIn: @(Session["USER_SESSION"] != null ? "true" : "false"),
+        lichChieuId: @Model.LichChieuID,
+        maxTicketsPerTrans: 8
+    };
+
+    let appState = {
+        selectedSeats: [],
+        currentThuong: 0,
+        currentVip: 0,
+        currentCouple: 0,
+        timer: null
+    };
+
+    let seatMapTimeout = null;
+
+    // ========================
+    // 2) HELPERS: NORMALIZE + CLASSIFY
+    // ========================
+    function normText(s) {
+        return (s || "")
+            .toString()
+            .trim()
+            .toLowerCase()
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, ""); // bỏ dấu tiếng Việt
+    }
+
+    // Phân loại vé dựa trên tên loại vé (đã bỏ dấu)
+    function classifyTicketName(rawName) {
+        const name = normText(rawName);
+
+        // VIP
+        if (name.includes("vip")) return "vip";
+
+        // ĐÔI: bắt rất rộng để không phụ thuộc đúng 1 chữ
+        // (doi / couple / double / sweetbox / sofa / love / pair...)
+        if (
+            name.includes("doi") ||
+            name.includes("couple") ||
+            name.includes("double") ||
+            name.includes("sweet") ||
+            name.includes("sweetbox") ||
+            name.includes("sofa") ||
+            name.includes("love") ||
+            name.includes("pair")
+        ) return "couple";
+
+        return "thuong";
+    }
+
+    // Phân loại ghế dựa trên data-* + class + giá trị số (bắt rất rộng)
+    function classifySeatElement($el) {
+        // gom nhiều nguồn lại để dò
+        const raw =
+            ($el.data("type") ?? "") + " " +
+            ($el.data("seatType") ?? "") + " " +
+            ($el.data("loaighe") ?? "") + " " +
+            ($el.data("kind") ?? "") + " " +
+            ($el.attr("class") ?? "");
+
+        const s = normText(raw);
+
+        // Trường hợp backend set số:
+        // 1=thuong, 2=vip, 3=couple (rất hay gặp)
+        const typeVal = ($el.data("type") ?? "").toString().trim();
+        if (typeVal === "3") return "couple";
+        if (typeVal === "2") return "vip";
+        if (typeVal === "1") return "thuong";
+
+        // VIP (bắt rộng)
+        if (s.includes("vip")) return "vip";
+
+        // COUPLE / ĐÔI (bắt rộng)
+        if (
+            s.includes("doi") ||
+            s.includes("couple") ||
+            s.includes("double") ||
+            s.includes("sweet") ||
+            s.includes("sweetbox") ||
+            s.includes("sofa") ||
+            s.includes("love") ||
+            s.includes("pair") ||
+            s.includes("ghedoi") ||
+            s.includes("ghe-doi") ||
+            s.includes("seatdoi") ||
+            s.includes("seat-doi")
+        ) return "couple";
+
+        // mặc định là thường
+        return "thuong";
+    }
+
+    // ========================
+    // 3) COUNT TICKETS BY TYPE (CHUẨN)
+    // ========================
+    function getTicketCountByType() {
+        let result = { thuong: 0, vip: 0, couple: 0 };
+
+        $('.ticket-box').each(function () {
+            const qty = parseInt($(this).find('.qty-input').val()) || 0;
+            const rawName = $(this).find('.ticket-name-text').text();
+
+            const type = classifyTicketName(rawName);
+            if (type === "vip") result.vip += qty;
+            else if (type === "couple") result.couple += qty;
+            else result.thuong += qty;
+        });
+
+        return result;
+    }
+
+    // ========================
+    // 4) UPDATE QTY + LOAD SEAT MAP (KHỚP BACKEND CŨ)
+    // ========================
+    function updateQty(btn, change) {
+        const input = $(btn).siblings('.qty-input');
+        let val = (parseInt(input.val()) || 0) + change;
+
+        if (val < 0) val = 0;
+        if (val > CONFIG.maxTicketsPerTrans) {
+            alert("Tối đa " + CONFIG.maxTicketsPerTrans + " vé / giao dịch!");
+            val = CONFIG.maxTicketsPerTrans;
+        }
+
+        input.val(val);
+
+        resetActionButton();
+        reloadSeatMap();
+    }
+
+    function reloadSeatMap() {
+        clearTimeout(seatMapTimeout);
+
+        const counts = getTicketCountByType();
+        const qtyNorm = counts.thuong + counts.vip;   // backend chỉ nhận qtyNorm (thường+vip)
+        const qtyCouple = counts.couple;              // backend nhận qtyCouple
+        const total = qtyNorm + qtyCouple;
+
+        if (appState.timer) {
+            clearInterval(appState.timer);
+            $('#countdown').text("05:00");
+        }
+
+        if (total > 0) {
+            $('#seat-map-wrapper').css('opacity', '0.5');
+            seatMapTimeout = setTimeout(function () {
+                loadSeatMap(qtyNorm, qtyCouple);
+            }, 250);
+        } else {
+            $('#seat-map-wrapper').empty().css('opacity', '1');
+            resetSelectionState();
+            updateFooterInfo();
+            updateTotalPrice();
+        }
+    }
+
+    function loadSeatMap(qtyNorm, qtyCouple) {
+        $.ajax({
+            url: '/DatVe/GetSeatMap',
+            data: {
+                lichChieuId: CONFIG.lichChieuId,
+                qtyNorm: qtyNorm,
+                qtyCouple: qtyCouple
+            },
+            success: function (html) {
+                $('#seat-map-wrapper').html(html).css('opacity', '1');
+                resetSelectionState();
+                updateFooterInfo();
+                updateTotalPrice();
+
+                const sec = $("#seatMapSection");
+                if (sec.length) $('html, body').animate({ scrollTop: sec.offset().top }, 400);
+            },
+            error: function (err) {
+                console.error(err);
+                alert("Lỗi tải sơ đồ ghế!");
+                $('#seat-map-wrapper').css('opacity', '1');
+            }
+        });
+    }
+
+    // ========================
+    // 5) SEAT CLICK (RÀNG BUỘC THEO LOẠI VÉ)
+    // ========================
+    $(document).on('click', '.seat', function () {
+        const $el = $(this);
+        if ($el.hasClass('booked')) return;
+
+        const counts = getTicketCountByType();
+        const seatKind = classifySeatElement($el); // "thuong" | "vip" | "couple"
+
+        // BỎ CHỌN
+        if ($el.hasClass('selected')) {
+            $el.removeClass('selected');
+
+            if (seatKind === "vip") appState.currentVip--;
+            else if (seatKind === "couple") appState.currentCouple--;
+            else appState.currentThuong--;
+
+            const id = $el.data('id');
+            appState.selectedSeats = appState.selectedSeats.filter(s => s.id !== id);
+
+            updateFooterInfo();
+            updateTotalPrice();
+            return;
+        }
+
+        // RÀNG BUỘC: đúng loại vé mới chọn được ghế tương ứng
+        if (seatKind === "vip") {
+            if (appState.currentVip >= counts.vip) {
+                alert("Bạn chỉ được chọn " + counts.vip + " ghế VIP!");
+                return;
+            }
+        } else if (seatKind === "couple") {
+            if (appState.currentCouple >= counts.couple) {
+                alert("Bạn chỉ được chọn " + counts.couple + " ghế đôi!");
+                return;
+            }
+        } else { // thuong
+            if (appState.currentThuong >= counts.thuong) {
+                alert("Bạn chỉ được chọn " + counts.thuong + " ghế thường!");
+                return;
+            }
+        }
+
+        // CHỌN
+        $el.addClass('selected');
+
+        if (seatKind === "vip") appState.currentVip++;
+        else if (seatKind === "couple") appState.currentCouple++;
+        else appState.currentThuong++;
+
+        appState.selectedSeats.push({
+            id: $el.data('id'),
+            code: $el.data('code'),
+            type: seatKind
+        });
+
+        updateFooterInfo();
+        updateTotalPrice();
+    });
+
+    // ========================
+    // 6) FOOTER + TOTAL
+    // ========================
+    function updateFooterInfo() {
+        const seatCodes = appState.selectedSeats.map(s => s.code).join(', ');
+
+        if ($('#seatInfoFooter').length === 0 && seatCodes) {
+            $('#ticketSummaryText').append(' <span id="seatInfoFooter"></span>');
+        }
+
+        $('#seatInfoFooter').html(
+            seatCodes ? ' | <span class="text-warning">Ghế: ' + seatCodes + '</span>' : ''
+        );
+
+        const counts = getTicketCountByType();
+        const total = counts.thuong + counts.vip + counts.couple;
+
+        const btn = $('#btnAction');
+        if (appState.selectedSeats.length === total && total > 0) {
+            btn.text("ĐẶT VÉ")
+                .removeClass('btn-warning')
+                .addClass('btn-danger')
+                .prop('disabled', false);
+        } else {
+            btn.text("TIẾP TỤC")
+                .removeClass('btn-danger btn-success')
+                .addClass('btn-warning')
+                .prop('disabled', false);
+        }
+    }
+
+    function updateTotalPrice() {
+        const seatIds = appState.selectedSeats.map(s => s.id).join(',');
+        if (!seatIds) {
+            $('#totalPrice').text('0 VNĐ');
+            return;
+        }
+
+        $.post('/DatVe/TinhTien', { seatIds: seatIds }, function (res) {
+            if (res && res.success) {
+                const money = res.finalAmount || res.total || 0;
+                $('#totalPrice').text(money.toLocaleString('vi-VN') + ' VNĐ');
+            }
+        });
+    }
+
+    function resetSelectionState() {
+        appState.selectedSeats = [];
+        appState.currentThuong = 0;
+        appState.currentVip = 0;
+        appState.currentCouple = 0;
+    }
+
+    function resetActionButton() {
+        $('#btnAction')
+            .text("TIẾP TỤC")
+            .removeClass('btn-danger btn-success')
+            .addClass('btn-warning')
+            .prop('disabled', false)
+            .attr('onclick', 'handleBookingAction()');
+    }
+    // ========================
+    // 7) XỬ LÝ SỰ KIỆN NÚT BẤM (Submit Form)
+    // ========================
+
+    // Hàm này chạy khi người dùng ấn nút "TIẾP TỤC" (khi chưa chọn đủ ghế)
+    function submitBookingForm() {
+        alert("Vui lòng chọn đủ số lượng ghế theo vé đã mua!");
+    }
+
+    // Hàm này chạy khi người dùng ấn nút "ĐẶT VÉ" (đã chọn đủ ghế)
+    function handleBookingAction() {
+        // 1. Kiểm tra đăng nhập
+        if (!CONFIG.isUserLoggedIn) {
+            alert("Vui lòng đăng nhập để tiếp tục!");
+            // Chuyển hướng sang trang đăng nhập, nhớ sửa đường dẫn cho đúng project của bạn
+            window.location.href = "/Login/Index_DangNhap?returnUrl=" + window.location.pathname;
+            return;
+        }
+
+        // 2. Kiểm tra lại lần cuối xem đủ ghế chưa
+        const counts = getTicketCountByType();
+        const totalRequired = counts.thuong + counts.vip + counts.couple;
+
+        if (appState.selectedSeats.length !== totalRequired || totalRequired === 0) {
+            alert("Vui lòng chọn đủ ghế!");
+            return;
+        }
+
+        // 3. Đổ dữ liệu ID ghế vào input hidden
+        // Tạo chuỗi dạng "101,102,103"
+        const seatIds = appState.selectedSeats.map(s => s.id).join(',');
+        $('#hiddenSeatIds').val(seatIds);
+
+        // 4. Submit form sang DatVeController -> ConfirmSeats
+        $('#bookingForm').submit();
+    }
+</script>

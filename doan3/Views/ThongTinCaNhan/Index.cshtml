@@ -1,0 +1,249 @@
+﻿@model doan3.Models.Khach_Hang
+@using doan3.Models
+
+@{
+    ViewBag.Title = "Hồ Sơ Thành Viên";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    // ĐÃ BỎ: string initial = ... (Không cần dùng nữa vì đã bỏ avatar)
+}
+
+<style>
+    /* --- FONT & GENERAL --- */
+    .movana-font { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+
+    .profile-wrapper {
+        max-width: 1100px;
+        margin: 60px auto;
+        display: flex;
+        gap: 30px;
+    }
+
+    /* --- PREMIUM CARD (ĐÃ SỬA: BO TRÒN GÓC) --- */
+    .premium-card {
+        background: #15183c;
+        border: 1px solid rgba(249, 224, 0, 0.15);
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+        padding: 40px;
+        position: relative;
+        border-radius: 16px; /* BO TRÒN GÓC Ở ĐÂY */
+        overflow: hidden; /* Đảm bảo nội dung bên trong cũng được bo theo */
+    }
+
+    /* --- CỘT TRÁI: BỎ AVATAR, CHỈ CÒN TÊN & ĐIỂM --- */
+    .left-sidebar { flex: 1; max-width: 350px; text-align: center; }
+
+    /* ĐÃ BỎ CSS .avatar-box */
+
+    .member-name {
+        font-size: 1.5rem; font-weight: 800; color: #fff;
+        text-transform: uppercase; letter-spacing: 2px;
+        margin-bottom: 15px;
+        margin-top: 20px; /* Thêm margin top vì đã bỏ avatar */
+    }
+
+    .badge-role {
+        background: #2c3e50; color: #8899a6;
+        padding: 5px 15px; font-size: 0.8rem; font-weight: 700; letter-spacing: 1px;
+        text-transform: uppercase; border: 1px solid #444;
+        border-radius: 20px; /* Bo tròn badge */
+    }
+    .badge-admin { background: #e2001a; color: #fff; border: none; }
+    .badge-staff { background: #f9e000; color: #000; border: none; }
+
+    .points-area { margin-top: 40px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 30px; }
+    .point-value {
+        font-size: 6rem; font-weight: 900; line-height: 1;
+        color: #f9e000;
+        text-shadow: 4px 4px 0px rgba(0,0,0,0.5);
+    }
+    .point-label { color: #8899a6; font-size: 0.9rem; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; }
+
+    /* --- CỘT PHẢI: FORM --- */
+    .profile-container { flex: 2; }
+
+    .section-title {
+        color: #f9e000; font-weight: 900; font-size: 2rem;
+        text-transform: uppercase; letter-spacing: 2px;
+        margin-bottom: 40px;
+    }
+
+    .form-group { margin-bottom: 25px; }
+
+    .label-custom {
+        color: #8899a6; font-size: 0.85rem; font-weight: 700;
+        text-transform: uppercase; letter-spacing: 1px;
+        margin-bottom: 8px; display: block;
+    }
+    .label-custom i { color: #f9e000; margin-right: 8px; }
+
+    /* INPUT STYLE (ĐÃ SỬA: BO TRÒN GÓC) */
+    .input-premium {
+        background: #0a0d29;
+        border: 1px solid #2a2d55;
+        color: #fff;
+        height: 50px;
+        border-radius: 10px; /* BO TRÒN INPUT */
+        padding: 0 15px;
+        font-weight: 600;
+        font-size: 1rem;
+        width: 100%;
+        transition: border-color 0.3s;
+    }
+    .input-premium:focus {
+        background: #0a0d29;
+        border-color: #f9e000;
+        color: #fff;
+        box-shadow: 0 0 10px rgba(249, 224, 0, 0.2); /* Thêm chút shadow vàng khi focus */
+        outline: none;
+    }
+    .input-premium[readonly] { color: #f9e000; cursor: default; }
+
+    .input-group-premium {
+        display: flex; align-items: center; position: relative;
+    }
+
+    /* NÚT ĐỔI MẬT KHẨU - KHÔNG KHUNG */
+    .btn-change-pass {
+        position: absolute;
+        right: 0;
+        top: 0;
+        height: 100%;
+        /* --- BỎ KHUNG Ở ĐÂY --- */
+        background: transparent; /* Nền trong suốt */
+        border: none; /* Bỏ viền */
+        color: #f9e000; /* Chữ màu vàng */
+        /* ---------------------- */
+
+        padding: 0 20px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-size: 0.85rem;
+        display: flex;
+        align-items: center;
+        text-decoration: none !important;
+        transition: all 0.3s;
+        cursor: pointer;
+    }
+
+        .btn-change-pass:hover {
+            color: #fff; /* Hover vào chuyển sang màu trắng */
+            text-shadow: 0 0 10px rgba(249, 224, 0, 0.8); /* Hiệu ứng phát sáng nhẹ */
+            background: transparent;
+        }
+
+    /* Nút mắt */
+    .btn-eye {
+        position: absolute; right: 140px;
+        background: none; border: none; color: #666;
+        height: 100%; padding: 0 15px; cursor: pointer;
+        transition: color 0.3s;
+    }
+    .btn-eye:hover { color: #f9e000; }
+
+    /* Responsive */
+    @@media (max-width: 768px) {
+        .profile-wrapper { flex-direction: column; }
+        .left-sidebar { max-width: 100%; }
+        .form-row { display: block; }
+    }
+</style>
+
+<div class="container movana-font">
+    <div class="profile-wrapper">
+
+        <div class="left-sidebar premium-card">
+            <div class="member-name">@Model.TenDayDu</div>
+
+            <div class="mb-3">
+                @if (Model.NguoiDung != null)
+                {
+                    if (Model.NguoiDung.GroupID == 1)
+                    {<span class="badge-role badge-admin">ADMIN</span> }
+                    else if (Model.NguoiDung.GroupID == 3)
+                    { <span class="badge-role badge-staff">STAFF</span> }
+                    else
+                    { <span class="badge-role">MEMBER</span>}
+                }
+            </div>
+
+            <div class="points-area">
+                <div class="point-value" style="margin-bottom: 30px;">
+                    @(Model.DiemThanhVien.HasValue ? Model.DiemThanhVien.Value : 0)
+                </div>
+
+                <div class="point-label">ĐIỂM TÍCH LŨY</div>
+            </div>
+        </div>
+
+        <div class="profile-container premium-card">
+            <h2 class="section-title"><i class="fa fa-id-card mr-3"></i> THÔNG TIN CÁ NHÂN</h2>
+
+           
+           
+
+            @using (Html.BeginForm("CapNhatProfile", "ThongTinCaNhan", FormMethod.Post))
+            {
+                @Html.AntiForgeryToken()
+                @Html.HiddenFor(model => model.KhachHangID)
+
+                <div class="row">
+                    <div class="col-md-6 form-group">
+                        <label class="label-custom"><i class="fa fa-user"></i> TÀI KHOẢN</label>
+                        <input type="text" class="input-premium" value="@(Model.NguoiDung != null ? Model.NguoiDung.UserName : "")" readonly />
+                    </div>
+                    <div class="col-md-6 form-group">
+                        <label class="label-custom"><i class="fa fa-birthday-cake"></i> NGÀY SINH</label>
+                        @Html.TextBoxFor(model => model.Ngaysinh, "{0:yyyy-MM-dd}", new { @class = "input-premium", type = "date", @readonly = "readonly" })
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 form-group">
+                        <label class="label-custom"><i class="fa fa-envelope"></i> EMAIL</label>
+                        @Html.TextBoxFor(model => model.Email, new { @class = "input-premium", @readonly = "readonly" })
+                    </div>
+                    <div class="col-md-6 form-group">
+                        <label class="label-custom"><i class="fa fa-phone"></i> SỐ ĐIỆN THOẠI</label>
+                        @Html.TextBoxFor(model => model.SoDienThoai, new { @class = "input-premium", @readonly = "readonly" })
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="label-custom"><i class="fa fa-lock"></i> MẬT KHẨU BẢO MẬT</label>
+                    <div class="input-group-premium">
+                        <input type="password" value="@ViewBag.MatKhauCu" class="input-premium" id="passwordField" readonly style="letter-spacing: 3px; font-family: monospace;" />
+
+                        <button type="button" class="btn-eye" id="togglePassword">
+                            <i class="fa fa-eye-slash"></i>
+                        </button>
+
+                        @Html.ActionLink("ĐỔI MẬT KHẨU", "DoiMatKhau", "ThongTinCaNhan", null, new { @class = "btn-change-pass" })
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @Scripts.Render("~/bundles/jqueryval")
+    <script>
+        $(document).ready(function () {
+            $("#togglePassword").click(function () {
+                var passwordField = $("#passwordField");
+                var icon = $(this).find('i');
+                var currentType = passwordField.attr('type');
+
+                if (currentType === 'password') {
+                    passwordField.attr('type', 'text');
+                    icon.removeClass('fa-eye-slash').addClass('fa-eye');
+                } else {
+                    passwordField.attr('type', 'password');
+                    icon.removeClass('fa-eye').addClass('fa-eye-slash');
+                }
+                return false;
+            });
+        });
+    </script>
+}

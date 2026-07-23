@@ -1,0 +1,384 @@
+﻿@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@ViewBag.Title - MOVANA</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet" />
+
+    <style>
+        body {
+            background-color: #060922;
+            color: #fff;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 0.95rem;
+        }
+
+        .content-wrapper {
+            max-width: 1300px;
+            margin: 0 auto;
+            padding: 0 15px;
+            box-sizing: border-box;
+        }
+
+        /* ================= HEADER ================= */
+        .header-container {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            background-color: #060922;
+            border-bottom: 1px solid #15183c;
+            z-index: 9999;
+        }
+
+        .navbar-top {
+            padding: 0.8rem 0;
+        }
+
+            .navbar-top .content-wrapper,
+            .sub-navbar .content-wrapper {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+
+        .navbar-brand img {
+            height: 55px;
+            width: auto;
+        }
+
+        .search-box {
+            position: relative;
+            width: 350px;
+        }
+
+            .search-box input {
+                width: 100%;
+                height: 42px;
+                border-radius: 21px;
+                border: 1px solid rgba(255,255,255,0.2);
+                background: rgba(255,255,255,0.05);
+                padding-left: 42px;
+                color: #fff;
+                outline: none;
+                transition: 0.3s;
+            }
+
+                .search-box input:focus {
+                    background: #fff;
+                    color: #000;
+                }
+
+            .search-box i {
+                position: absolute;
+                left: 15px;
+                top: 50%;
+                transform: translateY(-50%);
+                color: #999;
+            }
+
+        .nav-right {
+            display: flex;
+            align-items: center;
+            gap: 25px;
+        }
+
+            .nav-right .nav-link {
+                color: #fff !important;
+                font-weight: 600;
+                cursor: pointer;
+            }
+
+                .nav-right .nav-link:hover {
+                    color: #f9e000 !important;
+                }
+
+        .flag-icon {
+            height: 18px;
+            margin-right: 5px;
+        }
+
+        /* Custom Dropdown Style */
+        .dropdown-menu {
+            background-color: #12173b;
+            border: 1px solid #ffeb00;
+            border-radius: 10px;
+            margin-top: 10px;
+        }
+
+        .dropdown-item {
+            color: #fff;
+            font-weight: 500;
+            padding: 10px 20px;
+        }
+
+            .dropdown-item:hover {
+                background-color: #ffeb00;
+                color: #000;
+            }
+
+        /* ================= SUB NAV ================= */
+        .sub-navbar {
+            background-color: #060922;
+            border-top: 1px solid #15183c;
+            border-bottom: 1px solid #15183c;
+            padding: 0.5rem 0;
+        }
+
+        .sub-nav-item a {
+            color: #fff !important;
+            font-weight: 600;
+            padding: 0.5rem 1rem;
+            text-decoration: none;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+        }
+
+            .sub-nav-item a:hover {
+                color: #f9e000 !important;
+            }
+
+        /* Hover Dropdown cho Chọn rạp & Thể loại */
+        .rap-hover:hover .dropdown-menu,
+        .theloai-hover:hover .dropdown-menu {
+            display: block;
+        }
+
+        /* ================= MAIN ================= */
+        .main-content {
+            padding-top: 160px;
+            min-height: 70vh;
+        }
+
+        /* ================= FOOTER ================= */
+        footer {
+            background-color: #060922;
+            padding: 40px 0;
+            margin-top: 60px;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.12);
+        }
+
+        .footer-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+        }
+
+        .footer-links a {
+            color: #e6e6f0;
+            margin-left: 22px;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+            .footer-links a:hover {
+                color: #f9e000;
+            }
+
+        .footer-middle {
+            text-align: center;
+            font-size: 0.85rem;
+            color: #d0d3ff;
+            line-height: 1.8;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="header-container">
+        <div class="navbar-top">
+            <div class="content-wrapper">
+
+                <a class="navbar-brand" href="@Url.Action("PhimDangChieu", "Home")">
+                    <img src="/Images/logomavana.png" alt="MOVANA" />
+                </a>
+
+                <div class="d-flex align-items-center" style="gap: 25px;">
+                    <form method="post" action="/Home/TimKiemPhim" class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" name="tenphim" placeholder="Tìm phim..." autocomplete="off" />
+                    </form>
+
+                    <div class="nav-right">
+
+                        @if (Session["USER_SESSION"] != null)
+                        {
+                            var userSession = (doan3.Models.UserLogin)Session["USER_SESSION"];
+                            <div class="dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" id="userDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                    <i class="fas fa-user-circle"></i> @userSession.FullName
+                                </a>
+                                <div class="dropdown-menu dropdown-menu-right" aria-labelledby="userDropdown">
+
+                                    @* --- LOGIC: Chỉ hiện các mục này nếu KHÔNG PHẢI là Admin (GroupID != "1") --- *@
+                                    @if (userSession.GroupID != "1")
+                                    {
+                                        @Html.ActionLink("Thông tin cá nhân", "Index", "ThongTinCaNhan", null, new { @class = "dropdown-item" })
+                                        @Html.ActionLink("Lịch sử giao dịch", "LichSuDatVe", "LichSuGiaoDich", null, new { @class = "dropdown-item" })
+
+                                        <div class="dropdown-divider" style="border-top: 1px solid rgba(255,255,255,0.1)"></div>
+                                    }
+
+                                    @* --- Admin hay Khách đều thấy nút Đăng Xuất --- *@
+                                    @Html.ActionLink("Đăng xuất", "SignOut", "Login", null, new { @class = "dropdown-item" })
+                                </div>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" id="loginDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                    <i class="fas fa-user-circle"></i> Đăng nhập
+                                </a>
+                                <div class="dropdown-menu dropdown-menu-right" aria-labelledby="loginDropdown">
+                                    @Html.ActionLink("Đăng nhập", "Index_DangNhap", "Login", null, new { @class = "dropdown-item" })
+                                    @Html.ActionLink("Đăng ký", "Index_DangKy", "Register", null, new { @class = "dropdown-item" })
+                                </div>
+                            </div>
+                        }
+
+                        <div class="dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="langDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                <img src="/Images/vietnam_flag.png" class="flag-icon" /> VN
+                            </a>
+                            <div class="dropdown-menu dropdown-menu-right" aria-labelledby="langDropdown">
+                                <a class="dropdown-item" href="#"><img src="/Images/vietnam_flag.png" class="flag-icon" /> Vietnamese</a>
+                                <a class="dropdown-item" href="#"><img src="/Images/english_flag.png" class="flag-icon" /> English</a>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        @{
+            string role = "Customer";
+            if (Session["SESSION_GROUP"] != null)
+            {
+                var groups = Session["SESSION_GROUP"] as List<string>;
+                if (groups != null && groups.Count > 0) { role = groups[0]; }
+            }
+        }
+
+    <nav class="sub-navbar">
+        <div class="content-wrapper">
+            <div class="d-flex align-items-center w-100">
+
+                @* ========================================== *@
+                @* 1. CÁC MENU BÊN TRÁI (TÙY THEO QUYỀN)      *@
+                @* ========================================== *@
+
+                @* --- KHÁCH HÀNG --- *@
+                @if (role == "Customer")
+                {
+                    <div class="sub-nav-item dropdown rap-hover">
+                        <a href="#" class="dropdown-toggle"><i class="fas fa-map-marker-alt mr-1"></i> Chọn rạp</a>
+                        @Html.Action("TenRap_PartialView", "TenRap")
+                    </div>
+                    <div class="sub-nav-item dropdown theloai-hover">
+                        <a href="#" class="dropdown-toggle">Thể loại</a>
+                        @Html.Action("TheLoai_PartialView", "TheLoai")
+                    </div>
+                }
+
+                @* --- NHÂN VIÊN --- *@
+                @if (role == "Staff")
+                {
+                    <div class="sub-nav-item dropdown rap-hover">
+                        <a href="#" class="dropdown-toggle text-white"><i class="fas fa-map-marker-alt"></i> Chọn rạp</a>
+                        @Html.Action("TenRap_PartialView", "TenRap")
+                    </div>
+                    <div class="sub-nav-item dropdown theloai-hover">
+                        <a href="#" class="dropdown-toggle text-white">Thể loại</a>
+                        @Html.Action("TheLoai_PartialView", "TheLoai")
+                    </div>
+                    <div class="sub-nav-item">
+                        <a href="@Url.Action("Index", "HoTroKhachHang")" style="color:#ffeb00 !important">
+                            <i class="fas fa-headset mr-1"></i> Hỗ Trợ Khách Hàng
+                        </a>
+                    </div>
+                }
+
+                @* --- ADMIN --- *@
+                @if (role == "Admin")
+                {
+                    <div class="sub-nav-item dropdown rap-hover">
+                        <a href="#" class="dropdown-toggle"><i class="fas fa-map-marker-alt mr-1"></i> Chọn rạp</a>
+                        @Html.Action("TenRap_PartialView", "TenRap")
+                    </div>
+                    <div class="sub-nav-item dropdown theloai-hover">
+                        <a href="#" class="dropdown-toggle">Thể loại</a>
+                        @Html.Action("TheLoai_PartialView", "TheLoai")
+                    </div>
+                    <div class="sub-nav-item">
+                        <a href="@Url.Action("QuanLyAdmin", "ChucNang_Admin")" style="color:#ffeb00 !important">
+                            <i class="fas fa-user-shield"></i> Cài Đặt Admin
+                        </a>
+                    </div>
+                }
+
+                @* ========================================== *@
+                @* 2. CÁC MENU BÊN PHẢI (CHUNG CHO TẤT CẢ)    *@
+                @* ========================================== *@
+
+                @* --- GIỚI THIỆU: Thêm ml-auto TẠI ĐÂY để đẩy toàn bộ nhóm này sang phải --- *@
+                <div class="sub-nav-item ml-auto">
+                    <a href="@Url.Action("GioiThieu", "Home")" style="color: #ffeb00 !important; font-weight: 700;">
+                        <i class="fas fa-info-circle mr-1"></i> Giới thiệu
+                    </a>
+                </div>
+
+                <div class="sub-nav-item">
+                    <a href="@Url.Action("ChinhSachTichDiem", "Home")" style="color: #f9e000 !important; font-weight: 700;">
+                        <i class="fa fa-star mr-1"></i> CHÍNH SÁCH & ƯU ĐÃI
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+    </div>
+
+    <div class="main-content">
+        <div class="content-wrapper">
+            <div class="py-2">
+                @RenderBody()
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <div class="content-wrapper">
+            <div class="footer-top">
+                <div class="footer-copy">© @DateTime.Now.Year MOVANA Cinema. All rights reserved.</div>
+                <div class="footer-links">
+                    <a href="@Url.Action("Privacy","Home")">Chính sách bảo mật</a>
+                    <a href="@Url.Action("Contact","Home")">Liên hệ</a>
+                    <a href="#">Hỏi & đáp</a>
+                </div>
+            </div>
+            <div class="footer-middle">
+                <strong>CÔNG TY CỔ PHẦN MOVANA ENTERTAINMENT</strong><br />
+                Địa chỉ: 135 Hai Bà Trưng, Phường Bến Nghé, Quận 1, TP.HCM<br />
+                Hotline: 1900 1234 | Email: support@movana.vn
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
+
+    @RenderSection("scripts", required: false)
+</body>
+</html>

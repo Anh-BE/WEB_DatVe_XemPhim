@@ -1,0 +1,232 @@
+﻿@model doan3.Models.SeatMapViewModel
+
+<style>
+    .seat-map-container {
+        background-color: #121220;
+        padding: 40px 20px 60px 20px;
+        color: white;
+        text-align: center;
+        border-top: 1px solid #444;
+        animation: slideUp 0.4s ease-out;
+    }
+
+    @@keyframes slideUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .screen-container {
+        margin-bottom: 40px;
+    }
+
+    .screen-curve {
+        height: 60px;
+        width: 80%;
+        margin: 0 auto;
+        border-top: 4px solid white;
+        border-radius: 50% 50% 0 0 / 20px 20px 0 0;
+        box-shadow: 0 -15px 20px rgba(255, 255, 255, 0.25);
+    }
+
+    .screen-text {
+        margin-top: 10px;
+        font-size: 0.9rem;
+        color: #ccc;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+    }
+
+    .seats-grid {
+        display: inline-block;
+        padding: 15px 25px 5px 25px;
+        background: radial-gradient(circle at top, #25254a, #0a0917 70%);
+        border-radius: 12px;
+    }
+
+    .seat-row {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 10px;
+    }
+
+    .row-label {
+        width: 30px;
+        font-weight: bold;
+        color: #ccc;
+        text-align: center;
+    }
+
+    .seat {
+        width: 38px;
+        height: 30px;
+        margin: 3px;
+        border-radius: 6px;
+        border: 1px solid #8b8bd9;
+        font-size: 0.7rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        background-color: #ffffff;
+        color: #4b2c92;
+        font-weight: 600;
+        transition: all 0.15s ease-in-out;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.4);
+    }
+
+        .seat:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.6);
+        }
+
+    .seat-double {
+        width: 78px;
+    }
+
+    .seat-vip {
+        background-color: #e91e63;
+        color: #fff;
+        border-color: #ff9bb5;
+    }
+
+    .seat.selected {
+        background-color: #ffeb3b !important;
+        border-color: #ffeb3b !important;
+        color: #000 !important;
+        box-shadow: 0 0 10px #ffeb3b;
+    }
+
+    .seat.booked {
+        background-color: #555 !important;
+        border-color: #555 !important;
+        color: #bbb !important;
+        cursor: not-allowed;
+        pointer-events: none;
+        box-shadow: none;
+    }
+
+    .legend-container {
+        display: flex;
+        justify-content: center;
+        gap: 25px;
+        margin-top: 30px;
+        flex-wrap: wrap;
+        font-size: 0.9rem;
+    }
+
+    .legend-item {
+        display: flex;
+        align-items: center;
+        color: #ccc;
+    }
+
+    .legend-box {
+        width: 24px;
+        height: 18px;
+        margin-right: 8px;
+        border-radius: 6px;
+        border: 1px solid #8b8bd9;
+    }
+
+    .legend-normal {
+        background: #ffffff;
+    }
+
+    .legend-vip {
+        background: #e91e63;
+        border-color: #ff9bb5;
+    }
+
+    .legend-double {
+        background: #ffffff;
+        width: 45px;
+    }
+
+    .legend-selected {
+        background: #ffeb3b;
+        border-color: #ffeb3b;
+    }
+
+    .legend-booked {
+        background: #555555;
+        border-color: #555555;
+    }
+</style>
+
+<div class="seat-map-container"
+     id="seatMapSection"
+     data-max-norm="@Model.SoLuongGheDon"
+     data-max-couple="@Model.SoLuongGheDoi">
+
+    <h4 class="text-uppercase mb-4">Chọn ghế của bạn</h4>
+
+    <div class="screen-container">
+        <div class="screen-curve"></div>
+        <div class="screen-text">Màn hình</div>
+    </div>
+
+    <div class="seats-grid">
+        @foreach (var group in Model.DanhSachGhe
+                                   .GroupBy(g => g.HangGhe)
+                                   .OrderBy(g => g.Key))
+        {
+            <div class="seat-row">
+                <div class="row-label">@group.Key</div>
+
+                @foreach (var seat in group.OrderBy(s => s.MaGhe))
+                {
+                    var seatClass = "seat";
+                    var loai = (seat.LoaiGhe ?? "").ToLower();
+
+                    if (loai.Contains("vip"))
+                    {
+                        seatClass += " seat-vip";
+                    }
+                    if (loai.Contains("doi"))
+                    {
+                        seatClass += " seat-double";
+                    }
+                    if (seat.TrangThai == 1 || seat.TrangThai == 2)
+                    {
+                        seatClass += " booked";
+                    }
+
+                    <div class="@seatClass"
+                         data-id="@seat.GheID"
+                         data-code="@seat.MaGhe"
+                         data-type="@seat.LoaiGhe">
+                        @seat.MaGhe
+                    </div>
+                }
+
+                <div class="row-label">@group.Key</div>
+            </div>
+        }
+    </div>
+
+    <div class="legend-container">
+        <div class="legend-item">
+            <div class="legend-box legend-normal"></div> Ghế Thường
+        </div>
+        <div class="legend-item">
+            <div class="legend-box legend-vip"></div> Ghế VIP
+        </div>
+        <div class="legend-item">
+            <div class="legend-box legend-double"></div> Ghế Đôi (2 người)
+        </div>
+        <div class="legend-item">
+            <div class="legend-box legend-selected"></div> Ghế Chọn
+        </div>
+        <div class="legend-item">
+            <div class="legend-box legend-booked"></div> Ghế Đã Đặt
+        </div>
+    </div>
+</div>

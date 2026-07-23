@@ -1,0 +1,376 @@
+﻿@model doan3.Models.ThanhToanViewModel
+@{
+    ViewBag.Title = "Thanh Toán";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<style>
+    /* --- FONT & GENERAL --- */
+    .movana-font { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+
+    .checkout-container {
+        max-width: 1100px;
+        margin: 50px auto;
+        padding-bottom: 50px;
+    }
+
+    /* --- PREMIUM CARD --- */
+    .premium-card {
+        background: #15183c;
+        border: 1px solid rgba(249, 224, 0, 0.15);
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+        padding: 30px;
+        border-radius: 16px;
+        height: 100%;
+    }
+
+    /* TIÊU ĐỀ TRANG */
+    .page-title {
+        color: #f9e000;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        margin-bottom: 30px;
+        font-size: 2rem;
+        text-align: center;
+        text-shadow: 0 0 20px rgba(249, 224, 0, 0.3);
+    }
+
+    /* COUNTDOWN TIMER */
+    .countdown-wrapper {
+        display: flex; justify-content: center; margin-bottom: 40px;
+    }
+    .countdown-box {
+        background: rgba(249, 224, 0, 0.1);
+        border: 1px solid #f9e000;
+        color: #f9e000;
+        padding: 10px 30px;
+        border-radius: 50px;
+        font-weight: 700;
+        font-size: 1.2rem;
+        display: flex; align-items: center;
+        box-shadow: 0 0 15px rgba(249, 224, 0, 0.2);
+        animation: glow 2s infinite alternate;
+    }
+    @@keyframes glow { from { box-shadow: 0 0 10px rgba(249, 224, 0, 0.2); } to { box-shadow: 0 0 20px rgba(249, 224, 0, 0.6); } }
+
+    /* --- LEFT COLUMN: INFO --- */
+    .movie-title {
+        font-size: 1.5rem; font-weight: 800; color: #fff;
+        text-transform: uppercase; margin-bottom: 15px; letter-spacing: 1px;
+    }
+    .info-row { color: #ccc; margin-bottom: 12px; font-size: 1rem; }
+    .info-row i { color: #f9e000; width: 25px; text-align: center; margin-right: 5px; }
+    .info-highlight { color: #fff; font-weight: 700; }
+
+    .seat-list { margin-top: 15px; display: flex; flex-wrap: wrap; gap: 5px; }
+    .seat-badge {
+        background: #f9e000; color: #000;
+        padding: 5px 10px; border-radius: 6px; font-weight: 800; font-size: 0.9rem;
+    }
+
+    .divider { border-bottom: 1px dashed rgba(255,255,255,0.15); margin: 25px 0; }
+
+    /* POINTS SECTION */
+    .point-box {
+        background: #0a0d29; border: 1px solid #2a2d55;
+        border-radius: 10px; padding: 20px;
+    }
+    .point-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+    .point-title { color: #f9e000; font-weight: 700; text-transform: uppercase; margin: 0; }
+    .current-point { color: #fff; font-weight: 600; }
+
+    .checkbox-point-wrapper {
+        display: flex; align-items: center; cursor: pointer;
+        padding: 10px; border-radius: 8px; transition: 0.3s;
+        border: 1px solid transparent;
+    }
+    .checkbox-point-wrapper:hover { background: rgba(255,255,255,0.05); }
+    .checkbox-point-wrapper input {
+        width: 20px; height: 20px; margin-right: 12px; accent-color: #f9e000; cursor: pointer;
+    }
+    .label-point { color: #fff; font-weight: 700; text-transform: uppercase; cursor: pointer; }
+
+    .point-warning { color: #ff6b6b; font-size: 0.9rem; margin-top: 10px; font-style: italic; }
+
+    /* --- RIGHT COLUMN: PAYMENT --- */
+    .section-header { color: #fff; font-weight: 700; text-transform: uppercase; margin-bottom: 20px; border-left: 4px solid #f9e000; padding-left: 15px; }
+
+    /* Payment Method Item */
+    .payment-option {
+        display: flex; align-items: center;
+        background: #0a0d29;
+        border: 1px solid #2a2d55;
+        padding: 20px; /* Tăng padding chút cho thoáng vì ít item */
+        margin-bottom: 15px;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    .payment-option:hover { border-color: #f9e000; background: rgba(249, 224, 0, 0.05); }
+    .payment-option.active {
+        border-color: #f9e000;
+        background: rgba(249, 224, 0, 0.1);
+        box-shadow: 0 0 15px rgba(249, 224, 0, 0.1);
+    }
+    .payment-option input {
+        width: 20px; height: 20px; margin-right: 15px; accent-color: #f9e000;
+    }
+    .method-name { color: #fff; font-weight: 700; display: block; font-size: 1.1rem; }
+    .method-desc { color: #8899a6; font-size: 0.9rem; margin-top: 3px; display: block; }
+
+    /* TOTAL SECTION */
+    .total-box {
+        background: rgba(0,0,0,0.3);
+        padding: 20px; border-radius: 10px; margin-top: 30px;
+        border: 1px solid rgba(255,255,255,0.05);
+    }
+    .price-row { display: flex; justify-content: space-between; margin-bottom: 10px; color: #ccc; font-size: 1rem; }
+    .final-price-row { display: flex; justify-content: space-between; align-items: center; margin-top: 20px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.1); }
+    .final-label { color: #fff; font-weight: 700; font-size: 1.2rem; text-transform: uppercase; }
+    .final-price { color: #f9e000; font-weight: 900; font-size: 1.8rem; text-shadow: 0 0 10px rgba(249, 224, 0, 0.4); }
+
+    /* BUTTONS */
+    .btn-pay {
+        background: #f9e000; color: #000;
+        width: 100%; border: none; padding: 15px;
+        font-weight: 800; text-transform: uppercase; letter-spacing: 1px;
+        border-radius: 10px; margin-top: 20px; font-size: 1.1rem;
+        transition: all 0.3s;
+    }
+    .btn-pay:hover { background: #e0c900; transform: translateY(-2px); box-shadow: 0 5px 15px rgba(249, 224, 0, 0.3); }
+
+    .btn-cancel {
+        background: transparent; color: #8899a6;
+        width: 100%; border: 1px solid #444; padding: 12px;
+        font-weight: 700; text-transform: uppercase;
+        border-radius: 10px; margin-top: 15px;
+        transition: all 0.3s;
+    }
+    .btn-cancel:hover { border-color: #fff; color: #fff; background: rgba(255,255,255,0.05); }
+    /* --- KHUNG THÔNG TIN VÉ (MỚI) --- */
+    .ticket-info-box {
+        background: #0a0d29; /* Nền tối sẫm giống các ô bên phải */
+        border: 1px solid #2a2d55; /* Viền xanh nhẹ */
+        border-radius: 10px; /* Bo góc */
+        padding: 25px; /* Khoảng cách đệm bên trong */
+        margin-bottom: 20px; /* Cách phần bên dưới */
+        box-shadow: 0 4px 10px rgba(0,0,0,0.2); /* Đổ bóng nhẹ */
+    }
+
+        /* Điều chỉnh lại tiêu đề phim bên trong khung cho đẹp hơn */
+        .ticket-info-box .movie-title {
+            margin-top: 0;
+            padding-bottom: 15px;
+            border-bottom: 1px dashed rgba(255,255,255,0.1); /* Đường kẻ ngăn cách tên phim */
+            margin-bottom: 15px;
+        }
+
+</style>
+
+<div class="container movana-font checkout-container">
+
+    <h2 class="page-title">XÁC NHẬN THANH TOÁN</h2>
+
+    <div class="countdown-wrapper">
+        <div class="countdown-box">
+            <i class="fa fa-clock-o mr-2"></i>
+            Thời gian giữ ghế: <span id="countdownDisplay" class="ml-2">00:00</span>
+        </div>
+    </div>
+
+    <form action="@Url.Action("ProcessPayment", "ThanhToan")" method="post" id="ThanhToanForm">
+        <input type="hidden" name="lichChieuId" value="@Model.LichChieuId" />
+        <input type="hidden" name="lockedSeatIds" value="@Model.LockedSeatIds" />
+
+        <div class="row">
+            <div class="col-lg-7 mb-4">
+                <div class="premium-card">
+                    <h3 class="section-header">THÔNG TIN VÉ</h3>
+
+                    <div class="ticket-info-box">
+
+                        <div class="movie-title">@Model.TenPhim</div>
+
+                        <div class="info-row">
+                            <i class="fa fa-map-marker"></i> <span class="info-highlight">@Model.TenRap</span> - @Model.PhongChieu
+                        </div>
+
+                        <div class="info-row">
+                            <i class="fa fa-clock-o"></i> Suất chiếu: <span class="info-highlight" style="color: #f9e000;">@Model.SuatChieu</span>
+                        </div>
+
+                        <div class="mt-4 d-flex align-items-center flex-wrap">
+                            <div class="info-row mb-0 mr-3">
+                                <i class="fa fa-th"></i> Ghế đang chọn:
+                            </div>
+
+                            <div class="seat-list m-0">
+                                @foreach (var ghe in Model.DanhSachGhe.Split(','))
+                                {
+                                    <span class="seat-badge">@ghe.Trim()</span>
+                                }
+                            </div>
+                        </div>
+
+                    </div>
+                    <div class="divider"></div>
+
+                    <div class="point-box">
+                        <div class="point-header">
+                            <h5 class="point-title"><i class="fa fa-star mr-2"></i> Điểm Tích Lũy</h5>
+                            <span class="current-point">Bạn có: <span style="color: #f9e000;">@Model.DiemThanhVien</span> điểm</span>
+                        </div>
+
+                        @if (Model.DiemThanhVien >= 20)
+                        {
+                            <label class="checkbox-point-wrapper">
+                                <input type="checkbox" id="chkDungDiem" name="dungDiem" value="true">
+
+                                <span>
+                                    <span class="label-point" style="display:block">SỬ DỤNG ĐIỂM TÍCH LŨY</span>
+
+                                    <span style="font-size: 0.85rem; color: #ccc; margin-top: 3px; display:block">
+                                        Quy đổi: 1 điểm = 1.000 VNĐ. Giảm tối đa: <span style="color: #f9e000;">-@((Model.DiemThanhVien * 1000).ToString("#,##0")) VNĐ</span>
+                                    </span>
+                                </span>
+                            </label>
+                        }
+                        else
+                        {
+                            <div class="point-warning">
+                                <i class="fa fa-lock mr-1"></i> Bạn cần tối thiểu 20 điểm để sử dụng.
+                            </div>
+                            <input type="checkbox" name="dungDiem" value="false" style="display:none;" />
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-5">
+                <div class="premium-card">
+                    <h4 class="section-header">PHƯƠNG THỨC THANH TOÁN</h4>
+
+                    <div class="payment-methods">
+
+                        <label class="payment-option active">
+                            <input type="radio" name="paymentMethod" value="Momo" checked>
+
+                            <span>
+                                <span class="method-name" style="display:block">Ví MoMo</span>
+                                <span class="method-desc" style="display:block">Chuyển khoản qua APP MOMO</span>
+                            </span>
+                        </label>
+
+                        <label class="payment-option">
+                            <input type="radio" name="paymentMethod" value="MBBank">
+
+                            <span>
+                                <span class="method-name" style="display:block">MB Bank</span>
+                                <span class="method-desc" style="display:block">Chuyển khoản qua APP MB Bank</span>
+                            </span>
+                        </label>
+
+                    </div>
+
+                    <div class="total-box">
+                        <div class="price-row">
+                            <span>Tạm tính</span>
+                            <span>@Model.TongTien.ToString("#,##0") VNĐ</span>
+                        </div>
+
+                        <div id="discountRow" class="price-row" style="display: none; color: #28a745;">
+                            <span>Giảm giá điểm</span>
+                            <span>- <span id="discountValue">0</span> VNĐ</span>
+                        </div>
+
+                        <div class="final-price-row">
+                            <span class="final-label">THANH TOÁN</span>
+                            <span class="final-price" id="finalPrice">@Model.TongTien.ToString("#,##0") <small style="font-size: 1rem; color: #fff;">VNĐ</small></span>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-pay">
+                        THANH TOÁN NGAY <i class="fa fa-chevron-right ml-2"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </form>
+
+    <div class="row justify-content-center mt-3">
+        <div class="col-lg-5">
+            <form action="@Url.Action("CancelTransaction", "ThanhToan")" method="post" id="formCancel">
+                <input type="hidden" name="lichChieuId" value="@Model.LichChieuId" />
+                <input type="hidden" name="lockedSeatIds" value="@Model.LockedSeatIds" />
+                <button type="submit" class="btn-cancel">
+                    <i class="fa fa-times mr-2"></i> HỦY GIAO DỊCH & CHỌN LẠI
+                </button>
+            </form>
+        </div>
+    </div>
+
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    // --- 1. COUNTDOWN TIMER ---
+    let timeLeft = @Model.SoGiayConLai;
+    const displayElement = document.getElementById('countdownDisplay');
+
+    if (timeLeft <= 0) {
+        alert("Hết thời gian giữ ghế!");
+        document.getElementById('formCancel').submit();
+    }
+
+    const countdownTimer = setInterval(function () {
+        const minutes = Math.floor(timeLeft / 60);
+        let seconds = timeLeft % 60;
+        seconds = seconds < 10 ? '0' + seconds : seconds;
+        displayElement.textContent = minutes + ':' + seconds;
+
+        if (timeLeft <= 0) {
+            clearInterval(countdownTimer);
+            alert("Hết thời gian giữ ghế! Hệ thống sẽ chuyển về trang chọn vé.");
+            document.getElementById('formCancel').submit();
+        }
+        timeLeft--;
+    }, 1000);
+
+    // --- 2. ACTIVE CLASS CHO PAYMENT ---
+    $('input[name="paymentMethod"]').change(function() {
+        $('.payment-option').removeClass('active');
+        $(this).closest('.payment-option').addClass('active');
+    });
+
+    // --- 3. TÍNH ĐIỂM ---
+    $(document).ready(function() {
+        const tongTienGoc = @Model.TongTien;
+        const diemHienCo = @(Model.DiemThanhVien > 0 ? Model.DiemThanhVien : 0);
+        const giaTriDiem = diemHienCo * 1000;
+
+        if ($('#chkDungDiem').length > 0) {
+            $('#chkDungDiem').change(function() {
+                let tongPhaiTra = tongTienGoc;
+                let giamGia = 0;
+
+                if (this.checked) {
+                    if (giaTriDiem >= tongTienGoc) {
+                        giamGia = tongTienGoc;
+                        tongPhaiTra = 0;
+                    } else {
+                        giamGia = giaTriDiem;
+                        tongPhaiTra = tongTienGoc - giaTriDiem;
+                    }
+
+                    $('#discountRow').show();
+                    $('#discountValue').text(giamGia.toLocaleString('vi-VN'));
+                } else {
+                    $('#discountRow').hide();
+                }
+
+                $('#finalPrice').html(tongPhaiTra.toLocaleString('vi-VN') + ' <small style="font-size: 1rem; color: #fff;">VNĐ</small>');
+            });
+        }
+    });
+</script>

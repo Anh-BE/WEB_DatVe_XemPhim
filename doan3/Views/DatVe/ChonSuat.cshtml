@@ -1,0 +1,337 @@
+﻿@model doan3.Models.MovieBookingViewModel
+@{
+    ViewBag.Title = "Lịch Chiếu - " + Model.TenPhim;
+    Layout = "~/Views/Shared/_Layout.cshtml";
+
+    var firstDateKey = Model.CacNgayChieu.FirstOrDefault().ToString("ddMMyyyy");
+
+    // 1. KIỂM TRA QUYỀN ADMIN TỪ SESSION
+    var session = Session["USER_SESSION"] as doan3.Models.UserLogin;
+    bool isAdmin = (session != null && session.GroupID == "1");
+}
+
+<style>
+    /* --- CẤU TRÚC CHUNG --- */
+    .booking-container {
+        background-color: #3b3b98;
+        color: white;
+        min-height: 100vh;
+        padding-bottom: 50px;
+    }
+
+    .section-title {
+        text-align: center;
+        font-family: 'Impact', sans-serif;
+        font-size: 3rem;
+        text-transform: uppercase;
+        padding: 10px 0 30px 0;
+        letter-spacing: 2px;
+        color: #fff;
+    }
+
+    /* --- NÚT QUAY VỀ (STYLE MỚI) --- */
+    .btn-back-custom {
+        display: inline-block;
+        padding: 12px 40px; /* Nút to rộng */
+        font-size: 1.1rem; /* Chữ lớn */
+        font-weight: 800; /* Chữ đậm */
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: #ffeb3b; /* Chữ vàng */
+        border: 2px solid #ffeb3b; /* Viền vàng */
+        border-radius: 50px; /* Bo tròn 2 đầu */
+        background: transparent;
+        transition: all 0.3s ease;
+        text-decoration: none !important;
+        box-shadow: 0 0 15px rgba(255, 235, 59, 0.1); /* Phát sáng nhẹ */
+    }
+
+        .btn-back-custom:hover {
+            background-color: #ffeb3b; /* Nền vàng khi di chuột vào */
+            color: #3b3b98; /* Chữ chuyển màu xanh tối */
+            transform: translateY(-3px); /* Hiệu ứng nảy lên */
+            box-shadow: 0 5px 20px rgba(255, 235, 59, 0.4); /* Phát sáng mạnh */
+        }
+
+    /* --- DATE TABS (NGÀY CHIẾU) --- */
+    .date-tabs {
+        display: flex;
+        justify-content: center;
+        gap: 15px;
+        margin-bottom: 40px;
+        flex-wrap: wrap;
+    }
+
+    .date-item {
+        border: 1px solid #ffeb3b;
+        color: #ffeb3b;
+        padding: 15px 25px;
+        border-radius: 5px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s;
+        width: 120px;
+    }
+
+        .date-item:hover, .date-item.active {
+            background-color: #ffeb3b;
+            color: #3b3b98;
+            font-weight: bold;
+            box-shadow: 0 0 15px #ffeb3b;
+        }
+
+    .day-number {
+        font-size: 1.8rem;
+        display: block;
+        line-height: 1;
+    }
+
+    .day-name {
+        font-size: 0.9rem;
+        text-transform: uppercase;
+    }
+
+    /* --- CINEMA LIST (DANH SÁCH RẠP) --- */
+    .cinema-list-container {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 0 15px;
+    }
+
+    .cinema-item {
+        background-color: #4b4bb5;
+        margin-bottom: 20px;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    }
+
+    .cinema-header {
+        padding: 15px 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .cinema-name {
+        color: #ffeb3b;
+        font-size: 1.3rem;
+        font-weight: bold;
+        margin-bottom: 5px;
+    }
+
+    .cinema-address {
+        font-size: 0.9rem;
+        color: #ddd;
+    }
+
+    /* --- TIME SLOTS (GIỜ CHIẾU) --- */
+    .time-slots {
+        padding: 20px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+
+    .btn-time {
+        border: 1px solid white;
+        color: white;
+        padding: 8px 20px;
+        border-radius: 5px;
+        text-decoration: none;
+        transition: 0.2s;
+        display: inline-block;
+    }
+
+        .btn-time:hover {
+            background-color: white;
+            color: #3b3b98;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+    .format-tag {
+        font-size: 0.7rem;
+        background: #ff5722;
+        padding: 2px 5px;
+        border-radius: 3px;
+        margin-right: 5px;
+    }
+
+    /* --- FILTER BAR --- */
+    .city-select {
+        background: transparent;
+        color: #ffeb3b;
+        border: 1px solid #ffeb3b;
+        padding: 5px 15px;
+        border-radius: 5px;
+        font-weight: bold;
+        cursor: pointer;
+    }
+
+        .city-select option {
+            background-color: #3b3b98;
+            color: white;
+        }
+</style>
+
+<div class="booking-container">
+    <div class="container">
+
+        <div class="text-center pt-5 pb-3">
+            @if (isAdmin)
+            {
+                <div class="text-center pt-5 pb-3">
+                    <a href="@Url.Action("PhimDangChieu", "Home")" class="btn-back-custom">
+                        <i class="fa fa-arrow-left mr-2"></i> Quay về danh sách phim
+                    </a>
+                </div>
+            }
+        </div>
+
+        <h2 class="section-title">@Model.TenPhim</h2>
+
+        @if (Model.CacNgayChieu == null || !Model.CacNgayChieu.Any())
+        {
+            <div class="text-center py-5" style="opacity:0.8;">
+                <i class="fas fa-film fa-3x mb-3"></i>
+                <h4 class="mt-3">Phim hiện chưa có lịch chiếu</h4>
+                <p class="text-light">Vui lòng quay lại sau hoặc chọn phim khác.</p>
+            </div>
+            return;
+        }
+
+        <div class="date-tabs">
+            @foreach (var date in Model.CacNgayChieu)
+            {
+                var dateKey = date.ToString("ddMMyyyy");
+                var activeClass = (dateKey == firstDateKey) ? "active" : "";
+                var dayName = System.Globalization.CultureInfo.CurrentCulture.DateTimeFormat.GetDayName(date.DayOfWeek);
+
+                <div class="date-item @activeClass" onclick="showScheduleByDate('@dateKey', this)">
+                    <span class="day-number">@date.Day</span>/<span>@date.Month</span>
+                    <span class="day-name">@dayName</span>
+                </div>
+            }
+        </div>
+
+        <div class="cinema-list-container">
+
+            <div class="d-flex justify-content-between align-items-end mb-4 border-bottom pb-2" style="border-color: rgba(255,255,255,0.1) !important;">
+                <h3 class="text-uppercase m-0" style="font-weight: bold; color: #ffeb3b; border-bottom: 3px solid #ffeb3b; display: inline-block; padding-bottom: 5px;">
+                    Danh Sách Rạp
+                </h3>
+                <div class="filter-box d-flex align-items-center">
+                    <span style="margin-right: 10px; color: #ccc; font-size: 0.9rem; text-transform: uppercase;">
+                        <i class="fas fa-map-marker-alt"></i> Khu Vực:
+                    </span>
+                    <select id="cityFilter" class="city-select" onchange="filterByCity()">
+                        <option value="all">Toàn Quốc</option>
+                        @foreach (var city in Model.DanhSachThanhPho)
+                        {
+                            <option value="@city">@city</option>
+}
+                    </select>
+                </div>
+            </div>
+
+            @foreach (var dateKey in Model.LichChieuTheoNgay.Keys)
+            {
+                var displayStyle = (dateKey == firstDateKey) ? "block" : "none";
+                <div id="schedule-@dateKey" class="schedule-group" style="display:@displayStyle;">
+
+                    @if (Model.LichChieuTheoNgay[dateKey].Count == 0)
+                    {
+                        <div class="text-center py-5" style="opacity: 0.7;">
+                            <i class="fas fa-film fa-3x mb-3"></i>
+                            <p>Chưa có suất chiếu nào vào ngày này.</p>
+                        </div>
+                    }
+
+                    @foreach (var rap in Model.LichChieuTheoNgay[dateKey])
+                    {
+                        <div class="cinema-item" data-city="@rap.ThanhPho">
+                            <div class="cinema-header">
+                                <div>
+                                    <div class="cinema-name">@rap.TenRap</div>
+                                    <div class="cinema-address"><i class="fas fa-map-pin text-warning mr-1"></i> @rap.DiaChi</div>
+                                </div>
+                                <span class="badge badge-light text-dark">@rap.ThanhPho</span>
+                            </div>
+                            <div class="time-slots">
+                                <div style="width: 100%; color: #aaa; margin-bottom: 10px; font-size: 0.85rem;">
+                                    <i class="fas fa-layer-group"></i> 2D - Phụ đề
+                                </div>
+                                @foreach (var suat in rap.DanhSachSuatChieu)
+                                {
+                                    <a href="javascript:void(0)" class="btn-time" onclick="loadTicketSection(@suat.LichChieuID)">
+                                        <span class="format-tag">@suat.DinhDang</span> @suat.GioChieu
+                                    </a>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<div id="ticket-selection-wrapper"></div>
+
+@section scripts {
+    <script>
+        // Truyền trạng thái Admin xuống JS
+        var isAdmin = @(isAdmin.ToString().ToLower());
+
+        function showScheduleByDate(dateKey, element) {
+            $('.schedule-group').hide();
+            $('#schedule-' + dateKey).fadeIn();
+
+            $('.date-item').removeClass('active');
+            $(element).addClass('active');
+
+            filterByCity(); // Áp dụng lại bộ lọc thành phố nếu có
+        }
+
+        function filterByCity() {
+            var selectedCity = $('#cityFilter').val();
+            var visibleGroup = $('.schedule-group:visible');
+
+            visibleGroup.find('.cinema-item').each(function () {
+                var cinemaCity = $(this).data('city');
+                if (selectedCity === 'all' || selectedCity === cinemaCity) {
+                    $(this).show();
+                } else {
+                    $(this).hide();
+                }
+            });
+        }
+
+        function loadTicketSection(lichChieuId) {
+            // --- LOGIC CHẶN ADMIN ---
+            if (isAdmin) {
+                alert("Vui lòng chuyển sang phần Cài Đặt để chỉnh sửa");
+
+                return; // Dừng lại, không tải ghế
+            }
+            // ------------------------
+
+            // Gọi AJAX tải sơ đồ ghế (chỉ chạy với User thường)
+            $.ajax({
+                url: '@Url.Action("GetTicketSelection", "DatVe")',
+                data: { lichChieuId: lichChieuId },
+                success: function (response) {
+                    $('#ticket-selection-wrapper').html(response);
+                    $('html, body').animate({
+                        scrollTop: $("#ticketSection").offset().top
+                    }, 800);
+                },
+                error: function () {
+                    alert("Lỗi tải thông tin vé! Vui lòng thử lại.");
+                }
+            });
+        }
+    </script>
+}

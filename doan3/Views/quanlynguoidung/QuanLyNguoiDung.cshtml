@@ -1,0 +1,476 @@
+﻿@model doan3.Models.QuanLyNguoiDungTongHopViewModel
+
+@{
+    ViewBag.Title = "Quản Lý Người Dùng";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+
+    bool isStaff = ViewBag.IsStaff != null && (bool)ViewBag.IsStaff;
+}
+
+<style>
+    /* --- 1. DARK CARD & LAYOUT --- */
+    .card-dark {
+        background-color: #15183c; /* Màu nền tối chủ đạo */
+        border: 1px solid #2c3b4e;
+        color: #e0e0e0;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.5); /* Bóng đổ sâu */
+        border-radius: 12px;
+    }
+
+    .card-header {
+        background: transparent;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        padding: 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    /* --- 2. HEADER TEXT GOLD --- */
+    .text-gold-theme {
+        color: #f5c518 !important;
+        text-shadow: 0 0 15px rgba(245, 197, 24, 0.4);
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    /* --- 3. STATS BOX (Thống kê) --- */
+    .stat-box {
+        background-color: #1b2530;
+        border: 1px solid #2c3b4e;
+        border-radius: 12px;
+        padding: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        transition: transform 0.3s ease;
+        height: 100%;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+    }
+
+        .stat-box:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+            border-color: #f5c518;
+        }
+
+    .stat-info h3 {
+        font-weight: 800;
+        margin: 0;
+        color: #fff;
+        font-size: 1.8rem;
+    }
+
+    .stat-info p {
+        margin: 0;
+        font-size: 0.85rem;
+        opacity: 0.8;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-weight: 600;
+    }
+
+    .stat-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+    }
+
+    /* Màu nền icon */
+    .bg-admin {
+        background: rgba(220, 53, 69, 0.15);
+        color: #dc3545;
+    }
+
+    .bg-staff {
+        background: rgba(40, 167, 69, 0.15);
+        color: #28a745;
+    }
+
+    .bg-customer {
+        background: rgba(0, 123, 255, 0.15);
+        color: #007bff;
+    }
+
+    .bg-total {
+        background: rgba(255, 193, 7, 0.15);
+        color: #ffc107;
+    }
+    /* --- ẨN THANH CUỘN (QUAN TRỌNG) --- */
+    .table-responsive {
+        overflow-x: auto;
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
+
+        .table-responsive::-webkit-scrollbar {
+            display: none;
+        }
+    /* --- 4. PREMIUM SEARCH BOX --- */
+    .input-group-premium {
+        position: relative;
+        display: flex;
+        align-items: center;
+        width: 100%;
+    }
+
+    .input-icon {
+        position: absolute;
+        left: 20px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #f5c518;
+        font-size: 1.2rem;
+        z-index: 10;
+        pointer-events: none;
+    }
+
+    .input-premium {
+        background: #0a0d29 !important;
+        border: 1px solid #2c3b4e;
+        color: #fff !important;
+        height: 55px;
+        border-radius: 12px;
+        padding: 0 140px 0 55px; /* Chừa chỗ cho icon và nút */
+        font-weight: 500;
+        font-size: 1rem;
+        width: 100%;
+        transition: all 0.3s;
+        outline: none;
+    }
+
+        .input-premium:focus {
+            border-color: #f5c518;
+            box-shadow: 0 0 15px rgba(245, 197, 24, 0.15);
+            background: #0f1235 !important;
+        }
+
+    .btn-search-absolute {
+        position: absolute;
+        right: 6px;
+        top: 6px;
+        bottom: 6px;
+        background: #f5c518;
+        color: #000;
+        border: none;
+        border-radius: 8px;
+        padding: 0 25px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        transition: all 0.2s;
+        cursor: pointer;
+    }
+
+        .btn-search-absolute:hover {
+            background: #ffdb4d;
+            box-shadow: 0 0 15px rgba(245, 197, 24, 0.4);
+        }
+
+    .btn-reset {
+        position: absolute;
+        right: 160px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #dc3545;
+        font-size: 1.2rem;
+        background: transparent;
+        border: none;
+        transition: all 0.3s;
+        cursor: pointer;
+        z-index: 5;
+    }
+
+        .btn-reset:hover {
+            color: #ff6b6b;
+            transform: translateY(-50%) scale(1.1);
+        }
+
+    /* --- 5. TABLE STYLE --- */
+    .table-dark-custom {
+        background-color: transparent;
+        color: #ccc;
+        margin-bottom: 0;
+    }
+
+        .table-dark-custom th {
+            border-top: none;
+            border-bottom: 1px solid rgba(255, 235, 59, 0.2);
+            color: #f5c518;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            padding: 20px;
+            font-weight: 700;
+        }
+
+        .table-dark-custom td {
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            vertical-align: middle;
+            padding: 15px 20px;
+        }
+
+    .table-hover tbody tr:hover {
+        background-color: rgba(245, 197, 24, 0.05) !important;
+        transform: scale(1.002);
+        transition: all 0.2s;
+    }
+
+    /* --- 6. BADGES & ICONS --- */
+    .badge-point {
+        background: rgba(245, 197, 24, 0.1);
+        color: #f5c518;
+        border: 1px solid #f5c518;
+        padding: 6px 12px;
+        border-radius: 50px;
+        font-weight: 800;
+        font-size: 0.9rem;
+    }
+
+    .user-avatar-icon {
+        width: 40px;
+        height: 40px;
+        background: rgba(255,255,255,0.1);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #f5c518;
+        font-size: 1.2rem;
+        margin-right: 15px;
+    }
+
+    .btn-gold-outline {
+        color: #f5c518;
+        border: 1px solid #f5c518;
+        background: transparent;
+        transition: all 0.3s;
+        font-weight: 600;
+    }
+
+        .btn-gold-outline:hover {
+            background-color: #f5c518;
+            color: #000;
+            box-shadow: 0 0 10px rgba(245, 197, 24, 0.5);
+        }
+</style>
+
+<div class="container-fluid mt-4 px-4 pb-5">
+
+    @* --- HEADER --- *@
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="text-gold-theme mb-0" style="border-left: 5px solid #f5c518; padding-left: 20px;">
+            <i class="fa fa-users-cog me-2"></i> QUẢN LÝ NGƯỜI DÙNG
+        </h2>
+    </div>
+
+    @* --- PHẦN 1: THỐNG KÊ (4 Hộp Ngang) --- *@
+    @if (!isStaff)
+    {
+        <div class="row mb-4">
+            @foreach (var item in Model.ThongKeTheoQuyen)
+            {
+                string bgClass = "bg-total";
+                string icon = "fa-users";
+                if (item.TenQuyen == "Admin") { bgClass = "bg-admin"; icon = "fa-user-shield"; }
+                else if (item.TenQuyen == "Staff") { bgClass = "bg-staff"; icon = "fa-user-tie"; }
+                else if (item.TenQuyen == "Customer") { bgClass = "bg-customer"; icon = "fa-user"; }
+
+                <div class="col-xl-3 col-md-6 mb-4">
+                    <div class="stat-box">
+                        <div class="stat-info">
+                            <h3>@item.SoLuong</h3>
+                            <p class="@bgClass.Replace("bg-", "text-")">@item.TenQuyen</p>
+                        </div>
+                        <div class="stat-icon @bgClass">
+                            <i class="fa @icon"></i>
+                        </div>
+                    </div>
+                </div>
+            }
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="stat-box">
+                    <div class="stat-info">
+                        <h3>@Model.DanhSachChiTiet.Count</h3>
+                        <p class="text-warning">TỔNG TÀI KHOẢN</p>
+                    </div>
+                    <div class="stat-icon bg-total">
+                        <i class="fa fa-chart-bar"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    @* --- PHẦN 2: THANH TÌM KIẾM (PREMIUM STYLE) --- *@
+    <div class="card card-dark mb-4">
+        <div class="card-body p-4">
+            <div class="row">
+                <div class="col-md-8 mx-auto">
+                    <form action="@Url.Action("QuanLyNguoiDung", "QuanLyNguoiDung")" method="get">
+                        <div class="input-group-premium">
+                            <i class="fa fa-search input-icon"></i>
+                            <input type="text" name="searchKeyword" class="input-premium"
+                                   placeholder="Nhập họ tên hoặc SĐT"
+                                   value="@ViewBag.CurrentFilter" autocomplete="off">
+
+                            @if (!string.IsNullOrEmpty(ViewBag.CurrentFilter))
+                            {
+                                <a href="@Url.Action("QuanLyNguoiDung", "QuanLyNguoiDung")"
+                                   class="btn-reset" title="Xóa tìm kiếm ">
+                                    <i class="fa fa-times-circle"></i>
+                                </a>
+                            }
+
+                            <button class="btn-search-absolute" type="submit">TÌM KIẾM</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @* --- THÔNG BÁO --- *@
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show shadow-lg border-0 mb-4" role="alert" style="background: rgba(40, 167, 69, 0.9); color: white;">
+            <i class="fa fa-check-circle me-2"></i> <strong>@TempData["SuccessMessage"]</strong>
+            <button type="button" class="close text-white" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-warning alert-dismissible fade show shadow-lg border-0 mb-4" role="alert" style="background: rgba(255, 193, 7, 0.9); color: black;">
+            <i class="fa fa-exclamation-triangle me-2"></i> <strong>@TempData["ErrorMessage"]</strong>
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        </div>
+    }
+
+    @* --- PHẦN 3: DANH SÁCH TÀI KHOẢN --- *@
+    <div class="card card-dark">
+        <div class="card-header">
+            <h5 class="text-gold-theme mb-0" style="font-size: 1.1rem;">
+                <i class="fa fa-list me-2"></i> DANH SÁCH TÀI KHOẢN
+            </h5>
+            @if (!string.IsNullOrEmpty(ViewBag.CurrentFilter))
+            {
+                <span class="badge badge-warning text-dark font-weight-bold">Đang lọc: "@ViewBag.CurrentFilter"</span>
+            }
+        </div>
+
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-dark-custom table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th class="pl-4">ID</th>
+                            <th>THÔNG TIN TÀI KHOẢN</th>
+                            <th>LIÊN HỆ</th>
+                            <th>MẬT KHẨU</th>
+                            <th class="text-center">ĐIỂM TÍCH LŨY</th>
+                            <th>QUYỀN</th>
+                            <th class="text-center">THAO TÁC</th>
+                            <th class="text-center">XÓA</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.DanhSachChiTiet.Count == 0)
+                        {
+                            <tr>
+                                <td colspan="7" class="text-center py-5">
+                                    <div class="text-muted mb-3"><i class="fa fa-search fa-3x"></i></div>
+                                    <h5 class="text-warning font-weight-bold">KHÔNG TÌM THẤY DỮ LIỆU</h5>
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            foreach (var user in Model.DanhSachChiTiet)
+                            {
+                                bool isSearching = !string.IsNullOrEmpty(ViewBag.CurrentFilter);
+                                string keywordLower = isSearching ? ViewBag.CurrentFilter.ToLower() : "";
+                                bool highlight = isSearching && ((user.SoDienThoai != null && user.SoDienThoai.Contains(keywordLower)) || (user.HoTen != null && user.HoTen.ToLower().Contains(keywordLower)));
+
+                                <tr style="@(highlight ? "background: rgba(40, 167, 69, 0.1); border-left: 4px solid #28a745;" : "")">
+                                    <td class="pl-4 text-muted font-weight-bold">#@user.UserID</td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            
+                                            <div>
+                                                <div class="font-weight-bold text-white" style="font-size: 1.05rem;">@user.HoTen</div>
+                                                <small class="text-muted">@user.UserName</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div style="font-size: 0.9rem; line-height: 1.6;">
+                                            <div class="text-muted"><i class="fa fa-envelope mr-2" style="width:15px"></i> @(string.IsNullOrEmpty(user.Email) ? "---" : user.Email)</div>
+                                            <div class="text-white"><i class="fa fa-phone mr-2" style="width:15px"></i> @(string.IsNullOrEmpty(user.SoDienThoai) ? "---" : user.SoDienThoai)</div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="pass-tag">@user.Password</span>
+                                    </td>
+                                    <td class="text-center">
+                                        @if (user.DiemThanhVien > 0)
+                                        {
+                                            <span class="badge-point"><i class="fa fa-star mr-1"></i> @user.DiemThanhVien</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted font-weight-bold" style="opacity: 0.3;">0</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (user.TenQuyen == "Admin")
+                                        {<span class="badge badge-danger text-uppercase px-3 py-2">Admin</span> }
+                                        else if (user.TenQuyen == "Customer")
+                                        { <span class="badge badge-primary text-uppercase px-3 py-2">Khách</span> }
+                                        else
+                                        { <span class="badge badge-success text-uppercase px-3 py-2">NHÂN VIÊN</span>}
+                                    </td>
+                                    <td class="text-center">
+                                        @if (!isStaff && user.TenQuyen != "Admin")
+                                        {
+                                            using (Html.BeginForm("ThayDoiQuyen", "QuanLyNguoiDung", new { id = user.UserID }, FormMethod.Post, new { @style = "display:inline;" }))
+                                            {
+                                                @Html.AntiForgeryToken()
+                                                if (user.GroupID == 2)
+                                                {
+                                                    <button type="submit" class="btn btn-warning btn-sm font-weight-bold text-dark shadow-sm px-3" title="Nâng lên Nhân viên"><i class="fa fa-arrow-up mr-1"></i> Lên NV</button>
+                                                }
+                                                else if (user.GroupID == 3)
+                                                {
+                                                    <button type="submit" class="btn btn-outline-warning btn-sm font-weight-bold px-3" title="Hạ xuống Khách hàng"><i class="fa fa-arrow-down mr-1"></i> Xuống KH</button>
+                                                }
+                                            }
+                                        }
+                                        else
+                                        { <span class="text-muted small"><i class="fa fa-lock"></i></span>}
+                                    </td>
+                                    <td class="text-center">
+                                        @if (user.TenQuyen != "Admin")
+                                        {
+                                            <a href="@Url.Action("XoaUser", new { id = user.UserID })"
+                                               class="btn btn-sm btn-gold-outline" title="Xóa tài khoản"
+                                               onclick="return confirm('Bạn có chắc muốn xóa tài khoản: @user.HoTen?');">
+                                                <i class="fa fa-trash-alt"></i>
+                                            </a>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="card-footer bg-transparent border-top border-secondary text-right">
+            <small class="text-muted">Tổng cộng: @Model.DanhSachChiTiet.Count tài khoản</small>
+        </div>
+    </div>
+</div>

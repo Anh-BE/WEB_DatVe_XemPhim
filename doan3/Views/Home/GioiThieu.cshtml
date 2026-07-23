@@ -1,0 +1,232 @@
+﻿@{
+    ViewBag.Title = "Giới Thiệu - Movana Cinema";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<style>
+    /* --- GENERAL THEME --- */
+    .movana-about-section {
+        background-color: #060922;
+        color: #fff;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        padding-bottom: 80px;
+        min-height: 100vh;
+    }
+
+    /* --- HERO SECTION --- */
+    .about-hero {
+        text-align: center;
+        padding: 80px 20px 50px;
+        position: relative;
+    }
+
+    /* --- SỬA LẠI PHẦN NÀY ĐỂ KHÔNG BỊ LỖI --- */
+    .brand-title {
+        font-size: 4rem;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 8px; /* Tăng khoảng cách chữ cho sang hơn */
+        margin-bottom: 15px;
+        /* Thay vì dùng gradient, ta dùng màu vàng chuẩn */
+        color: #f9e000;
+        /* Tạo hiệu ứng phát sáng bằng bóng đổ (Chuẩn CSS, không lỗi) */
+        text-shadow: 0 0 10px rgba(249, 224, 0, 0.5), /* Lớp sáng nhẹ sát chữ */
+        0 0 20px rgba(249, 224, 0, 0.3), /* Lớp sáng tỏa ra */
+        2px 2px 0px #000; /* Viền đen mỏng tạo độ sâu */
+    }
+    /* ---------------------------------------- */
+
+    .brand-slogan {
+        color: #8899a6;
+        font-size: 1.2rem;
+        letter-spacing: 3px;
+        text-transform: uppercase;
+        margin-bottom: 40px;
+        position: relative;
+        display: inline-block;
+        border-bottom: 2px solid #f9e000; /* Kẻ chân vàng thay cho after */
+        padding-bottom: 10px;
+    }
+
+    /* --- STORY CARD --- */
+    .story-card {
+        background: #15183c;
+        border-radius: 20px;
+        padding: 50px;
+        border: 1px solid rgba(249, 224, 0, 0.15);
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+        margin-bottom: 60px;
+    }
+
+    .story-heading {
+        color: #f9e000;
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin-bottom: 20px;
+        text-transform: uppercase;
+    }
+
+    .story-text {
+        color: #d1d1d1;
+        line-height: 1.8;
+        font-size: 1.05rem;
+        text-align: justify;
+    }
+
+    /* --- FEATURES GRID --- */
+    .features-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 30px;
+    }
+
+    .feature-item {
+        background: #0a0d29;
+        border: 1px solid #2a2d55;
+        padding: 40px 30px;
+        border-radius: 15px;
+        text-align: center;
+        transition: all 0.3s ease;
+    }
+
+        .feature-item:hover {
+            transform: translateY(-5px);
+            border-color: #f9e000;
+            box-shadow: 0 5px 20px rgba(249, 224, 0, 0.2);
+        }
+
+    .feature-icon {
+        font-size: 3rem;
+        color: #f9e000;
+        margin-bottom: 25px;
+    }
+
+    .feature-title {
+        color: #fff;
+        font-size: 1.3rem;
+        font-weight: 700;
+        margin-bottom: 15px;
+        text-transform: uppercase;
+    }
+
+    .feature-desc {
+        color: #8899a6;
+        font-size: 0.95rem;
+        line-height: 1.6;
+    }
+
+    /* --- STATS --- */
+    .stat-number {
+        font-size: 2.5rem;
+        font-weight: 900;
+        color: #f9e000;
+        margin-bottom: 5px;
+    }
+
+    .stat-label {
+        color: #fff;
+        text-transform: uppercase;
+        font-size: 0.8rem;
+        opacity: 0.8;
+    }
+
+    /* --- BUTTON --- */
+    .about-cta {
+        text-align: center;
+        margin-top: 80px;
+    }
+
+    .btn-explore {
+        background: transparent;
+        color: #f9e000;
+        border: 2px solid #f9e000;
+        padding: 15px 40px;
+        font-size: 1.1rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        border-radius: 50px;
+        text-decoration: none;
+        display: inline-block;
+        transition: 0.3s;
+    }
+
+        .btn-explore:hover {
+            background: #f9e000;
+            color: #060922;
+            box-shadow: 0 0 15px rgba(249, 224, 0, 0.5);
+        }
+</style>
+
+<div class="movana-about-section">
+    <div class="container">
+
+        <div class="about-hero">
+            <h1 class="brand-title">MOVANA CINEMA</h1>
+            <p class="brand-slogan">Đánh thức mọi giác quan</p>
+        </div>
+
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="story-card">
+                    <div class="row align-items-center">
+                        <div class="col-md-7">
+                            <h3 class="story-heading"><i class="fa fa-film mr-2"></i> Câu chuyện thương hiệu</h3>
+                            <p class="story-text">
+                                MOVANA không chỉ là rạp chiếu phim – đó là thánh đường của cảm xúc. Chúng tôi mang đến trải nghiệm điện ảnh chân thực nhất với công nghệ tiên tiến, xóa nhòa ranh giới giữa thực tại và màn ảnh.
+                            </p>
+                            <p class="story-text">
+                                Từ những thước phim bom tấn cho đến những tác phẩm nghệ thuật, mọi khoảnh khắc tại Movana đều được chăm chút để trở nên hoàn hảo.
+                            </p>
+                        </div>
+                        <div class="col-md-5 text-center pt-4 pt-md-0">
+                            <div class="row">
+                                <div class="col-6 mb-4">
+                                    <div class="stat-number">N+</div>
+                                    <div class="stat-label">Phòng Chiếu</div>
+                                </div>
+                                <div class="col-6 mb-4">
+                                    <div class="stat-number">4KG</div>
+                                    <div class="stat-label">Ultra HD</div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="stat-number">N+</div>
+                                    <div class="stat-label">Khách Hàng</div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="stat-number">10/7</div>
+                                    <div class="stat-label">Hỗ Trợ</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="features-grid">
+            <div class="feature-item">
+                <i class="fa fa-eye feature-icon"></i>
+                <h4 class="feature-title">Hình Ảnh Sắc Nét</h4>
+                <p class="feature-desc">Công nghệ Laser IMAX 36K mang lại độ tương phản tuyệt đối và màu sắc sống động.</p>
+            </div>
+            <div class="feature-item">
+                <i class="fa fa-volume-up feature-icon"></i>
+                <h4 class="feature-title">Âm Thanh Đỉnh Cao</h4>
+                <p class="feature-desc">Hệ thống âm thanh đa chiều bao trùm khán phòng, tái tạo âm thanh chân thực.</p>
+            </div>
+            <div class="feature-item">
+                <i class="fa fa-star feature-icon"></i>
+                <h4 class="feature-title">Dịch Vụ Hạng Sang</h4>
+                <p class="feature-desc">Ghế ni long cao cấp, không gian sang trọng và đội ngũ nhân viên chuyên nghiệp.</p>
+            </div>
+        </div>
+
+        <div class="about-cta">
+            <h3 style="color: #fff; margin-bottom: 20px;">Sẵn sàng trải nghiệm?</h3>
+            <a href="@Url.Action("PhimDangChieu", "Home")" class="btn-explore">
+                ĐẶT VÉ NGAY <i class="fa fa-ticket ml-2"></i>
+            </a>
+        </div>
+
+    </div>
+</div>

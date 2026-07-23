@@ -1,0 +1,267 @@
+﻿@{
+    ViewBag.Title = "Đăng Ký Tài Khoản";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<style>
+    /* --- STYLE CHUNG (Đồng bộ với Đăng Nhập) --- */
+    .movana-font {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    .register-wrapper {
+        max-width: 600px; /* Rộng hơn đăng nhập xíu vì nhiều trường hơn */
+        margin: 60px auto;
+    }
+
+    /* --- PREMIUM CARD --- */
+    .premium-card {
+        background: #15183c;
+        border: 1px solid #2a2d55;
+        border-radius: 12px;
+        padding: 40px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    }
+
+    /* TIÊU ĐỀ */
+    .section-title {
+        color: #f9e000;
+        font-weight: 800;
+        font-size: 1.8rem;
+        text-transform: uppercase;
+        margin-bottom: 5px;
+        text-align: center;
+    }
+
+    .sub-text {
+        text-align: center;
+        color: #8899a6;
+        margin-bottom: 30px;
+        font-size: 0.9rem;
+        padding-bottom: 20px;
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+
+    /* FORM */
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .label-custom {
+        color: #ddd;
+        font-size: 0.85rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        margin-bottom: 8px;
+        display: block;
+    }
+
+    /* INPUT STYLE */
+    .input-group-premium {
+        position: relative;
+        display: flex;
+        align-items: center;
+    }
+
+    .input-icon {
+        position: absolute;
+        left: 15px;
+        color: #f9e000;
+        font-size: 1.1rem;
+        z-index: 10;
+        top: 50%;
+        transform: translateY(-50%);
+    }
+
+    .input-premium {
+        background: #0a0d29 !important;
+        border: 1px solid #2a2d55;
+        color: #fff !important;
+        height: 45px;
+        border-radius: 6px;
+        padding: 0 15px 0 45px; /* Chừa chỗ cho icon */
+        font-size: 0.95rem;
+        width: 100%;
+        transition: border-color 0.2s;
+    }
+
+        .input-premium:focus,
+        .input-premium:hover {
+            background: #0a0d29 !important;
+            border-color: #f9e000;
+            color: #fff !important;
+            outline: none;
+        }
+
+    /* AUTOFILL FIX */
+    input:-webkit-autofill,
+    input:-webkit-autofill:hover,
+    input:-webkit-autofill:focus,
+    input:-webkit-autofill:active {
+        -webkit-box-shadow: 0 0 0 30px #0a0d29 inset !important;
+        -webkit-text-fill-color: #fff !important;
+        caret-color: #fff;
+        transition: background-color 5000s ease-in-out 0s;
+    }
+
+    /* BUTTONS */
+    .btn-action-group {
+        margin-top: 30px;
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .btn-gold {
+        background: #f9e000;
+        color: #000;
+        border: none;
+        height: 45px;
+        font-weight: 700;
+        text-transform: uppercase;
+        border-radius: 6px;
+        width: 100%;
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+
+        .btn-gold:hover {
+            background: #d4c000;
+        }
+
+    .login-link {
+        text-align: center;
+        margin-top: 15px;
+        color: #8899a6;
+        font-size: 0.9rem;
+    }
+
+        .login-link a {
+            color: #f9e000;
+            font-weight: 700;
+            text-decoration: none;
+        }
+
+            .login-link a:hover {
+                text-decoration: underline;
+            }
+
+    /* ALERT */
+    .alert-custom {
+        background: rgba(220, 53, 69, 0.1);
+        border: 1px solid #dc3545;
+        color: #ff6b6b;
+        padding: 10px 15px;
+        border-radius: 6px;
+        font-size: 0.9rem;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+    }
+    /* --- XỬ LÝ ICON LỊCH TRONG INPUT DATE --- */
+    .input-premium::-webkit-calendar-picker-indicator {
+        filter: invert(1); /* Biến màu đen thành màu trắng */
+        cursor: pointer;
+        opacity: 0.8; /* Độ mờ nhẹ cho tinh tế */
+    }
+
+        .input-premium::-webkit-calendar-picker-indicator:hover {
+            opacity: 1; /* Sáng rõ khi di chuột vào */
+        }
+</style>
+
+<div class="container movana-font">
+    <div class="register-wrapper">
+        <div class="premium-card">
+
+            <h2 class="section-title"><i class="s mr-2"></i> ĐĂNG KÝ TÀI KHOẢN</h2>
+            <p class="sub-text"></p>
+
+            @if (ViewBag.Error != null)
+            {
+                <div class="alert-custom">
+                    <i class="fa fa-exclamation-triangle mr-2"></i> @ViewBag.Error
+                </div>
+            }
+
+            @using (Html.BeginForm("DangKy", "Register", FormMethod.Post))
+            {
+                @Html.AntiForgeryToken()
+
+                @* TÊN TÀI KHOẢN *@
+                <div class="form-group">
+                    <label class="label-custom">TÊN ĐĂNG NHẬP</label>
+                    <div class="input-group-premium">
+                        <i class="fa fa-user input-icon"></i>
+                        <input type="text" id="username" name="username" class="input-premium" required placeholder="Nhập tên tài khoản" autocomplete="off" />
+                    </div>
+                </div>
+
+                @* MẬT KHẨU *@
+                <div class="form-group">
+                    <label class="label-custom">MẬT KHẨU</label>
+                    <div class="input-group-premium">
+                        <i class="fa fa-lock input-icon"></i>
+                        <input type="password" id="password" name="password" class="input-premium" required placeholder="Nhập mật khẩu" />
+                    </div>
+                </div>
+
+                @* HỌ VÀ TÊN *@
+                <div class="form-group">
+                    <label class="label-custom">HỌ VÀ TÊN</label>
+                    <div class="input-group-premium">
+                        <i class="fa fa-id-card input-icon"></i>
+                        <input type="text" id="name" name="name" class="input-premium" required placeholder="Nhập họ tên " />
+                    </div>
+                </div>
+
+                <div class="row">
+                    @* NGÀY SINH *@
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="label-custom">NGÀY SINH</label>
+                            <div class="input-group-premium">
+                                <i class="fa fa-birthday-cake input-icon"></i>
+                                <input type="date" id="ngaysinh" name="ngaysinh" class="input-premium" required
+                                       max="@DateTime.Now.ToString("yyyy-MM-dd")" />
+                            </div>
+                        </div>
+                    </div>
+
+                    @* SỐ ĐIỆN THOẠI *@
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="label-custom">SỐ ĐIỆN THOẠI</label>
+                            <div class="input-group-premium">
+                                <i class="fa fa-phone input-icon"></i>
+                                <input type="tel" id="phone" name="phone" class="input-premium" placeholder="Nhập SĐT" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                @* EMAIL *@
+                <div class="form-group">
+                    <label class="label-custom">EMAIL</label>
+                    <div class="input-group-premium">
+                        <i class="fa fa-envelope input-icon"></i>
+                        <input type="email" id="email" name="email" class="input-premium" required placeholder="Nhập địa chỉ email" />
+                    </div>
+                </div>
+
+                @* NÚT BẤM *@
+                <div class="btn-action-group">
+                    <button type="submit" class="btn-gold">
+                        ĐĂNG KÝ
+                    </button>
+                </div>
+
+                @* LINK ĐĂNG NHẬP *@
+                <div class="login-link">
+                    Bạn đã có tài khoản?
+                    @Html.ActionLink("Đăng nhập ngay!", "Index_DangNhap", "Login")
+                </div>
+            }
+        </div>
+    </div>
+</div>
