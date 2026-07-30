@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Data.Entity;
 using System.Linq;
@@ -144,10 +144,8 @@ namespace doan3.Controllers
                               .Select(c => c.GheID)
                               .ToList();
 
-            var lockedIds = db.Khoa_Ghe_Tam_Thoi
-                              .Where(k => k.LichChieuID == lichChieuId && k.ThoiGianHetHan > now)
-                              .Select(k => k.GheID)
-                              .ToList();
+            // ĐỌC DANH SÁCH GHẾ ĐANG KHÓA TỪ REDIS
+            var lockedIds = SeatLockService.GetLockedSeatIds(lichChieuId);
 
             var giaTheoLoai = db.TienVes.ToDictionary(t => t.LoaiGhe, t => t.GiaTien ?? 0);
 
@@ -189,51 +187,40 @@ namespace doan3.Controllers
             {
                 return RedirectToAction("ChonSuat", new { idPhim = 1 }); 
             }
+
+            var listSeatIds = seatIds.Split(',').Select(long.Parse).ToList();
+
             using (var db = new LTW_DatVeXemPhimEntities())
             {
-                var listSeatIds = seatIds.Split(',').Select(long.Parse).ToList();
-                var now = DateTime.Now;
-
+                // 1. Kiểm tra ghế đã mua thành công trong SQL chưa
                 foreach (var id in listSeatIds)
                 {
                     bool daDat = db.Chi_Tiet_Ve.Any(c => c.LichChieuID == lichChieuId && c.GheID == id);
-
-                    bool dangKhoa = db.Khoa_Ghe_Tam_Thoi.Any(k => k.LichChieuID == lichChieuId &&
-                                                                  k.GheID == id &&
-                                                                  k.ThoiGianHetHan > now);
-
-                    if (daDat || dangKhoa)
+                    if (daDat)
                     {
-                        TempData["Error"] = $"Ghế {id} vừa được người khác chọn. Vui lòng chọn ghế khác.";
+                        TempData["Error"] = $"Ghế {id} đã được người khác mua thành công. Vui lòng chọn ghế khác.";
                         return Redirect(Request.UrlReferrer?.ToString() ?? "/");
                     }
                 }
 
-                var userSession = Session["USER_SESSION"] as doan3.Models.UserLogin; 
-                long? khachHangId = null;
+                var userSession = Session["USER_SESSION"] as doan3.Models.UserLogin;
+                long khachHangId = 0;
                 if (userSession != null)
                 {
                     var kh = db.Khach_Hang.FirstOrDefault(k => k.UserID == userSession.UserID);
-                    khachHangId = kh?.KhachHangID;
+                    khachHangId = kh?.KhachHangID ?? userSession.UserID;
                 }
 
-                foreach (var id in listSeatIds)
+                // 2. KHÓA GHẾ NGUYÊN TỬ VỚI REDIS (SETNX + TTL 60 GIÂY)
+                bool lockSuccess = SeatLockService.LockSeats(lichChieuId, listSeatIds, khachHangId, durationSeconds: 60);
+
+                if (!lockSuccess)
                 {
-                    var oldLock = db.Khoa_Ghe_Tam_Thoi.FirstOrDefault(k => k.LichChieuID == lichChieuId && k.GheID == id);
-                    if (oldLock != null) db.Khoa_Ghe_Tam_Thoi.Remove(oldLock);
-
-                    var lockSeat = new Khoa_Ghe_Tam_Thoi
-                    {
-                        LichChieuID = lichChieuId,
-                        GheID = id,
-                        KhachHangID = khachHangId,
-                        ThoiGianKhoa = now,
-                        ThoiGianHetHan = now.AddMinutes(1) 
-                    };
-                    db.Khoa_Ghe_Tam_Thoi.Add(lockSeat);
+                    TempData["Error"] = "Ghế vừa được người khác nhanh tay chọn trước. Vui lòng chọn ghế khác.";
+                    return Redirect(Request.UrlReferrer?.ToString() ?? "/");
                 }
-                db.SaveChanges();
             }
+
             return RedirectToAction("Index", "ThanhToan", new { lichChieuId = lichChieuId, lockedSeatIds = seatIds });
         }
 

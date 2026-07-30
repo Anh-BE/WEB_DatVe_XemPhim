@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Data.Entity;
 using System.Linq;
@@ -64,15 +64,43 @@ namespace doan3.Controllers
 
        
         [HttpPost]
-        public ActionResult ProcessPayment(long lichChieuId, string lockedSeatIds, string paymentMethod, bool dungDiem = false)
+        public ActionResult SendOtp()
+        {
+            var sessionUser = Session["USER_SESSION"] as UserLogin;
+            if (sessionUser == null)
+            {
+                return Json(new { success = false, message = "Vui lòng đăng nhập!" });
+            }
+
+            string otpCode = RedisFeaturesService.GenerateOtp(sessionUser.UserName, 120);
+            return Json(new
+            {
+                success = true,
+                otp = otpCode,
+                ttl = 120,
+                message = $"Đã tạo mã OTP xác thực trên Redis: {otpCode} (Hạn 120s)"
+            });
+        }
+
+        [HttpPost]
+        public ActionResult ProcessPayment(long lichChieuId, string lockedSeatIds, string paymentMethod, string otpCode = null, bool dungDiem = false)
         {
             if (Session["USER_SESSION"] == null) return RedirectToAction("Index_DangNhap", "Login");
 
-           
             var sessionUser = Session["USER_SESSION"] as UserLogin;
             long? maKhachHang = LayMaKhachHangTuSession();
 
             if (maKhachHang == null) return View("PaymentError", (object)"Lỗi: Không tìm thấy thông tin khách hàng.");
+
+            // KIEU TRA XÁC THỰC MÃ OTP REDIS (NẾU CÓ NHẬP)
+            if (!string.IsNullOrWhiteSpace(otpCode))
+            {
+                bool isValidOtp = RedisFeaturesService.VerifyOtp(sessionUser.UserName, otpCode);
+                if (!isValidOtp)
+                {
+                    return View("PaymentError", (object)"Mã OTP không chính xác hoặc đã hết hạn (120s) trên Redis. Vui lòng lấy mã mới.");
+                }
+            }
 
             var danhSachIdGhe = TachChuoiIdGhe(lockedSeatIds);
 
@@ -272,29 +300,15 @@ namespace doan3.Controllers
 
         private long TinhThoiGianGiuGheConLai(long lichChieuId, List<long> danhSachIdGhe)
         {
-            var khoaGheMoiNhat = db.Khoa_Ghe_Tam_Thoi
-                              .Where(k => k.LichChieuID == lichChieuId && k.GheID.HasValue && danhSachIdGhe.Contains(k.GheID.Value))
-                              .OrderByDescending(k => k.ThoiGianHetHan)
-                              .FirstOrDefault();
-
-            if (khoaGheMoiNhat != null)
-            {
-                var khoangThoiGian = khoaGheMoiNhat.ThoiGianHetHan - DateTime.Now;
-                return (long)Math.Max(0, khoangThoiGian.TotalSeconds);
-            }
-            return 0;
+            // TÍNH THỜI GIAN KHÓA GHẾ CÒN LẠI TỪ REDIS (TTL)
+            return SeatLockService.GetRemainingLockTime(lichChieuId, danhSachIdGhe);
         }
 
         private void XoaKhoaGheTamThoi(long lichChieuId, string chuoiIdGhe)
         {
             var danhSachId = TachChuoiIdGhe(chuoiIdGhe);
-            var cacKhoaGhe = db.Khoa_Ghe_Tam_Thoi.Where(k => k.LichChieuID == lichChieuId).ToList();
-            var danhSachCanXoa = cacKhoaGhe.Where(k => k.GheID.HasValue && danhSachId.Contains(k.GheID.Value)).ToList();
-            if (danhSachCanXoa.Any())
-            {
-                db.Khoa_Ghe_Tam_Thoi.RemoveRange(danhSachCanXoa);
-                db.SaveChanges();
-            }
+            // XÓA KHÓA GHẾ TRÊN REDIS
+            SeatLockService.ReleaseSeatLocks(lichChieuId, danhSachId);
         }
 
         private long LayIdPhimTuLichChieu(long lichChieuId)
@@ -305,13 +319,8 @@ namespace doan3.Controllers
 
         private bool KiemTraGheConThuocVeMinhKhong(long lichChieuId, long maKhachHang, List<long> danhSachIdGhe)
         {
-            var cacKhoaHopLe = db.Khoa_Ghe_Tam_Thoi
-                               .Where(k => k.LichChieuID == lichChieuId &&
-                                           k.KhachHangID == maKhachHang &&
-                                           k.ThoiGianHetHan > DateTime.Now)
-                               .ToList();
-            int soLuongHopLe = cacKhoaHopLe.Count(k => k.GheID.HasValue && danhSachIdGhe.Contains(k.GheID.Value));
-            return soLuongHopLe == danhSachIdGhe.Count;
+            // KIỂM TRA XÁC THỰC KHÓA GHẾ NGUYÊN TỬ TRÊN REDIS
+            return SeatLockService.VerifySeatsLockedByCustomer(lichChieuId, danhSachIdGhe, maKhachHang);
         }
 
         private long TaoDonHangMoi(long maKhachHang, decimal tongTien)
@@ -330,12 +339,8 @@ namespace doan3.Controllers
 
         private void XoaKhoaGheSauKhiMuaThanhCong(long lichChieuId, List<long> danhSachIdGhe)
         {
-            var cacKhoaGhe = db.Khoa_Ghe_Tam_Thoi.Where(k => k.LichChieuID == lichChieuId).ToList();
-            var danhSachCanXoa = cacKhoaGhe.Where(k => k.GheID.HasValue && danhSachIdGhe.Contains(k.GheID.Value)).ToList();
-            if (danhSachCanXoa.Any())
-            {
-                db.Khoa_Ghe_Tam_Thoi.RemoveRange(danhSachCanXoa);
-            }
+            // XÓA KHÓA GHẾ TRÊN REDIS SAU KHIMUA THÀNH CÔNG
+            SeatLockService.ReleaseSeatLocks(lichChieuId, danhSachIdGhe);
         }
 
         private Don_Dat_Ve LayThongTinDonHangDayDu(long maDonHang)
