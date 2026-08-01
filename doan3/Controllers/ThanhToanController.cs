@@ -48,12 +48,26 @@ namespace doan3.Controllers
                 DiemThanhVien = diemHienCo
             };
 
+            // TÍNH NĂNG REDIS 2: LƯU GIỎ HÀNG THÔNG TIN THANH TOÁN VÀO REDIS (TTL 600s / 10 PHÚT)
+            var sessionUserObj = Session["USER_SESSION"] as UserLogin;
+            if (sessionUserObj != null)
+            {
+                RedisFeaturesService.SaveCart(sessionUserObj.UserName, lichChieuId, model.DanhSachGhe, model.TongTien, 600);
+            }
+
             return View(model);
         }
 
         [HttpPost]
         public ActionResult CancelTransaction(long lichChieuId, string lockedSeatIds)
         {
+            var sessionUserObj = Session["USER_SESSION"] as UserLogin;
+            if (sessionUserObj != null)
+            {
+                // Xóa giỏ hàng trên Redis khi hủy giao dịch
+                RedisFeaturesService.ClearCart(sessionUserObj.UserName);
+            }
+
             if (!string.IsNullOrEmpty(lockedSeatIds))
             {
                 XoaKhoaGheTamThoi(lichChieuId, lockedSeatIds);
@@ -72,14 +86,49 @@ namespace doan3.Controllers
                 return Json(new { success = false, message = "Vui lòng đăng nhập!" });
             }
 
+            // 1. Tạo mã OTP 6 số lưu trên Redis (Hạn 120s)
             string otpCode = RedisFeaturesService.GenerateOtp(sessionUser.UserName, 120);
-            return Json(new
+
+            // 2. Lấy Email khách hàng từ CSDL
+            string customerEmail = null;
+            string fullName = sessionUser.FullName ?? "Khách hàng";
+            var khachHang = db.Khach_Hang.FirstOrDefault(kh => kh.UserID == sessionUser.UserID);
+            if (khachHang != null)
             {
-                success = true,
-                otp = otpCode,
-                ttl = 120,
-                message = $"Đã tạo mã OTP xác thực trên Redis: {otpCode} (Hạn 120s)"
-            });
+                customerEmail = khachHang.Email;
+            }
+
+            // 3. Thử gửi mã OTP tới Gmail thực tế của khách hàng
+            var sendResult = EmailService.SendOtpViaGmail(customerEmail, otpCode, fullName);
+
+            if (sendResult.IsSuccess)
+            {
+                // Đã gửi mail thành công -> Ẩn OTP trên UI để bảo mật
+                return Json(new
+                {
+                    success = true,
+                    otp = (string)null,
+                    email = customerEmail,
+                    ttl = 120,
+                    message = $"Mã OTP 6 số đã được gửi thành công đến Gmail: {customerEmail}. Vui lòng kiểm tra hộp thư!"
+                });
+            }
+            else
+            {
+                // Chưa bật/cấu hình Gmail SMTP -> Hiển thị OTP trên UI kèm thông báo chế độ Demo
+                string displayMsg = !string.IsNullOrEmpty(customerEmail)
+                    ? $"[Chế độ Demo] Đã tạo OTP trên Redis cho Gmail ({customerEmail}): {otpCode} (Hạn 120s)"
+                    : $"[Chế độ Demo] Đã tạo OTP trên Redis: {otpCode} (Hạn 120s)";
+
+                return Json(new
+                {
+                    success = true,
+                    otp = otpCode,
+                    email = customerEmail,
+                    ttl = 120,
+                    message = displayMsg
+                });
+            }
         }
 
         [HttpPost]
@@ -167,6 +216,7 @@ namespace doan3.Controllers
 
                     
                     XoaKhoaGheSauKhiMuaThanhCong(lichChieuId, danhSachIdGhe);
+                    RedisFeaturesService.ClearCart(sessionUser.UserName);
                     db.SaveChanges();
                     giaoDich.Commit();
 

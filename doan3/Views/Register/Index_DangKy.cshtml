@@ -234,7 +234,7 @@
                             <label class="label-custom">SỐ ĐIỆN THOẠI</label>
                             <div class="input-group-premium">
                                 <i class="fa fa-phone input-icon"></i>
-                                <input type="tel" id="phone" name="phone" class="input-premium" placeholder="Nhập SĐT" />
+                                <input type="tel" id="phone" name="phone" class="input-premium" required placeholder="Nhập SĐT (10 số)" />
                             </div>
                         </div>
                     </div>
@@ -242,16 +242,17 @@
 
                 @* EMAIL *@
                 <div class="form-group">
-                    <label class="label-custom">EMAIL</label>
+                    <label class="label-custom">EMAIL (CHỈ CHẤP NHẬN GMAIL)</label>
                     <div class="input-group-premium">
                         <i class="fa fa-envelope input-icon"></i>
-                        <input type="email" id="email" name="email" class="input-premium" required placeholder="Nhập địa chỉ email" />
+                        <input type="email" id="email" name="email" class="input-premium" required placeholder="example@gmail.com" />
                     </div>
+                    <small id="email-error" style="color: #ff6b6b; display: none; margin-top: 5px; font-size: 0.85rem;"></small>
                 </div>
 
                 @* NÚT BẤM *@
                 <div class="btn-action-group">
-                    <button type="submit" class="btn-gold">
+                    <button type="submit" id="btn-submit-register" class="btn-gold">
                         ĐĂNG KÝ
                     </button>
                 </div>
@@ -265,3 +266,57 @@
         </div>
     </div>
 </div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        var emailInput = document.getElementById("email");
+        var emailError = document.getElementById("email-error");
+        var form = emailInput.closest("form");
+
+        var gmailRegex = /^[a-zA-Z0-9.]{6,30}@@(gmail\.com|googlemail\.com)$/i;
+
+        function validateGmail() {
+            var val = emailInput.value.trim();
+            if (val === "") {
+                emailError.style.display = "none";
+                emailError.innerText = "";
+                return false;
+            }
+
+            if (!val.toLowerCase().endsWith("@@gmail.com") && !val.toLowerCase().endsWith("@@googlemail.com")) {
+                emailError.innerText = "[!] Dia chi Email phai co duoi @@gmail.com";
+                emailError.style.display = "block";
+                return false;
+            }
+
+            if (!gmailRegex.test(val)) {
+                emailError.innerText = "[!] Ten tai khoan Gmail phai tu 6-30 ky tu (chi dung chu cai, chu so, dau cham).";
+                emailError.style.display = "block";
+                return false;
+            }
+
+            var usernamePart = val.split('@@')[0];
+            if (usernamePart.startsWith(".") || usernamePart.endsWith(".") || usernamePart.indexOf("..") !== -1) {
+                emailError.innerText = "[!] Dau cham khong duoc nam o dau, cuoi hoac lien nhau (..).";
+                emailError.style.display = "block";
+                return false;
+            }
+
+            emailError.style.display = "none";
+            emailError.innerText = "";
+            return true;
+        }
+
+        emailInput.addEventListener("input", validateGmail);
+        emailInput.addEventListener("blur", validateGmail);
+
+        if (form) {
+            form.addEventListener("submit", function (e) {
+                if (!validateGmail()) {
+                    e.preventDefault();
+                    emailInput.focus();
+                }
+            });
+        }
+    });
+</script>

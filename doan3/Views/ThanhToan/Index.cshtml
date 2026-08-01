@@ -1,4 +1,4 @@
-@model doan3.Models.ThanhToanViewModel
+﻿@model doan3.Models.ThanhToanViewModel
 @{
     ViewBag.Title = "Thanh Toán";
     Layout = "~/Views/Shared/_Layout.cshtml";
@@ -387,17 +387,31 @@
             });
         }
 
-        // --- 4. TÍNH NĂNG REDIS OTP ---
+        // --- 4. TÍNH NĂNG REDIS & GMAIL OTP ---
         $('#btnGetOtp').click(function(e) {
             e.preventDefault();
+            var $btn = $(this);
+            $btn.prop('disabled', true).text('ĐANG GỬI...');
+
             $.post('@Url.Action("SendOtp", "ThanhToan")', function(res) {
+                $btn.prop('disabled', false).text('LẤY MÃ OTP');
+
                 if (res.success) {
-                    $('#otpCodeInput').val(res.otp);
+                    if (res.otp) {
+                        // Chế độ Demo: Tự điền OTP vào ô input
+                        $('#otpCodeInput').val(res.otp);
+                    } else {
+                        // Gửi Gmail thật thành công: Xóa ô input để người dùng mở Email tự gõ mã
+                        $('#otpCodeInput').val('').focus();
+                    }
                     $('#otpNotice').html('<span style="color: #28a745; font-weight: 700;">' + res.message + '</span>');
-                    alert(res.message + "\n\nBạn hãy mở Another Redis Desktop Manager để thấy Key otp:checkout:{username} đang đếm ngược 120 giây!");
+                    alert(res.message);
                 } else {
                     alert(res.message);
                 }
+            }).fail(function() {
+                $btn.prop('disabled', false).text('LẤY MÃ OTP');
+                alert("Đã xảy ra lỗi khi kết nối hệ thống gửi OTP.");
             });
         });
     });

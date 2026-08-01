@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Web;
@@ -80,7 +80,9 @@ namespace doan3.Controllers
                     Session.Add("SESSION_GROUP", listGroups);
                     Session.Add("USER_SESSION", userSession);
 
-                    
+                    // TÍNH NĂNG REDIS 4: LƯU SESSION USER VÀO REDIS (TTL 1800s / 30 PHÚT)
+                    string roleName = listGroups.FirstOrDefault() ?? "Customer";
+                    RedisFeaturesService.SaveUserSession(username, userDb.UserID, userSession.FullName, roleName, 1800);
 
                     if (ghinho == "on")
                         ghinhotaikhoan(username, password);

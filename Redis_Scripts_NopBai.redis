@@ -1,0 +1,83 @@
+# =========================================================================
+# DỰ ÁN DỮ LIỆU NOSQL - BẢN SCRIPT CÁC CÂU LỆNH REDIS CLI (SUBMISSION SCRIPT)
+# Học phần: CSDL NoSQL
+# Tính năng thực hiện: Redis Key-Value Store (Khóa ghế, Giỏ hàng, OTP, Session)
+# =========================================================================
+
+# -------------------------------------------------------------------------
+# TÍNH NĂNG 1: KHÓA GHẾ TẠM THỜI (ATOMIC SEAT LOCK - STRING + TTL 60S)
+# Mục đích: Đảm bảo tính nguyên tử (Atomic), tránh 2 người đặt trùng 1 ghế.
+# Key format: seatlock:{lichChieuId}:{gheId}
+# -------------------------------------------------------------------------
+
+# 1. Khóa ghế số 15 của Suất chiếu 102 cho Khách hàng ID 5 trong 60 giây
+SET seatlock:102:15 "LockedBy_Customer_5" NX EX 60
+
+# 2. Kiểm tra thời gian khóa ghế còn lại (TTL)
+TTL seatlock:102:15
+
+# 3. Lấy thông tin ai đang giữ ghế
+GET seatlock:102:15
+
+# 4. Hủy khóa ghế (khi khách hàng đổi ý chọn lại hoặc hết hạn)
+DEL seatlock:102:15
+
+
+# -------------------------------------------------------------------------
+# TÍNH NĂNG 2: GIỎ HÀNG THÔNG TIN THANH TOÁN (PAYMENT CART - HASH + TTL 600S)
+# Mục đích: Lưu giữ tạm thời thông tin vé chờ thanh toán trên RAM.
+# Key format: cart:{username}
+# -------------------------------------------------------------------------
+
+# 1. Tạo/Cập nhật thông tin giỏ hàng cho người dùng 'le_ngoc_anh'
+HSET cart:le_ngoc_anh lichChieuId "102" danhSachGhe "15,16" tongTien "180000" thoiGianTao "01/08/2026 22:30:00"
+
+# 2. Đặt thời gian hết hạn cho giỏ hàng là 10 phút (600 giây)
+EXPIRE cart:le_ngoc_anh 600
+
+# 3. Xem toàn bộ thông tin giỏ hàng
+HGETALL cart:le_ngoc_anh
+
+# 4. Xem thời gian giữ giỏ hàng còn lại
+TTL cart:le_ngoc_anh
+
+# 5. Xóa giỏ hàng sau khi thanh toán thành công
+DEL cart:le_ngoc_anh
+
+
+# -------------------------------------------------------------------------
+# TÍNH NĂNG 3: MÃ OTP XÁC THỰC THANH TOÁN QUA GMAIL (GMAIL OTP - STRING + TTL 120S)
+# Mục đích: Lưu mã xác thực OTP 6 số ngẫu nhiên, tự động hủy sau 2 phút.
+# Key format: otp:checkout:{username}
+# -------------------------------------------------------------------------
+
+# 1. Hệ thống sinh mã OTP '849201' lưu vào Redis có thời hạn 120 giây (2 phút)
+SET otp:checkout:le_ngoc_anh "849201" EX 120
+
+# 2. Kiểm tra đếm ngược thời gian hết hạn của mã OTP
+TTL otp:checkout:le_ngoc_anh
+
+# 3. Đọc mã OTP trên Redis để đối chiếu với mã người dùng nhập từ Gmail
+GET otp:checkout:le_ngoc_anh
+
+# 4. Xóa ngay lập tức mã OTP sau khi xác thực thành công (Chống sử dụng lại mã - Anti-Replay)
+DEL otp:checkout:le_ngoc_anh
+
+
+# -------------------------------------------------------------------------
+# TÍNH NĂNG 4: LƯU TRỮ SESSION NGƯỜI DÙNG (REDIS USER SESSION - HASH + TTL 1800S)
+# Mục đích: Lưu trạng thái đăng nhập người dùng trên RAM (30 phút).
+# Key format: session:user:{username}
+# -------------------------------------------------------------------------
+
+# 1. Lưu thông tin Session khi người dùng đăng nhập thành công
+HSET session:user:le_ngoc_anh userId "5" username "le_ngoc_anh" fullName "Lê Ngọc Anh" roleName "Customer" lastAccess "01/08/2026 23:00:00"
+
+# 2. Đặt thời gian hết hạn Session là 30 phút (1800 giây)
+EXPIRE session:user:le_ngoc_anh 1800
+
+# 3. Lấy thông tin Session người dùng
+HGETALL session:user:le_ngoc_anh
+
+# 4. Xóa Session khi người dùng bấm Đăng xuất (Sign Out)
+DEL session:user:le_ngoc_anh

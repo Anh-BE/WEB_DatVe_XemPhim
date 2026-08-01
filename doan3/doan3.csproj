@@ -209,6 +209,7 @@
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
     <Compile Include="Models\AccountModels.cs" />
+    <Compile Include="Models\EmailService.cs" />
     <Compile Include="Models\BaoCaoDoanhThu.cs" />
     <Compile Include="Models\Chi_Tiet_Ve.cs">
       <DependentUpon>Model1.tt</DependentUpon>
