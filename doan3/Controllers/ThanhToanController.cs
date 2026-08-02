@@ -220,6 +220,15 @@ namespace doan3.Controllers
                     db.SaveChanges();
                     giaoDich.Commit();
 
+                    // TÍNH NĂNG NEO4J: TỰ ĐỘNG GHI NHẬN LƯỢT ĐẶT VÉ VÀO NEO4J GRAPH
+                    try
+                    {
+                        var idPhim = LayIdPhimTuLichChieu(lichChieuId);
+                        var neo4jService = new Neo4jService();
+                        neo4jService.AddBooking(sessionUser.UserName, (int)idPhim, "BK" + maDonHang, danhSachGheCanMua.Count, tongTienPhaiTra);
+                    }
+                    catch { }
+
                     return RedirectToAction("PaymentSuccess", new { orderId = maDonHang });
                 }
                 catch (Exception loi)

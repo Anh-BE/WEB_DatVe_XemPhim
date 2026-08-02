@@ -1,4 +1,4 @@
-﻿@Html.Partial("_BannerPartial")
+﻿﻿﻿@Html.Partial("_BannerPartial")
 
 @using doan3.Models; 
 
@@ -13,7 +13,73 @@
     bool isAdmin = (session != null && session.GroupID == "1");
 }
 
-<div class="content-wrapper">
+@{
+    var topBookedNeo4j = ViewBag.TopBookedNeo4j as List<doan3.Models.Neo4jMovieViewModel> ?? new List<doan3.Models.Neo4jMovieViewModel>();
+    var topFavsNeo4j = ViewBag.TopFavoritesNeo4j as List<doan3.Models.Neo4jMovieViewModel> ?? new List<doan3.Models.Neo4jMovieViewModel>();
+}
+
+<div class="content-wrapper" style="margin-top: 20px;">
+    <!-- ========================================================================= -->
+    <!-- KHỐI TÍNH NĂNG NEO4J: BẢNG XẾP HẠNG TOP PHIM TRÊN TRANG CHỦ              -->
+    <!-- ========================================================================= -->
+    <!-- ========================================================================= -->
+    <!-- KHỐI TÍNH NĂNG NEO4J: TOP PHIM THỊNH HÀNH (ĐỒNG BỘ NATIVE PHIM-CARD)    -->
+    <!-- ========================================================================= -->
+    @if (topBookedNeo4j.Count > 0)
+    {
+        <div class="header-clean" style="margin-top: 10px !important; margin-bottom: 25px !important; text-align: center !important;">
+            <h2 class="title-silver" style="font-family: 'Montserrat', sans-serif !important; font-weight: 700 !important; font-size: 26px !important; color: #adc1ff !important; text-transform: uppercase !important; letter-spacing: 2px !important; display: inline-block !important; border-bottom: 3px solid #ffeb00; padding-bottom: 8px !important; margin: 0 !important; text-shadow: 0 0 10px rgba(173, 193, 255, 0.3) !important;">
+                🏆 TOP PHIM THỊNH HÀNH
+            </h2>
+        </div>
+
+        <div class="phim-container" style="margin-bottom: 45px;">
+            @{
+                int rank = 1;
+                foreach (var m in topBookedNeo4j.Take(4))
+                {
+                    <div class="phim-card" style="position: relative;">
+                        <span style="position: absolute; top: 10px; left: 10px; background: rgba(0, 0, 0, 0.85); color: #ffeb00; width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.1rem; border: 2px solid #ffeb00; z-index: 2; box-shadow: 0 4px 10px rgba(0,0,0,0.6);">
+                            #@rank
+                        </span>
+                        <img src="@Url.Content("~/Content/HinhAnhSP/" + m.Poster)" alt="@m.Title" />
+
+                        <div class="phim-info">
+                            <p class="phim-title">
+                                @(m.Title.Length > 25 ? m.Title.Substring(0, 25) + "..." : m.Title)
+                            </p>
+
+                            <div style="margin-bottom: 12px;">
+                                <span style="background: rgba(255, 235, 0, 0.15); color: #ffeb00; border: 1px solid rgba(255, 235, 0, 0.4); padding: 4px 12px; border-radius: 15px; font-size: 0.82rem; font-weight: 700;">
+                                    <i class="fa fa-ticket"></i> @m.BookingCount Lượt Đặt Vé
+                                </span>
+                            </div>
+
+                            <div class="phim-buttons">
+                                @Html.ActionLink("Chi Tiết", "ChiTietPhim", "Home", new { id = m.MovieId }, new { @class = "btn-movana" })
+                                @if (isAdmin)
+                                {
+                                    @Html.ActionLink("Xem Lịch", "ChonSuat", "DatVe", new { idPhim = m.MovieId }, new { @class = "btn-movana" })
+                                }
+                                else
+                                {
+                                    @Html.ActionLink("Đặt Vé", "ChonSuat", "DatVe", new { idPhim = m.MovieId }, new { @class = "btn-movana" })
+                                }
+                            </div>
+                        </div>
+                    </div>
+                    rank++;
+                }
+            }
+        </div>
+    }
+
+    <div class="header-clean" style="margin-top: 40px !important; margin-bottom: 25px !important; text-align: center !important;">
+        <h2 class="title-silver" style="font-family: 'Montserrat', sans-serif !important; font-weight: 700 !important; font-size: 26px !important; color: #adc1ff !important; text-transform: uppercase !important; letter-spacing: 2px !important; display: inline-block !important; border-bottom: 3px solid #ffeb00; padding-bottom: 8px !important; margin: 0 !important; text-shadow: 0 0 10px rgba(173, 193, 255, 0.3) !important;">
+            PHIM ĐANG CHIẾU
+        </h2>
+    </div>
+
     <div class="phim-container">
         @foreach (Phim s in Model)
         {

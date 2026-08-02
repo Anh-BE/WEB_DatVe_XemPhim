@@ -1,0 +1,328 @@
+﻿@{
+    ViewBag.Title = "Movana Cinema - Chào Mừng Đến Với Trải Nghiệm Điện Ảnh Đỉnh Cao";
+    ViewBag.HideHeader = true;
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<style>
+    /* TRANG LANDING HOÀN TOÀN KHÔNG CÓ HEADER */
+    .landing-wrapper {
+        margin-top: 0;
+        padding-top: 20px;
+        background-color: #060922;
+        color: #fff;
+        font-family: 'Montserrat', sans-serif;
+    }
+
+    /* HERO BANNER SANG TRỌNG CẢM CỨNG MOVAN */
+    .hero-landing-section {
+        position: relative;
+        background: linear-gradient(180deg, #060922 0%, #12173b 50%, #060922 100%);
+        padding: 90px 20px 70px 20px;
+        text-align: center;
+        border-bottom: 1px solid #15183c;
+    }
+
+    .title-gold-hero {
+        font-size: 3.5rem;
+        font-weight: 900;
+        color: #ffeb00;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        margin-bottom: 20px;
+        text-shadow: 0 0 20px rgba(255, 235, 0, 0.4);
+    }
+
+    .subtitle-hero {
+        font-size: 1.3rem;
+        color: #adc1ff;
+        max-width: 900px;
+        margin: 0 auto 35px auto;
+        line-height: 1.8;
+        font-weight: 500;
+    }
+
+    /* TIÊU ĐỀ CHUẨN NGUYÊN BẢN CỦA CODE GỐC (TITLE-SILVER) */
+    .header-clean-landing {
+        margin-top: 50px !important;
+        margin-bottom: 30px !important;
+        text-align: center !important;
+    }
+
+    .title-silver-landing {
+        font-family: 'Montserrat', sans-serif !important;
+        font-weight: 700 !important;
+        font-size: 26px !important;
+        color: #adc1ff !important;
+        text-transform: uppercase !important;
+        letter-spacing: 2px !important;
+        display: inline-block !important;
+        position: relative !important;
+        padding-bottom: 12px !important;
+        margin: 0 !important;
+        text-shadow: 0 0 10px rgba(173, 193, 255, 0.3) !important;
+    }
+
+    .title-silver-landing::after {
+        content: '' !important;
+        position: absolute !important;
+        bottom: 0 !important;
+        left: 50% !important;
+        transform: translateX(-50%) !important;
+        width: 80px !important;
+        height: 3px !important;
+        background-color: #ffeb00 !important;
+        border-radius: 2px !important;
+    }
+
+    /* KHỐI NỘI DUNG CHI TIẾT (PHIM-CARD STYLE) */
+    .landing-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 30px;
+        margin-bottom: 60px;
+    }
+
+    .landing-card {
+        background-color: #1a1a2e;
+        border-radius: 12px;
+        padding: 35px 25px;
+        color: #fff;
+        text-align: center;
+        transition: 0.3s ease;
+        border: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .landing-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 12px 24px rgba(0,0,0,0.5);
+        border-color: #ffeb00;
+    }
+
+    .landing-icon {
+        font-size: 3rem;
+        color: #ffeb00;
+        margin-bottom: 20px;
+    }
+
+    .landing-card-title {
+        font-weight: 700;
+        font-size: 1.25rem;
+        margin-bottom: 15px;
+        color: #fff;
+    }
+
+    .landing-card-text {
+        color: #ccc;
+        font-size: 0.95rem;
+        line-height: 1.7;
+    }
+
+    /* NÚT BTN-MOVANA CHUẨN 100% THEO MÃ NGUỒN CỦA BẠN */
+    .btn-movana-landing {
+        position: relative;
+        display: inline-block;
+        padding: 14px 35px;
+        font-family: 'Montserrat', sans-serif;
+        font-size: 15px;
+        font-weight: 700;
+        color: #000 !important;
+        background: #ffeb00;
+        border-radius: 8px;
+        text-decoration: none !important;
+        overflow: hidden;
+        z-index: 1;
+        transition: color 0.3s ease;
+        border: none;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .btn-movana-landing::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(90deg, #7f00ff, #3a7bd5);
+        transform: translateX(-105%);
+        transition: transform 0.4s ease-in-out;
+        z-index: -1;
+        border-radius: 8px;
+    }
+
+    .btn-movana-landing:hover::before {
+        transform: translateX(0);
+    }
+
+    .btn-movana-landing:hover {
+        color: #fff !important;
+        box-shadow: 0 4px 15px rgba(127, 0, 255, 0.4);
+    }
+
+    /* NÚT ĐẶT VÉ NGAY LƠ LỬNG (STICKY / FLOATING BUTTON) CỐ ĐỊNH KHI CUỘN TRANG */
+    .floating-cta-container {
+        position: fixed;
+        bottom: 35px;
+        right: 35px;
+        z-index: 99999;
+    }
+
+    .btn-floating-movana {
+        position: relative;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 16px 32px;
+        font-family: 'Montserrat', sans-serif;
+        font-size: 15px;
+        font-weight: 800;
+        color: #000 !important;
+        background: #ffeb00;
+        border-radius: 30px;
+        text-decoration: none !important;
+        overflow: hidden;
+        z-index: 1;
+        transition: all 0.3s ease;
+        border: 2px solid #ffeb00;
+        box-shadow: 0 8px 25px rgba(255, 235, 0, 0.5);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .btn-floating-movana::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(90deg, #7f00ff, #3a7bd5);
+        transform: translateX(-105%);
+        transition: transform 0.4s ease-in-out;
+        z-index: -1;
+        border-radius: 30px;
+    }
+
+    .btn-floating-movana:hover::before {
+        transform: translateX(0);
+    }
+
+    .btn-floating-movana:hover {
+        color: #fff !important;
+        transform: scale(1.05);
+        box-shadow: 0 12px 30px rgba(127, 0, 255, 0.6);
+        border-color: #7f00ff;
+    }
+</style>
+
+<div class="landing-wrapper">
+    <!-- HERO SECTION LỚN CHIẾM TRỌN ĐẦU TRANG -->
+    <div class="hero-landing-section">
+        <div class="content-wrapper">
+            <h1 class="title-gold-hero">MOVANA CINEMA</h1>
+            <p class="subtitle-hero">
+                HỆ THỐNG RẠP CHIẾU PHIM TRỰC TUYẾN THÔNG MINH ĐẮNG CẤP HÀNG ĐẦU. THƯỞNG THỨC NGHỆ THUẬT ĐIỆN ẢNH ĐỈNH CAO VỚI CÔNG NGHỆ CHIẾU HÌNH ẢNH 4K VÀ ÂM THANH DOLBY ATMOS CHÂN THỰC.
+            </p>
+
+            <!-- 🎬 KHỐI HIỂN THỊ ẢNH PHIM CỰC NÉT CHUYÊN NGHIỆP -->
+            <div style="margin: 35px auto 25px auto; max-width: 880px; position: relative;">
+                <div style="background: rgba(255, 235, 0, 0.05); padding: 10px; border-radius: 18px; border: 2px solid rgba(255, 235, 0, 0.4); box-shadow: 0 15px 45px rgba(0,0,0,0.8), 0 0 35px rgba(255, 235, 0, 0.25);">
+                    <img src="/Images/banner1.png" alt="Movana Cinema Featured Movie" style="width: 100%; height: auto; max-height: 420px; object-fit: cover; border-radius: 10px; display: block;" onerror="this.src='/Content/HinhAnhSP/029.png'" />
+                </div>
+            </div>
+
+            <div style="margin-top: 30px;">
+                <a href="@Url.Action("PhimDangChieu", "Home")" class="btn-movana-landing">
+                    <i class="fa fa-ticket mr-2"></i> ĐẶT VÉ NGAY
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="content-wrapper" style="padding-top: 20px; padding-bottom: 60px;">
+        <!-- MỤC 1: GIỚI THIỆU HỆ THỐNG RẠP MOVANA -->
+        <div class="header-clean-landing">
+            <h2 class="title-silver-landing">HỆ THỐNG PHÒNG CHIẾU HIỆN ĐẠI</h2>
+        </div>
+
+        <div class="landing-grid">
+            <div class="landing-card">
+                <div class="landing-icon"><i class="fa fa-desktop"></i></div>
+                <div class="landing-card-title">MÀN HÌNH 4K LASER SẮC NÉT</div>
+                <div class="landing-card-text">Màn chiếu cực đại độ phân giải 4K Ultra-HD mang đến từng khung hình sống động, độ tương phản tuyệt hảo và sắc màu chân thực.</div>
+            </div>
+
+            <div class="landing-card">
+                <div class="landing-icon"><i class="fa fa-volume-up"></i></div>
+                <div class="landing-card-title">ÂM THANH DOLBY ATMOS</div>
+                <div class="landing-card-text">Hệ thống loa vòm bao quanh không gian 360 độ giúp bạn chìm đắm trong âm thanh chân thực của từng cảnh phim gay cấn.</div>
+            </div>
+
+            <div class="landing-card">
+                <div class="landing-icon"><i class="fa fa-couch"></i></div>
+                <div class="landing-card-title">GHẾ NỒI SOFA NẰM PREMIUM</div>
+                <div class="landing-card-text">Không gian ghế ngồi êm ái, bọc da cao cấp tích hợp chế độ ngả lưng tùy chỉnh mang lại cảm giác thoải mái trọn vẹn suốt buổi chiếu.</div>
+            </div>
+        </div>
+
+        <!-- MỤC 2: CÔNG NGHỆ NOSQL SIÊU TỐC -->
+        <div class="header-clean-landing">
+            <h2 class="title-silver-landing">TRẢI NGHIỆM ĐẶT VÉ CÔNG NGHỆ MỚI</h2>
+        </div>
+
+        <div class="landing-grid">
+            <div class="landing-card">
+                <div class="landing-icon"><i class="fa fa-clock-o"></i></div>
+                <div class="landing-card-title">KHÓA GHẾ TẠM THỜI 60S (REDIS)</div>
+                <div class="landing-card-text">Tính năng giữ ghế nguyên tử trên Redis Cache giúp bạn chọn và giữ ngay chiếc ghế ưng ý trong 60s mà không lo bị trùng lặp.</div>
+            </div>
+
+            <div class="landing-card">
+                <div class="landing-icon"><i class="fa fa-envelope-o"></i></div>
+                <div class="landing-card-title">XÁC THỰC OTP GMAIL THẬT</div>
+                <div class="landing-card-text">Hệ thống gửi mã OTP xác nhận đặt vé tức thì qua Gmail SMTP giúp bảo mật giao dịch và thông tin thanh toán tuyệt đối.</div>
+            </div>
+
+            <div class="landing-card">
+                <div class="landing-icon"><i class="fa fa-line-chart"></i></div>
+                <div class="landing-card-title">TOP PHIM THỊNH HÀNH (NEO4J)</div>
+                <div class="landing-card-text">Bảng xếp hạng phim Hot được truy vấn thời gian thực từ CSDL Đồ thị Neo4j dựa trên lượng đặt vé và thả tim của khán giả.</div>
+            </div>
+        </div>
+
+        <!-- MỤC 3: QUY TRÌNH 3 BƯỚC ĐẶT VÉ ĐƠN GIẢN -->
+        <div class="header-clean-landing">
+            <h2 class="title-silver-landing">QUY TRÌNH ĐẶT VÉ DỄ DÀNG</h2>
+        </div>
+
+        <div class="landing-grid">
+            <div class="landing-card">
+                <div style="font-size: 2rem; font-weight: 900; color: #ffeb00; margin-bottom: 10px;">BƯỚC 1</div>
+                <div class="landing-card-title">CHỌN PHIM &amp; SUẤT CHIẾU</div>
+                <div class="landing-card-text">Duyệt danh sách các bộ phim đang chiếu Hot nhất và lựa chọn suất chiếu theo cụm rạp gần bạn.</div>
+            </div>
+
+            <div class="landing-card">
+                <div style="font-size: 2rem; font-weight: 900; color: #ffeb00; margin-bottom: 10px;">BƯỚC 2</div>
+                <div class="landing-card-title">CHỌN GHẾ &amp; XÁC NHẬN OTP</div>
+                <div class="landing-card-text">Chọn vị trí ghế đẹp trên sơ đồ phòng chiếu và xác nhận mã OTP 6 số bảo mật được gửi đến Email của bạn.</div>
+            </div>
+
+            <div class="landing-card">
+                <div style="font-size: 2rem; font-weight: 900; color: #ffeb00; margin-bottom: 10px;">BƯỚC 3</div>
+                <div class="landing-card-title">THANH TOÁN &amp; NHẬN VÉ</div>
+                <div class="landing-card-text">Thanh toán trực tuyến tiện lợi và nhận ngay mã vé QR Code hiển thị để vào phòng chiếu lập tức.</div>
+            </div>
+        </div>
+
+        <!-- NÚT CTA CHÍNH Ở CUỐI NỘI DUNG -->
+        <div style="text-align: center; margin-top: 50px; margin-bottom: 30px;">
+            <a href="@Url.Action("PhimDangChieu", "Home")" class="btn-movana-landing" style="font-size: 17px; padding: 16px 45px;">
+                🍿 TRẢI NGHIỆM ĐẶT VÉ PHIM NGAY
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- NÚT ĐẶT VÉ NGAY LƠ LỬNG (STICKY FLOATING BUTTON KHI CUỘN TRANG LÊN / XUỐNG) -->
+<div class="floating-cta-container">
+    <a href="@Url.Action("PhimDangChieu", "Home")" class="btn-floating-movana" title="Bấm để vào trang chọn phim & đặt vé ngay!">
+        <i class="fa fa-ticket" style="font-size: 1.2rem;"></i> ĐẶT VÉ NGAY
+    </a>
+</div>

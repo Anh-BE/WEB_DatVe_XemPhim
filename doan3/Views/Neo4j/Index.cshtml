@@ -1,0 +1,281 @@
+﻿@{
+    ViewBag.Title = "Bảng Xếp Hạng Top Phim Neo4j Graph";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+
+    var topBooked = ViewBag.TopBooked as List<doan3.Models.Neo4jMovieViewModel> ?? new List<doan3.Models.Neo4jMovieViewModel>();
+    var topFavorites = ViewBag.TopFavorites as List<doan3.Models.Neo4jMovieViewModel> ?? new List<doan3.Models.Neo4jMovieViewModel>();
+    string currentUsername = ViewBag.CurrentUsername as string;
+}
+
+<style>
+    .neo4j-container {
+        color: #fff;
+        background: linear-gradient(135deg, #0d0e15 0%, #1a1d29 100%);
+        padding: 35px 25px;
+        border-radius: 16px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        margin-bottom: 40px;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .neo4j-header {
+        text-align: center;
+        border-bottom: 2px solid rgba(212, 175, 55, 0.3);
+        padding-bottom: 20px;
+        margin-bottom: 35px;
+    }
+    .neo4j-header h1 {
+        font-weight: 800;
+        color: #f1c40f;
+        font-size: 2.2rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        text-shadow: 0 0 15px rgba(241, 196, 15, 0.4);
+    }
+    .neo4j-badge {
+        background: linear-gradient(45deg, #00b4db, #0083b0);
+        color: white;
+        padding: 6px 18px;
+        border-radius: 20px;
+        font-size: 0.95rem;
+        display: inline-block;
+        margin-top: 5px;
+    }
+    .section-title {
+        color: #f39c12;
+        font-size: 1.5rem;
+        margin-bottom: 25px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        border-left: 4px solid #f1c40f;
+        padding-left: 12px;
+    }
+    .movie-card {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 12px;
+        overflow: hidden;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        position: relative;
+        height: 100%;
+    }
+    .movie-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(241, 196, 15, 0.25);
+        border-color: rgba(241, 196, 15, 0.5);
+    }
+    .movie-poster-box {
+        position: relative;
+        height: 250px;
+        overflow: hidden;
+        background: #000;
+    }
+    .movie-poster-box img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        opacity: 0.85;
+        transition: opacity 0.3s;
+    }
+    .movie-card:hover .movie-poster-box img {
+        opacity: 1;
+    }
+    .rank-tag {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        background: rgba(0, 0, 0, 0.85);
+        color: #f1c40f;
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        font-size: 1.1rem;
+        border: 2px solid #f1c40f;
+        z-index: 2;
+    }
+    .fav-btn-icon {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: rgba(0, 0, 0, 0.75);
+        color: #e74c3c;
+        border: none;
+        width: 42px;
+        height: 42px;
+        border-radius: 50%;
+        cursor: pointer;
+        font-size: 1.4rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s;
+        z-index: 2;
+    }
+    .fav-btn-icon:hover {
+        transform: scale(1.15);
+        background: #e74c3c;
+        color: white;
+    }
+    .movie-info {
+        padding: 15px;
+    }
+    .movie-title {
+        font-size: 1.15rem;
+        font-weight: 700;
+        color: #fff;
+        margin-bottom: 8px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .movie-meta {
+        font-size: 0.88rem;
+        color: #aaa;
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 12px;
+    }
+    .metric-badge {
+        background: rgba(241, 196, 15, 0.15);
+        color: #f1c40f;
+        border: 1px solid rgba(241, 196, 15, 0.3);
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        display: inline-block;
+    }
+</style>
+
+<div class="container margin-top-20" style="margin-top: 30px;">
+    <div class="neo4j-container">
+        <!-- HEADER BẢNG XẾP HẠNG -->
+        <div class="neo4j-header">
+            <h1>🏆 BẢNG XẾP HẠNG PHIM XU HƯỚNG (NEO4J GRAPH)</h1>
+            <p style="color: #bbb; margin-top: 8px;">Dữ liệu thời gian thực được tự động cập nhật từ <b>Neo4j Graph Database</b> (Nodes: <code>:User</code>, <code>:Movie</code>)</p>
+            <span class="neo4j-badge"><i class="fa fa-nodes"></i> Neo4j Graph Analytics Engine</span>
+        </div>
+
+        <!-- MỤC 1: TOP PHIM ĐƯỢC ĐẶT VÉ NHIỀU NHẤT -->
+        <div style="margin-bottom: 45px;">
+            <h2 class="section-title">
+                🍿 TOP PHIM ĐƯỢC ĐẶT VÉ NHIỀU NHẤT ( Quan hệ <code>[:BOOKED]</code> )
+            </h2>
+            <div class="row">
+                @if (topBooked.Count > 0)
+                {
+                    int rank = 1;
+                    foreach (var item in topBooked)
+                    {
+                        <div class="col-md-4 col-sm-6 col-xs-12" style="margin-bottom: 25px;">
+                            <div class="movie-card">
+                                <div class="rank-tag">#@rank</div>
+                                <button class="fav-btn-icon" onclick="toggleFav(@item.MovieId, '@item.Title', '@item.Poster', this)" title="Thả tim yêu thích">
+                                    <i class="fa @(item.IsFavorite ? "fa-heart" : "fa-heart-o")"></i>
+                                </button>
+                                <div class="movie-poster-box">
+                                    <img src="@item.Poster" alt="@item.Title" onerror="this.src='https://via.placeholder.com/300x400?text=Movana+Cinema'" />
+                                </div>
+                                <div class="movie-info">
+                                    <div class="movie-title">@item.Title</div>
+                                    <div class="movie-meta">
+                                        <span><i class="fa fa-tag"></i> @item.GenreName</span>
+                                        <span><i class="fa fa-clock-o"></i> @item.Duration phút</span>
+                                    </div>
+                                    <div>
+                                        <span class="metric-badge">
+                                            <i class="fa fa-ticket"></i> @item.BookingCount lượt đặt vé
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        rank++;
+                    }
+                }
+                else
+                {
+                    <div class="col-xs-12 text-center" style="padding: 30px; color: #aaa;">
+                        <p>Chưa có dữ liệu đặt vé trong Neo4j.</p>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- MỤC 2: TOP PHIM ĐƯỢC THẢ TIM / YÊU THÍCH NHẤT -->
+        <div>
+            <h2 class="section-title" style="color: #e74c3c; border-left-color: #e74c3c;">
+                ❤️ TOP PHIM ĐƯỢC THẢ TIM / YÊU THÍCH NHẤT ( Quan hệ <code>[:FAVORITE]</code> )
+            </h2>
+            <div class="row">
+                @if (topFavorites.Count > 0)
+                {
+                    int rankFav = 1;
+                    foreach (var item in topFavorites)
+                    {
+                        <div class="col-md-4 col-sm-6 col-xs-12" style="margin-bottom: 25px;">
+                            <div class="movie-card">
+                                <div class="rank-tag" style="border-color: #e74c3c; color: #e74c3c;">#@rankFav</div>
+                                <button class="fav-btn-icon" onclick="toggleFav(@item.MovieId, '@item.Title', '@item.Poster', this)" title="Thả tim yêu thích">
+                                    <i class="fa @(item.IsFavorite ? "fa-heart" : "fa-heart-o")"></i>
+                                </button>
+                                <div class="movie-poster-box">
+                                    <img src="@item.Poster" alt="@item.Title" onerror="this.src='https://via.placeholder.com/300x400?text=Movana+Cinema'" />
+                                </div>
+                                <div class="movie-info">
+                                    <div class="movie-title">@item.Title</div>
+                                    <div class="movie-meta">
+                                        <span><i class="fa fa-tag"></i> @item.GenreName</span>
+                                    </div>
+                                    <div>
+                                        <span class="metric-badge" style="background: rgba(231, 76, 60, 0.2); color: #e74c3c; border-color: rgba(231, 76, 60, 0.4);">
+                                            <i class="fa fa-heart"></i> @item.FavoriteCount lượt thả tim
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        rankFav++;
+                    }
+                }
+                else
+                {
+                    <div class="col-xs-12 text-center" style="padding: 30px; color: #aaa;">
+                        <p>Chưa có lượt thả tim nào trong Neo4j. Hãy bấm nút ❤️ trên từng thẻ phim để thả tim ngay!</p>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function toggleFav(movieId, title, poster, btnObj) {
+        $.ajax({
+            url: '@Url.Action("ToggleFavorite", "Neo4j")',
+            type: 'POST',
+            data: { movieId: movieId, title: title, poster: poster },
+            success: function (res) {
+                if (res.success) {
+                    var icon = $(btnObj).find('i');
+                    if (res.isFavorite) {
+                        icon.removeClass('fa-heart-o').addClass('fa-heart');
+                    } else {
+                        icon.removeClass('fa-heart').addClass('fa-heart-o');
+                    }
+                    alert(res.message);
+                    location.reload();
+                } else {
+                    alert(res.message);
+                }
+            },
+            error: function () {
+                alert('Không thể kết nối tới server Neo4j!');
+            }
+        });
+    }
+</script>

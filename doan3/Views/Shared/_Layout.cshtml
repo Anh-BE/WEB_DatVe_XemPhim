@@ -195,161 +195,150 @@
 
 <body>
 
-    <div class="header-container">
-        <div class="navbar-top">
-            <div class="content-wrapper">
+    @if (ViewBag.HideHeader != true)
+    {
+        <div class="header-container">
+            <div class="navbar-top">
+                <div class="content-wrapper">
 
-                <a class="navbar-brand" href="@Url.Action("PhimDangChieu", "Home")">
-                    <img src="/Images/logomavana.png" alt="MOVANA" />
-                </a>
+                    <a class="navbar-brand" href="@Url.Action("PhimDangChieu", "Home")">
+                        <img src="/Images/logomavana.png" alt="MOVANA" />
+                    </a>
 
-                <div class="d-flex align-items-center" style="gap: 25px;">
-                    <form method="post" action="/Home/TimKiemPhim" class="search-box">
-                        <i class="fas fa-search"></i>
-                        <input type="text" name="tenphim" placeholder="Tìm phim..." autocomplete="off" />
-                    </form>
+                    <div class="d-flex align-items-center" style="gap: 25px;">
+                        <form method="post" action="/Home/TimKiemPhim" class="search-box">
+                            <i class="fas fa-search"></i>
+                            <input type="text" name="tenphim" placeholder="Tìm phim..." autocomplete="off" />
+                        </form>
 
-                    <div class="nav-right">
+                        <div class="nav-right">
 
-                        @if (Session["USER_SESSION"] != null)
-                        {
-                            var userSession = (doan3.Models.UserLogin)Session["USER_SESSION"];
+                            @if (Session["USER_SESSION"] != null)
+                            {
+                                var userSession = (doan3.Models.UserLogin)Session["USER_SESSION"];
+                                <div class="dropdown">
+                                    <a class="nav-link dropdown-toggle" href="#" id="userDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                        <i class="fas fa-user-circle"></i> @userSession.FullName
+                                    </a>
+                                    <div class="dropdown-menu dropdown-menu-right" aria-labelledby="userDropdown">
+
+                                        @if (userSession.GroupID != "1")
+                                        {
+                                            @Html.ActionLink("Thông tin cá nhân", "Index", "ThongTinCaNhan", null, new { @class = "dropdown-item" })
+                                            @Html.ActionLink("Lịch sử giao dịch", "LichSuDatVe", "LichSuGiaoDich", null, new { @class = "dropdown-item" })
+
+                                            <div class="dropdown-divider" style="border-top: 1px solid rgba(255,255,255,0.1)"></div>
+                                        }
+
+                                        @Html.ActionLink("Đăng xuất", "SignOut", "Login", null, new { @class = "dropdown-item" })
+                                    </div>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="dropdown">
+                                    <a class="nav-link dropdown-toggle" href="#" id="loginDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                        <i class="fas fa-user-circle"></i> Đăng nhập
+                                    </a>
+                                    <div class="dropdown-menu dropdown-menu-right" aria-labelledby="loginDropdown">
+                                        @Html.ActionLink("Đăng nhập", "Index_DangNhap", "Login", null, new { @class = "dropdown-item" })
+                                        @Html.ActionLink("Đăng ký", "Index_DangKy", "Register", null, new { @class = "dropdown-item" })
+                                    </div>
+                                </div>
+                            }
+
                             <div class="dropdown">
-                                <a class="nav-link dropdown-toggle" href="#" id="userDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                    <i class="fas fa-user-circle"></i> @userSession.FullName
+                                <a class="nav-link dropdown-toggle" href="#" id="langDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                    <img src="/Images/vietnam_flag.png" class="flag-icon" /> VN
                                 </a>
-                                <div class="dropdown-menu dropdown-menu-right" aria-labelledby="userDropdown">
-
-                                    @* --- LOGIC: Chỉ hiện các mục này nếu KHÔNG PHẢI là Admin (GroupID != "1") --- *@
-                                    @if (userSession.GroupID != "1")
-                                    {
-                                        @Html.ActionLink("Thông tin cá nhân", "Index", "ThongTinCaNhan", null, new { @class = "dropdown-item" })
-                                        @Html.ActionLink("Lịch sử giao dịch", "LichSuDatVe", "LichSuGiaoDich", null, new { @class = "dropdown-item" })
-
-                                        <div class="dropdown-divider" style="border-top: 1px solid rgba(255,255,255,0.1)"></div>
-                                    }
-
-                                    @* --- Admin hay Khách đều thấy nút Đăng Xuất --- *@
-                                    @Html.ActionLink("Đăng xuất", "SignOut", "Login", null, new { @class = "dropdown-item" })
+                                <div class="dropdown-menu dropdown-menu-right" aria-labelledby="langDropdown">
+                                    <a class="dropdown-item" href="#"><img src="/Images/vietnam_flag.png" class="flag-icon" /> Vietnamese</a>
+                                    <a class="dropdown-item" href="#"><img src="/Images/english_flag.png" class="flag-icon" /> English</a>
                                 </div>
                             </div>
-                        }
-                        else
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            @{
+                string role = "Customer";
+                if (Session["SESSION_GROUP"] != null)
+                {
+                    var groups = Session["SESSION_GROUP"] as List<string>;
+                    if (groups != null && groups.Count > 0) { role = groups[0]; }
+                }
+            }
+
+            <nav class="sub-navbar">
+                <div class="content-wrapper">
+                    <div class="d-flex align-items-center w-100">
+
+                        @if (role == "Customer")
                         {
-                            <div class="dropdown">
-                                <a class="nav-link dropdown-toggle" href="#" id="loginDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                    <i class="fas fa-user-circle"></i> Đăng nhập
-                                </a>
-                                <div class="dropdown-menu dropdown-menu-right" aria-labelledby="loginDropdown">
-                                    @Html.ActionLink("Đăng nhập", "Index_DangNhap", "Login", null, new { @class = "dropdown-item" })
-                                    @Html.ActionLink("Đăng ký", "Index_DangKy", "Register", null, new { @class = "dropdown-item" })
-                                </div>
+                            <div class="sub-nav-item dropdown rap-hover">
+                                <a href="#" class="dropdown-toggle"><i class="fas fa-map-marker-alt mr-1"></i> Chọn rạp</a>
+                                @Html.Action("TenRap_PartialView", "TenRap")
+                            </div>
+                            <div class="sub-nav-item dropdown theloai-hover">
+                                <a href="#" class="dropdown-toggle">Thể loại</a>
+                                @Html.Action("TheLoai_PartialView", "TheLoai")
                             </div>
                         }
 
-                        <div class="dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" id="langDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                <img src="/Images/vietnam_flag.png" class="flag-icon" /> VN
+                        @if (role == "Staff")
+                        {
+                            <div class="sub-nav-item dropdown rap-hover">
+                                <a href="#" class="dropdown-toggle text-white"><i class="fas fa-map-marker-alt"></i> Chọn rạp</a>
+                                @Html.Action("TenRap_PartialView", "TenRap")
+                            </div>
+                            <div class="sub-nav-item dropdown theloai-hover">
+                                <a href="#" class="dropdown-toggle text-white">Thể loại</a>
+                                @Html.Action("TheLoai_PartialView", "TheLoai")
+                            </div>
+                            <div class="sub-nav-item">
+                                <a href="@Url.Action("Index", "HoTroKhachHang")" style="color:#ffeb00 !important">
+                                    <i class="fas fa-headset mr-1"></i> Hỗ Trợ Khách Hàng
+                                </a>
+                            </div>
+                        }
+
+                        @if (role == "Admin")
+                        {
+                            <div class="sub-nav-item dropdown rap-hover">
+                                <a href="#" class="dropdown-toggle"><i class="fas fa-map-marker-alt mr-1"></i> Chọn rạp</a>
+                                @Html.Action("TenRap_PartialView", "TenRap")
+                            </div>
+                            <div class="sub-nav-item dropdown theloai-hover">
+                                <a href="#" class="dropdown-toggle">Thể loại</a>
+                                @Html.Action("TheLoai_PartialView", "TheLoai")
+                            </div>
+                            <div class="sub-nav-item">
+                                <a href="@Url.Action("QuanLyAdmin", "ChucNang_Admin")" style="color:#ffeb00 !important">
+                                    <i class="fas fa-user-shield"></i> Cài Đặt Admin
+                                </a>
+                            </div>
+                        }
+
+                        <div class="sub-nav-item ml-auto">
+                            <a href="@Url.Action("GioiThieu", "Home")" style="color: #ffeb00 !important; font-weight: 700;">
+                                <i class="fas fa-info-circle mr-1"></i> Giới thiệu
                             </a>
-                            <div class="dropdown-menu dropdown-menu-right" aria-labelledby="langDropdown">
-                                <a class="dropdown-item" href="#"><img src="/Images/vietnam_flag.png" class="flag-icon" /> Vietnamese</a>
-                                <a class="dropdown-item" href="#"><img src="/Images/english_flag.png" class="flag-icon" /> English</a>
-                            </div>
                         </div>
 
+                        <div class="sub-nav-item">
+                            <a href="@Url.Action("ChinhSachTichDiem", "Home")" style="color: #f9e000 !important; font-weight: 700;">
+                                <i class="fa fa-star mr-1"></i> CHÍNH SÁCH & ƯU ĐÃI
+                            </a>
+                        </div>
                     </div>
                 </div>
-            </div>
+            </nav>
         </div>
+    }
 
-        @{
-            string role = "Customer";
-            if (Session["SESSION_GROUP"] != null)
-            {
-                var groups = Session["SESSION_GROUP"] as List<string>;
-                if (groups != null && groups.Count > 0) { role = groups[0]; }
-            }
-        }
-
-    <nav class="sub-navbar">
-        <div class="content-wrapper">
-            <div class="d-flex align-items-center w-100">
-
-                @* ========================================== *@
-                @* 1. CÁC MENU BÊN TRÁI (TÙY THEO QUYỀN)      *@
-                @* ========================================== *@
-
-                @* --- KHÁCH HÀNG --- *@
-                @if (role == "Customer")
-                {
-                    <div class="sub-nav-item dropdown rap-hover">
-                        <a href="#" class="dropdown-toggle"><i class="fas fa-map-marker-alt mr-1"></i> Chọn rạp</a>
-                        @Html.Action("TenRap_PartialView", "TenRap")
-                    </div>
-                    <div class="sub-nav-item dropdown theloai-hover">
-                        <a href="#" class="dropdown-toggle">Thể loại</a>
-                        @Html.Action("TheLoai_PartialView", "TheLoai")
-                    </div>
-                }
-
-                @* --- NHÂN VIÊN --- *@
-                @if (role == "Staff")
-                {
-                    <div class="sub-nav-item dropdown rap-hover">
-                        <a href="#" class="dropdown-toggle text-white"><i class="fas fa-map-marker-alt"></i> Chọn rạp</a>
-                        @Html.Action("TenRap_PartialView", "TenRap")
-                    </div>
-                    <div class="sub-nav-item dropdown theloai-hover">
-                        <a href="#" class="dropdown-toggle text-white">Thể loại</a>
-                        @Html.Action("TheLoai_PartialView", "TheLoai")
-                    </div>
-                    <div class="sub-nav-item">
-                        <a href="@Url.Action("Index", "HoTroKhachHang")" style="color:#ffeb00 !important">
-                            <i class="fas fa-headset mr-1"></i> Hỗ Trợ Khách Hàng
-                        </a>
-                    </div>
-                }
-
-                @* --- ADMIN --- *@
-                @if (role == "Admin")
-                {
-                    <div class="sub-nav-item dropdown rap-hover">
-                        <a href="#" class="dropdown-toggle"><i class="fas fa-map-marker-alt mr-1"></i> Chọn rạp</a>
-                        @Html.Action("TenRap_PartialView", "TenRap")
-                    </div>
-                    <div class="sub-nav-item dropdown theloai-hover">
-                        <a href="#" class="dropdown-toggle">Thể loại</a>
-                        @Html.Action("TheLoai_PartialView", "TheLoai")
-                    </div>
-                    <div class="sub-nav-item">
-                        <a href="@Url.Action("QuanLyAdmin", "ChucNang_Admin")" style="color:#ffeb00 !important">
-                            <i class="fas fa-user-shield"></i> Cài Đặt Admin
-                        </a>
-                    </div>
-                }
-
-                @* ========================================== *@
-                @* 2. CÁC MENU BÊN PHẢI (CHUNG CHO TẤT CẢ)    *@
-                @* ========================================== *@
-
-                @* --- GIỚI THIỆU: Thêm ml-auto TẠI ĐÂY để đẩy toàn bộ nhóm này sang phải --- *@
-                <div class="sub-nav-item ml-auto">
-                    <a href="@Url.Action("GioiThieu", "Home")" style="color: #ffeb00 !important; font-weight: 700;">
-                        <i class="fas fa-info-circle mr-1"></i> Giới thiệu
-                    </a>
-                </div>
-
-                <div class="sub-nav-item">
-                    <a href="@Url.Action("ChinhSachTichDiem", "Home")" style="color: #f9e000 !important; font-weight: 700;">
-                        <i class="fa fa-star mr-1"></i> CHÍNH SÁCH & ƯU ĐÃI
-                    </a>
-                </div>
-            </div>
-        </div>
-    </nav>
-    </div>
-
-    <div class="main-content">
+    <div class="main-content" style="@(ViewBag.HideHeader == true ? "padding-top: 0 !important;" : "")">
         <div class="content-wrapper">
             <div class="py-2">
                 @RenderBody()

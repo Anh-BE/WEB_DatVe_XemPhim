@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Web;
@@ -11,6 +11,19 @@ namespace doan3.Controllers
     public class HomeController : Controller
     {
         LTW_DatVeXemPhimEntities db = new LTW_DatVeXemPhimEntities();
+
+        public ActionResult LandingPage()
+        {
+            ViewBag.HideHeader = true;
+            try
+            {
+                var neo4jService = new Neo4jService();
+                string username = Session["username"] as string ?? "";
+                ViewBag.TopHotMovies = neo4jService.GetTopBookedMovies(4, username);
+            }
+            catch { }
+            return View();
+        }
 
         public ActionResult GioiThieu()
         {
@@ -28,6 +41,36 @@ namespace doan3.Controllers
                           .Where(p => p.TrangThai == "Dang Chieu" )
                           .OrderByDescending(t => t.NgayKhoiChieu)
                           .ToList();
+
+            // TÍNH NĂNG NEO4J: LOAD BẢNG XẾP HẠNG TOP PHIM TRỰC TIẾP TRÊN TRANG CHỦ
+            try
+            {
+                var neo4jService = new Neo4jService();
+                neo4jService.SeedInitialData(db);
+                string username = Session["username"] as string ?? "";
+                var topBooked = neo4jService.GetTopBookedMovies(4, username);
+                var topFavorites = neo4jService.GetTopFavoriteMovies(4, username);
+
+                // Đồng bộ 100% Tên phim và File ảnh Poster từ SQL Server
+                var listAllPhimSql = db.Phims.ToList();
+                for (int i = 0; i < topBooked.Count; i++)
+                {
+                    var item = topBooked[i];
+                    var sqlPhim = listAllPhimSql.FirstOrDefault(p => p.PhimID == item.MovieId) 
+                                 ?? (i < listAllPhimSql.Count ? listAllPhimSql[i] : null);
+
+                    if (sqlPhim != null)
+                    {
+                        item.Title = sqlPhim.TenPhim;
+                        item.Poster = sqlPhim.Poster; // VD: 001.png, 002.png...
+                    }
+                }
+
+                ViewBag.TopBookedNeo4j = topBooked;
+                ViewBag.TopFavoritesNeo4j = topFavorites;
+            }
+            catch { }
+
             return View(dsphim);
         }
         public ActionResult PhimTheoTheLoai(int MATHELOAI)

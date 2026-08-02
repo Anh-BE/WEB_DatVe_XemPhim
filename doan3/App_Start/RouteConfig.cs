@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Web;
@@ -16,7 +16,7 @@ namespace doan3
             routes.MapRoute(
                 name: "Default",
                 url: "{controller}/{action}/{id}",
-                defaults: new { controller = "Home", action = "PhimDangChieu", id = UrlParameter.Optional }
+                defaults: new { controller = "Home", action = "LandingPage", id = UrlParameter.Optional }
             );
         }
     }
