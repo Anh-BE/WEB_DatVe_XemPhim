@@ -1,0 +1,585 @@
+using doan3.Models;
+using doan3.Models.Cassandra;
+using System;
+using System.Collections.Generic;
+using System.Data.Entity;
+using System.Linq;
+using System.Web.Mvc;
+using static MongoDB.Libmongocrypt.CryptContext;
+
+namespace doan3.Controllers
+{
+
+
+    public class ThanhToanController : Controller
+    {
+        private LTW_DatVeXemPhimEntities db = new LTW_DatVeXemPhimEntities();
+
+        public ActionResult Index(long lichChieuId, string lockedSeatIds)
+        {
+            if (Session["USER_SESSION"] == null) return RedirectToAction("Index_DangNhap", "Login");
+
+            var lichChieu = LayThongTinLichChieu(lichChieuId);
+            if (lichChieu == null) return HttpNotFound();
+
+            var danhSachIdGhe = TachChuoiIdGhe(lockedSeatIds);
+            var danhSachGheHienThi = LayThongTinGhe(danhSachIdGhe);
+            var soGiayConLai = TinhThoiGianGiuGheConLai(lichChieuId, danhSachIdGhe);
+
+            var khachHangId = LayMaKhachHangTuSession();
+
+
+            var diemHienCo = 0;
+            if (khachHangId.HasValue)
+            {
+                diemHienCo = LayDiemThanhVien(khachHangId.Value);
+            }
+
+            var sessionUserObj = Session["USER_SESSION"] as UserLogin;
+            if (sessionUserObj != null)
+            {
+                var userVouchers = doan3.Models.Mgdb.MgdbService.GetUserClaimedVouchers(sessionUserObj.UserName);
+                ViewBag.UserClaimedVouchers = userVouchers;
+            }
+
+            decimal tongTienGoc = danhSachGheHienThi.Sum(s => s.GiaTien.GetValueOrDefault());
+            decimal discount = 0;
+            string appliedCode = Session["APPLIED_VOUCHER_CODE"] as string;
+            if (!string.IsNullOrEmpty(appliedCode))
+            {
+                var promo = doan3.Models.Mgdb.MgdbService.GetPromotionByCode(appliedCode);
+                if (promo != null)
+                {
+                    discount = promo.DiscountAmount;
+                    ViewBag.AppliedVoucherCode = promo.Code;
+                    ViewBag.VoucherDiscount = discount;
+                }
+            }
+
+            decimal tongTienSauGiam = Math.Max(0, tongTienGoc - discount);
+
+            var model = new ThanhToanViewModel
+            {
+                LichChieuId = lichChieuId,
+                LockedSeatIds = lockedSeatIds,
+                TenPhim = lichChieu.Phim.TenPhim,
+                TenRap = lichChieu.Phong_Chieu.Rap_Chieu.TenRap,
+                PhongChieu = lichChieu.Phong_Chieu.TenPhong,
+                SuatChieu = lichChieu.ThoiGianBatDau.HasValue ? lichChieu.ThoiGianBatDau.Value.ToString("HH:mm dd/MM/yyyy") : "",
+                DanhSachGhe = string.Join(", ", danhSachGheHienThi.Select(s => s.MaGhe)),
+                TongTien = tongTienSauGiam,
+                SoGiayConLai = soGiayConLai,
+                DiemThanhVien = diemHienCo
+            };
+
+            // TÍNH NĂNG REDIS 2: LƯU GIỎ HÀNG THÔNG TIN THANH TOÁN VÀO REDIS (TTL 600s / 10 PHÚT)
+            if (sessionUserObj != null)
+            {
+                RedisFeaturesService.SaveCart(sessionUserObj.UserName, lichChieuId, model.DanhSachGhe, model.TongTien, 600);
+            }
+
+            return View(model);
+        }
+
+        // POST: /ThanhToan/ChonVoucher (Chọn mã Voucher từ Ví cá nhân khi thanh toán vé)
+        [HttpPost]
+        public ActionResult ChonVoucher(string selectedVoucherCode, long lichChieuId, string lockedSeatIds)
+        {
+            if (string.IsNullOrEmpty(selectedVoucherCode) || selectedVoucherCode == "NONE")
+            {
+                Session.Remove("APPLIED_VOUCHER_CODE");
+                TempData["Message"] = "Đã bỏ chọn mã Voucher giảm giá.";
+            }
+            else
+            {
+                var promo = doan3.Models.Mgdb.MgdbService.GetPromotionByCode(selectedVoucherCode);
+                if (promo != null)
+                {
+                    Session["APPLIED_VOUCHER_CODE"] = promo.Code;
+                    TempData["Message"] = "Đã tích chọn mã Voucher MongoDB " + promo.Code + " (Giảm " + string.Format("{0:N0}", promo.DiscountAmount) + " VNĐ)!";
+                }
+                else
+                {
+                    TempData["Error"] = "Mã Voucher này không hợp lệ hoặc đã hết hạn!";
+                }
+            }
+            return RedirectToAction("Index", new { lichChieuId = lichChieuId, lockedSeatIds = lockedSeatIds });
+        }
+
+        // POST: /ThanhToan/ApDungVoucher (Áp dụng mã Voucher từ MongoDB khi thanh toán vé)
+        [HttpPost]
+        public ActionResult ApDungVoucher(string voucherCode, long lichChieuId, string lockedSeatIds)
+        {
+            if (!string.IsNullOrEmpty(voucherCode))
+            {
+                var promo = doan3.Models.Mgdb.MgdbService.GetPromotionByCode(voucherCode);
+                if (promo != null)
+                {
+                    Session["APPLIED_VOUCHER_CODE"] = promo.Code;
+                    TempData["Message"] = "Đã áp dụng thành công mã Voucher MongoDB " + promo.Code + " (Giảm " + string.Format("{0:N0}", promo.DiscountAmount) + " VNĐ)!";
+                }
+                else
+                {
+                    TempData["Error"] = "Mã Voucher này không tồn tại hoặc đã hết hạn trên MongoDB!";
+                }
+            }
+            return RedirectToAction("Index", new { lichChieuId = lichChieuId, lockedSeatIds = lockedSeatIds });
+        }
+
+        [HttpPost]
+        public ActionResult CancelTransaction(long lichChieuId, string lockedSeatIds)
+        {
+            var sessionUserObj = Session["USER_SESSION"] as UserLogin;
+            if (sessionUserObj != null)
+            {
+                // Xóa giỏ hàng trên Redis khi hủy giao dịch
+                RedisFeaturesService.ClearCart(sessionUserObj.UserName);
+            }
+
+            if (!string.IsNullOrEmpty(lockedSeatIds))
+            {
+                XoaKhoaGheTamThoi(lichChieuId, lockedSeatIds);
+            }
+            var idPhim = LayIdPhimTuLichChieu(lichChieuId);
+            return RedirectToAction("ChonSuat", "DatVe", new { idPhim = idPhim });
+        }
+
+
+        [HttpPost]
+        public ActionResult SendOtp()
+        {
+            var sessionUser = Session["USER_SESSION"] as UserLogin;
+            if (sessionUser == null)
+            {
+                return Json(new { success = false, message = "Vui lòng đăng nhập!" });
+            }
+
+            // 1. Tạo mã OTP 6 số lưu trên Redis (Hạn 120s)
+            string otpCode = RedisFeaturesService.GenerateOtp(sessionUser.UserName, 120);
+
+            // 2. Lấy Email khách hàng từ CSDL
+            string customerEmail = null;
+            string fullName = sessionUser.FullName ?? "Khách hàng";
+            var khachHang = db.Khach_Hang.FirstOrDefault(kh => kh.UserID == sessionUser.UserID);
+            if (khachHang != null)
+            {
+                customerEmail = khachHang.Email;
+            }
+
+            // 3. Thử gửi mã OTP tới Gmail thực tế của khách hàng
+            var sendResult = EmailService.SendOtpViaGmail(customerEmail, otpCode, fullName);
+
+            if (sendResult.IsSuccess)
+            {
+                // Đã gửi mail thành công -> Ẩn OTP trên UI để bảo mật
+                return Json(new
+                {
+                    success = true,
+                    otp = (string)null,
+                    email = customerEmail,
+                    ttl = 120,
+                    message = $"Mã OTP 6 số đã được gửi thành công đến Gmail: {customerEmail}. Vui lòng kiểm tra hộp thư!"
+                });
+            }
+            else
+            {
+                // Chưa bật/cấu hình Gmail SMTP -> Hiển thị OTP trên UI kèm thông báo chế độ Demo
+                string displayMsg = !string.IsNullOrEmpty(customerEmail)
+                    ? $"[Chế độ Demo] Đã tạo OTP trên Redis cho Gmail ({customerEmail}): {otpCode} (Hạn 120s)"
+                    : $"[Chế độ Demo] Đã tạo OTP trên Redis: {otpCode} (Hạn 120s)";
+
+                return Json(new
+                {
+                    success = true,
+                    otp = otpCode,
+                    email = customerEmail,
+                    ttl = 120,
+                    message = displayMsg
+                });
+            }
+        }
+
+        [HttpPost]
+        public ActionResult ProcessPayment(long lichChieuId, string lockedSeatIds, string paymentMethod, string otpCode = null, bool dungDiem = false)
+        {
+            if (Session["USER_SESSION"] == null) return RedirectToAction("Index_DangNhap", "Login");
+
+            var sessionUser = Session["USER_SESSION"] as UserLogin;
+            long? maKhachHang = LayMaKhachHangTuSession();
+
+            if (maKhachHang == null) return View("PaymentError", (object)"Lỗi: Không tìm thấy thông tin khách hàng.");
+
+
+            // KIỂM TRA BẮT BUỘC MÃ OTP REDIS (REDIS TTL 120s)
+            if (string.IsNullOrWhiteSpace(otpCode))
+            {
+                return View("PaymentError", (object)"Vui lòng bấm nút 'LẤY MÃ OTP' và nhập mã OTP 6 số xác thực trên Redis trước khi thanh toán!");
+            }
+
+            bool isValidOtp = RedisFeaturesService.VerifyOtp(sessionUser.UserName, otpCode.Trim());
+            if (!isValidOtp)
+            {
+                return View("PaymentError", (object)"Mã OTP không chính xác hoặc đã hết hạn (120s) trên Redis. Vui lòng bấm nút 'LẤY MÃ OTP' để nhận mã mới.");
+            }
+
+            var danhSachIdGhe = TachChuoiIdGhe(lockedSeatIds);
+
+
+            if (!KiemTraGheConThuocVeMinhKhong(lichChieuId, maKhachHang.Value, danhSachIdGhe))
+            {
+                return View("PaymentError", (object)"Hết thời gian giữ ghế. Vui lòng chọn lại.");
+            }
+
+            var danhSachGheCanMua = LayThongTinGhe(danhSachIdGhe);
+            decimal tongTienGoc = danhSachGheCanMua.Sum(i => i.GiaTien.GetValueOrDefault());
+
+            var khachHang = db.Khach_Hang.Find(maKhachHang.Value);
+            int diemHienCo = khachHang.DiemThanhVien ?? 0;
+            decimal soTienGiam = 0;
+            int diemBiTru = 0;
+
+
+            if (sessionUser.GroupID == "2")
+            {
+                if (dungDiem && diemHienCo >= 20)
+                {
+                    decimal giaTriDiem = diemHienCo * 1000;
+                    if (giaTriDiem >= tongTienGoc)
+                    {
+                        soTienGiam = tongTienGoc;
+                        diemBiTru = (int)(tongTienGoc / 1000);
+                    }
+                    else
+                    {
+                        soTienGiam = giaTriDiem;
+                        diemBiTru = diemHienCo;
+                    }
+                }
+            }
+
+            string appliedVoucher = Session["APPLIED_VOUCHER_CODE"] as string;
+            if (!string.IsNullOrEmpty(appliedVoucher))
+            {
+                var promo = doan3.Models.Mgdb.MgdbService.GetPromotionByCode(appliedVoucher);
+                if (promo != null)
+                {
+                    soTienGiam += promo.DiscountAmount;
+                    doan3.Models.Mgdb.MgdbService.UseVoucher(promo.Code, sessionUser.UserName);
+                }
+                Session.Remove("APPLIED_VOUCHER_CODE");
+            }
+
+            decimal tongTienPhaiTra = Math.Max(0, tongTienGoc - soTienGiam);
+
+
+            using (var giaoDich = db.Database.BeginTransaction())
+            {
+                try
+                {
+
+                    long maDonHang = TaoDonHangMoi(maKhachHang.Value, tongTienPhaiTra, lichChieuId, danhSachGheCanMua);
+                    var donHang = db.Don_Dat_Ve.Find(maDonHang);
+                    var movieId = db.Lich_Chieu
+                                    .Where(x => x.LichChieuID == lichChieuId)
+                                    .Select(x => x.PhimID)
+                                    .FirstOrDefault();
+                    TaoChiTietVe(maDonHang, lichChieuId, danhSachGheCanMua, maKhachHang.Value);
+
+                    var user = Session["USER_SESSION"] as UserLogin;
+
+                    if (user == null)
+                    {
+                        return RedirectToAction("Index", "Login");
+                    }
+
+                    if (khachHang != null)
+                    {
+
+                        khachHang.DiemThanhVien = (khachHang.DiemThanhVien ?? 0) - diemBiTru;
+
+
+                        if (sessionUser.GroupID == "2")
+                        {
+                            int diemCongThem = TinhDiemTichLuy(danhSachGheCanMua);
+                            khachHang.DiemThanhVien += diemCongThem;
+                        }
+
+                    }
+
+
+                    XoaKhoaGheSauKhiMuaThanhCong(lichChieuId, danhSachIdGhe);
+                    RedisFeaturesService.ClearCart(sessionUser.UserName);
+                    db.SaveChanges();
+                    giaoDich.Commit();
+                    foreach (var ghe in danhSachGheCanMua)
+                    {
+                        CassandraService.LogSeatTimeline(
+                            lichChieuId,
+                            ghe,
+                            maKhachHang.Value,
+                            "BOOKED"
+                        );
+                    }
+                    CassandraService.LogBookingEvent(
+                         donHang.DonDatVeID,
+                         (int)maKhachHang.Value,
+                         lichChieuId,
+                         "BOOKING_CREATED",
+                         donHang.TongTienDonHang ?? 0
+                     );
+
+                    CassandraService.LogPaymentHistory(
+                        (int)maKhachHang.Value,
+                        donHang.DonDatVeID,
+                        donHang.TongTienDonHang ?? 0,
+                        "MOMO",
+                        "SUCCESS"
+                    );
+
+                    CassandraService.LogUserActivity(
+                        (int)maKhachHang.Value,
+                        (int)(movieId ?? 0),
+                        lichChieuId,
+                        donHang.DonDatVeID,
+                        "BOOKING",
+                        "Đặt vé thành công"
+                    );
+
+                    CassandraService.LogActivityByDay(
+                        (int)maKhachHang.Value,
+                        (int)(movieId ?? 0),
+                        lichChieuId,
+                        donHang.DonDatVeID,
+                        "BOOKING",
+                        "Đặt vé thành công"
+                    );
+
+                    CassandraService.UpdateDashboard(
+                        DateTime.Today,
+                        donHang.TongTienDonHang ?? 0
+                    );
+
+                    CassandraService.UpdateAnalytics(
+                        DateTime.Today,
+                        donHang.TongTienDonHang ?? 0
+                    );
+                    // TÍNH NĂNG NEO4J: TỰ ĐỘNG GHI NHẬN LƯỢT ĐẶT VÉ VÀO NEO4J GRAPH
+                    try
+                    {
+                        var idPhim = LayIdPhimTuLichChieu(lichChieuId);
+                        var neo4jService = new Neo4jService();
+                        neo4jService.AddBooking(sessionUser.UserName, (int)idPhim, "BK" + maDonHang, danhSachGheCanMua.Count, tongTienPhaiTra);
+                    }
+                    catch { }
+
+                    return RedirectToAction("PaymentSuccess", new { orderId = maDonHang });
+                }
+                catch (Exception loi)
+                {
+                    giaoDich.Rollback();
+                    return View("PaymentError", (object)("Lỗi hệ thống: " + loi.Message));
+                }
+            }
+        }
+
+
+        public ActionResult PaymentSuccess(long orderId)
+        {
+            var donHang = LayThongTinDonHangDayDu(orderId);
+            if (donHang == null) return RedirectToAction("Index", "Home");
+            return View(donHang);
+        }
+
+        public ActionResult PaymentError(string error)
+        {
+            ViewBag.ErrorMessage = error;
+            return View();
+        }
+
+
+
+
+        private List<GheTinhDiem> LayThongTinGhe(List<long> danhSachIdGhe)
+        {
+            return (from g in db.Ghe_Ngoi
+                    join t in db.TienVes on g.LoaiGhe equals t.LoaiGhe
+                    where danhSachIdGhe.Contains(g.GheID)
+                    select new GheTinhDiem
+                    {
+                        GheID = g.GheID,
+                        MaGhe = g.MaGhe,
+                        GiaTien = t.GiaTien,
+                        LoaiGhe = g.LoaiGhe
+                    }).ToList();
+        }
+
+
+        private int TinhDiemTichLuy(List<GheTinhDiem> danhSachGhe)
+        {
+            int tongDiem = 0;
+            foreach (var ghe in danhSachGhe)
+            {
+
+                if (string.IsNullOrEmpty(ghe.LoaiGhe))
+                {
+                    tongDiem += 1;
+                    continue;
+                }
+
+
+                string loai = ghe.LoaiGhe.Trim().ToLower();
+
+
+                if (loai.Contains("vip"))
+                {
+                    tongDiem += 2;
+                }
+                else if (loai.Contains("doi") || loai.Contains("đôi") || loai.Contains("couple"))
+                {
+                    tongDiem += 3;
+                }
+                else
+                {
+
+                    tongDiem += 1;
+                }
+            }
+            return tongDiem;
+        }
+
+        private void CongDiemThanhVien(long khachHangId, int diemCong)
+        {
+            var kh = db.Khach_Hang.Find(khachHangId);
+            if (kh != null)
+            {
+                kh.DiemThanhVien = (kh.DiemThanhVien ?? 0) + diemCong;
+            }
+        }
+
+        private int LayDiemThanhVien(long? khachHangId)
+        {
+            if (!khachHangId.HasValue) return 0;
+            var kh = db.Khach_Hang.Find(khachHangId.Value);
+            return kh != null ? (kh.DiemThanhVien ?? 0) : 0;
+        }
+
+        private void TaoChiTietVe(long maDonHang, long lichChieuId, List<GheTinhDiem> danhSachGhe, long maKhachHangId)
+        {
+            foreach (var ghe in danhSachGhe)
+            {
+                CassandraService.LogSeatTimeline(
+                    lichChieuId,
+                    ghe,
+                    maDonHang,
+                    maKhachHangId
+                );
+                var chiTiet = new Chi_Tiet_Ve
+                {
+                    DonDatVeID = maDonHang,
+                    LichChieuID = lichChieuId,
+                    GheID = ghe.GheID,
+                    LoaiGhe = ghe.LoaiGhe,
+                    LoaiVe = "Nguoi Lon",
+                    TrangThaiSuDung = false
+
+                };
+                db.Chi_Tiet_Ve.Add(chiTiet);
+            }
+        }
+
+
+        private long? LayMaKhachHangTuSession()
+        {
+            var sessionNguoiDung = Session["USER_SESSION"] as UserLogin;
+            if (sessionNguoiDung == null || sessionNguoiDung.UserID == 0) return null;
+            var khachHang = db.Khach_Hang.FirstOrDefault(kh => kh.UserID == sessionNguoiDung.UserID);
+            return khachHang?.KhachHangID;
+        }
+
+        private Lich_Chieu LayThongTinLichChieu(long lichChieuId)
+        {
+            return db.Lich_Chieu.Include(l => l.Phim).Include(l => l.Phong_Chieu.Rap_Chieu).FirstOrDefault(l => l.LichChieuID == lichChieuId);
+        }
+
+        private List<long> TachChuoiIdGhe(string chuoiIdGhe)
+        {
+            if (string.IsNullOrEmpty(chuoiIdGhe)) return new List<long>();
+            return chuoiIdGhe.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Select(id => long.Parse(id.Trim())).ToList();
+        }
+
+        private long TinhThoiGianGiuGheConLai(long lichChieuId, List<long> danhSachIdGhe)
+        {
+            // TÍNH THỜI GIAN KHÓA GHẾ CÒN LẠI TỪ REDIS (TTL)
+            return SeatLockService.GetRemainingLockTime(lichChieuId, danhSachIdGhe);
+        }
+
+        private void XoaKhoaGheTamThoi(long lichChieuId, string chuoiIdGhe)
+        {
+            var danhSachId = TachChuoiIdGhe(chuoiIdGhe);
+            // XÓA KHÓA GHẾ TRÊN REDIS
+            SeatLockService.ReleaseSeatLocks(lichChieuId, danhSachId);
+        }
+
+        private long LayIdPhimTuLichChieu(long lichChieuId)
+        {
+            var lc = db.Lich_Chieu.FirstOrDefault(l => l.LichChieuID == lichChieuId);
+            return lc?.PhimID ?? 1;
+        }
+
+        private bool KiemTraGheConThuocVeMinhKhong(long lichChieuId, long maKhachHang, List<long> danhSachIdGhe)
+        {
+            // KIỂM TRA XÁC THỰC KHÓA GHẾ NGUYÊN TỬ TRÊN REDIS
+            return SeatLockService.VerifySeatsLockedByCustomer(lichChieuId, danhSachIdGhe, maKhachHang);
+        }
+
+        private long TaoDonHangMoi(long maKhachHang, decimal tongTien, long lichChieuId, List<GheTinhDiem> danhSachGheCanMua)
+        {
+            var donHang = new Don_Dat_Ve
+            {
+                KhachHangID = maKhachHang,
+                TongTienDonHang = tongTien,
+                TrangThaiDonHang = "Đã thanh toán",
+                ThoiGianDat = DateTime.Now
+            };
+            db.Don_Dat_Ve.Add(donHang);
+            db.SaveChanges();
+
+            // Dùng navigation property lichChieu.Phim (giống cách Index() đang làm) thay vì gọi thẳng db.Phim,
+            // vì DbSet sinh ra từ EDMX có thể không có tên là "Phim" (nên mới lỗi CS1061 trước đó).
+            var lichChieu = db.Lich_Chieu.Include(x => x.Phim).FirstOrDefault(x => x.LichChieuID == lichChieuId);
+            if (lichChieu != null && lichChieu.Phim != null)
+            {
+                CassandraService.LogBookingHistory(
+                    (int)maKhachHang,
+                    donHang.DonDatVeID,
+                    (int)lichChieu.Phim.PhimID,
+                    lichChieu.Phim.TenPhim,
+                    lichChieu.LichChieuID,
+                    lichChieu.ThoiGianBatDau,
+                    new HashSet<string>(danhSachGheCanMua.Select(g => g.MaGhe)),
+                    donHang.TongTienDonHang ?? 0,
+                    "PAID",
+                    "MOMO"
+                );
+            }
+            return donHang.DonDatVeID;
+        }
+
+        private void XoaKhoaGheSauKhiMuaThanhCong(long lichChieuId, List<long> danhSachIdGhe)
+        {
+            // XÓA KHÓA GHẾ TRÊN REDIS SAU KHIMUA THÀNH CÔNG
+            SeatLockService.ReleaseSeatLocks(lichChieuId, danhSachIdGhe);
+        }
+
+        private Don_Dat_Ve LayThongTinDonHangDayDu(long maDonHang)
+        {
+            return db.Don_Dat_Ve
+                     .Include("Khach_Hang")
+                     .Include("Chi_Tiet_Ve")
+                     .Include("Chi_Tiet_Ve.Lich_Chieu")
+                     .Include("Chi_Tiet_Ve.Lich_Chieu.Phim")
+                     .Include("Chi_Tiet_Ve.Ghe_Ngoi")
+                     .FirstOrDefault(d => d.DonDatVeID == maDonHang);
+        }
+    }
+}

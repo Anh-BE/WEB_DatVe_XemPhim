@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<edmx:Edmx Version="3.0" xmlns:edmx="http://schemas.microsoft.com/ado/2009/11/edmx">
+ <!-- EF Designer content (DO NOT EDIT MANUALLY BELOW HERE) -->
+  <edmx:Designer xmlns="http://schemas.microsoft.com/ado/2009/11/edmx">
+    <!-- Diagram content (shape and connector positions) -->
+    <edmx:Diagrams>
+      <Diagram DiagramId="4f161ce3cb53482d83ef1aa0d6a86edd" Name="Diagram1">
+        <EntityTypeShape EntityType="LTW_DatVeXemPhimModel.Chi_Tiet_Ve" Width="1.5" PointX="7.5" PointY="4.375" IsExpanded="true" />
+        <EntityTypeShape EntityType="LTW_DatVeXemPhimModel.Don_Dat_Ve" Width="1.5" PointX="5.25" PointY="11.625" IsExpanded="true" />
+        <EntityTypeShape EntityType="LTW_DatVeXemPhimModel.Ghe_Ngoi" Width="1.5" PointX="5.25" PointY="15.375" IsExpanded="true" />
+        <EntityTypeShape EntityType="LTW_DatVeXemPhimModel.Khach_Hang" Width="1.5" PointX="3" PointY="11.25" IsExpanded="true" />
+        <EntityTypeShape EntityType="LTW_DatVeXemPhimModel.Khoa_Ghe_Tam_Thoi" Width="1.5" PointX="10.5" PointY="4.5" IsExpanded="true" />
+        <EntityTypeShape EntityType="LTW_DatVeXemPhimModel.Lich_Chieu" Width="1.5" PointX="5.25" PointY="4.375" IsExpanded="true" />
+        <EntityTypeShape EntityType="LTW_DatVeXemPhimModel.NguoiDung" Width="1.5" PointX="0.75" PointY="11.75" IsExpanded="true" />
+        <EntityTypeShape EntityType="LTW_DatVeXemPhimModel.NhomNguoiDung" Width="1.5" PointX="1.5" PointY="16.125" IsExpanded="true" />
+        <EntityTypeShape EntityType="LTW_DatVeXemPhimModel.Phim" Width="1.5" PointX="3" PointY="4.125" IsExpanded="true" />
+        <EntityTypeShape EntityType="LTW_DatVeXemPhimModel.Phong_Chieu" Width="1.5" PointX="3" PointY="0.75" IsExpanded="true" />
+        <EntityTypeShape EntityType="LTW_DatVeXemPhimModel.Rap_Chieu" Width="1.5" PointX="0.75" PointY="8" IsExpanded="true" />
+        <EntityTypeShape EntityType="LTW_DatVeXemPhimModel.TheLoai" Width="1.5" PointX="0.75" PointY="5.125" IsExpanded="true" />
+        <EntityTypeShape EntityType="LTW_DatVeXemPhimModel.TienVe" Width="1.5" PointX="5.25" PointY="18.875" IsExpanded="true" />
+        <AssociationConnector Association="LTW_DatVeXemPhimModel.FK__Chi_Tiet___DonDa__6477ECF3" ManuallyRouted="false" />
+        <AssociationConnector Association="LTW_DatVeXemPhimModel.FK__Chi_Tiet___GheID__66603565" ManuallyRouted="false" />
+        <AssociationConnector Association="LTW_DatVeXemPhimModel.FK__Chi_Tiet___LichC__656C112C" ManuallyRouted="false" />
+        <AssociationConnector Association="LTW_DatVeXemPhimModel.FK__Chi_Tiet___LoaiG__6754599E" ManuallyRouted="false" />
+        <AssociationConnector Association="LTW_DatVeXemPhimModel.FK__Don_Dat_V__Khach__5EBF139D" ManuallyRouted="false" />
+        <AssociationConnector Association="LTW_DatVeXemPhimModel.FK__Ghe_Ngoi__PhongI__5165187F" ManuallyRouted="false" />
+        <AssociationConnector Association="LTW_DatVeXemPhimModel.FK__Khoa_Ghe___GheID__6D0D32F4" ManuallyRouted="false" />
+        <AssociationConnector Association="LTW_DatVeXemPhimModel.FK__Khach_Han__UserI__412EB0B6" ManuallyRouted="false" />
+        <AssociationConnector Association="LTW_DatVeXemPhimModel.FK__Khoa_Ghe___Khach__6E01572D" ManuallyRouted="false" />
+        <AssociationConnector Association="LTW_DatVeXemPhimModel.FK__Khoa_Ghe___LichC__6C190EBB" ManuallyRouted="false" />
+        <AssociationConnector Association="LTW_DatVeXemPhimModel.FK__Lich_Chie__PhimI__5629CD9C" ManuallyRouted="false" />
+        <AssociationConnector Association="LTW_DatVeXemPhimModel.FK__Lich_Chie__Phong__571DF1D5" ManuallyRouted="false" />
+        <AssociationConnector Association="LTW_DatVeXemPhimModel.FK__NguoiDung__Group__3A81B327" ManuallyRouted="false" />
+        <AssociationConnector Association="LTW_DatVeXemPhimModel.FK__Phim__MaTheLoai__47DBAE45" ManuallyRouted="false" />
+        <AssociationConnector Association="LTW_DatVeXemPhimModel.FK__Phong_Chi__RapID__4CA06362" ManuallyRouted="false" />
+      </Diagram>
+    </edmx:Diagrams>
+  </edmx:Designer>
+</edmx:Edmx>

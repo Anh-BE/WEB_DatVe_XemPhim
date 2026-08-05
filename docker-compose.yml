@@ -1,0 +1,63 @@
+version: '3.8'
+
+services:
+  # 1. REDIS (NoSQL Key-Value)
+  redis:
+    image: redis:alpine
+    container_name: docker_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  # 2. MONGODB (NoSQL Document)
+  mongodb:
+    image: mongo:latest
+    container_name: docker_mongodb
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: adminpassword
+    volumes:
+      - mongo_data:/data/db
+
+  # 3. NEO4J (NoSQL Graph Database)
+  neo4j:
+    image: neo4j:latest
+    container_name: docker_neo4j
+    ports:
+      - "7474:7474" # Web Browser UI
+      - "7687:7687" # Bolt protocol
+    environment:
+      NEO4J_AUTH: neo4j/adminpassword
+    volumes:
+      - neo4j_data:/data
+
+  # 4. CASSANDRA (NoSQL Column-Family)
+  cassandra:
+    image: cassandra:latest
+    container_name: docker_cassandra
+    ports:
+      - "9042:9042"
+    volumes:
+      - cassandra_data:/var/lib/cassandra
+
+  # 5. SQL SERVER (Relational Database)
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: docker_sqlserver
+    ports:
+      - "1433:1433"
+    environment:
+      SA_PASSWORD: "YourPassword123!"
+      ACCEPT_EULA: "Y"
+    volumes:
+      - mssql_data:/var/opt/mssql
+
+volumes:
+  redis_data:
+  mongo_data:
+  neo4j_data:
+  cassandra_data:
+  mssql_data:

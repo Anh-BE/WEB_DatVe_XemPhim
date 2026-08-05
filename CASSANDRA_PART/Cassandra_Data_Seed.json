@@ -1,0 +1,818 @@
+{
+  "keyspace": "movie_booking_cassandra",
+  "format_version": "2.0-aspnet-mvc-compatible",
+  "id_type_mapping": {
+    "UserID": "int",
+    "MovieID": "int",
+    "LichChieuID": "int",
+    "DonDatVeID": "bigint",
+    "event_id": "uuid",
+    "audit_id": "uuid",
+    "payment_id": "uuid",
+    "request_id": "uuid",
+    "search_id": "bigint"
+  },
+  "tables": {
+    "user_activity_by_user_month": [
+      {
+        "user_id": 1,
+        "activity_month": "2026-06-01",
+        "event_time": "2026-06-12T09:01:10Z",
+        "event_id": "51000000-0000-4000-8000-000000000001",
+        "action_type": "LOGIN",
+        "movie_id": null,
+        "showtime_id": null,
+        "booking_id": null,
+        "description": "Đăng nhập thành công",
+        "ip_address": "10.0.0.11",
+        "device": "Chrome/Windows"
+      },
+      {
+        "user_id": 1,
+        "activity_month": "2026-06-01",
+        "event_time": "2026-06-12T09:03:05Z",
+        "event_id": "51000000-0000-4000-8000-000000000002",
+        "action_type": "SEARCH",
+        "movie_id": 1,
+        "showtime_id": null,
+        "booking_id": null,
+        "description": "Tìm kiếm phim Dune: Part Two",
+        "ip_address": "10.0.0.11",
+        "device": "Chrome/Windows"
+      },
+      {
+        "user_id": 1,
+        "activity_month": "2026-06-01",
+        "event_time": "2026-06-12T09:05:00Z",
+        "event_id": "51000000-0000-4000-8000-000000000003",
+        "action_type": "VIEW_MOVIE",
+        "movie_id": 1,
+        "showtime_id": 1,
+        "booking_id": null,
+        "description": "Xem chi tiết phim và suất chiếu",
+        "ip_address": "10.0.0.11",
+        "device": "Chrome/Windows"
+      },
+      {
+        "user_id": 1,
+        "activity_month": "2026-06-01",
+        "event_time": "2026-06-12T09:10:00Z",
+        "event_id": "51000000-0000-4000-8000-000000000004",
+        "action_type": "BOOKING",
+        "movie_id": 1,
+        "showtime_id": 1,
+        "booking_id": 1,
+        "description": "Tạo đơn đặt vé B1",
+        "ip_address": "10.0.0.11",
+        "device": "Chrome/Windows"
+      },
+      {
+        "user_id": 1,
+        "activity_month": "2026-06-01",
+        "event_time": "2026-06-12T09:12:00Z",
+        "event_id": "51000000-0000-4000-8000-000000000005",
+        "action_type": "PAYMENT",
+        "movie_id": 1,
+        "showtime_id": 1,
+        "booking_id": 1,
+        "description": "Thanh toán VNPay thành công",
+        "ip_address": "10.0.0.11",
+        "device": "Chrome/Windows"
+      },
+      {
+        "user_id": 2,
+        "activity_month": "2026-07-01",
+        "event_time": "2026-07-03T14:00:00Z",
+        "event_id": "52000000-0000-4000-8000-000000000001",
+        "action_type": "LOGIN",
+        "movie_id": null,
+        "showtime_id": null,
+        "booking_id": null,
+        "description": "Đăng nhập thành công",
+        "ip_address": "10.0.0.12",
+        "device": "Safari/iPhone"
+      },
+      {
+        "user_id": 2,
+        "activity_month": "2026-07-01",
+        "event_time": "2026-07-03T14:04:00Z",
+        "event_id": "52000000-0000-4000-8000-000000000002",
+        "action_type": "SEARCH",
+        "movie_id": 2,
+        "showtime_id": null,
+        "booking_id": null,
+        "description": "Tìm kiếm phim Inside Out 2",
+        "ip_address": "10.0.0.12",
+        "device": "Safari/iPhone"
+      },
+      {
+        "user_id": 2,
+        "activity_month": "2026-07-01",
+        "event_time": "2026-07-03T14:09:00Z",
+        "event_id": "52000000-0000-4000-8000-000000000003",
+        "action_type": "BOOKING",
+        "movie_id": 2,
+        "showtime_id": 2,
+        "booking_id": 2,
+        "description": "Tạo đơn đặt vé B2",
+        "ip_address": "10.0.0.12",
+        "device": "Safari/iPhone"
+      },
+      {
+        "user_id": 3,
+        "activity_month": "2026-08-01",
+        "event_time": "2026-08-01T18:30:00Z",
+        "event_id": "53000000-0000-4000-8000-000000000001",
+        "action_type": "LOGIN",
+        "movie_id": null,
+        "showtime_id": null,
+        "booking_id": null,
+        "description": "Đăng nhập thành công",
+        "ip_address": "10.0.0.13",
+        "device": "Edge/Windows"
+      },
+      {
+        "user_id": 3,
+        "activity_month": "2026-08-01",
+        "event_time": "2026-08-01T18:35:00Z",
+        "event_id": "53000000-0000-4000-8000-000000000002",
+        "action_type": "VIEW_MOVIE",
+        "movie_id": 3,
+        "showtime_id": 3,
+        "booking_id": null,
+        "description": "Xem chi tiết phim Deadpool & Wolverine",
+        "ip_address": "10.0.0.13",
+        "device": "Edge/Windows"
+      }
+    ],
+    "activity_by_day_type": [
+      {
+        "activity_date": "2026-06-12",
+        "action_type": "LOGIN",
+        "event_time": "2026-06-12T09:01:10Z",
+        "event_id": "51000000-0000-4000-8000-000000000001",
+        "user_id": 1,
+        "movie_id": null,
+        "showtime_id": null,
+        "booking_id": null,
+        "description": "Đăng nhập thành công"
+      },
+      {
+        "activity_date": "2026-06-12",
+        "action_type": "SEARCH",
+        "event_time": "2026-06-12T09:03:05Z",
+        "event_id": "51000000-0000-4000-8000-000000000002",
+        "user_id": 1,
+        "movie_id": 1,
+        "showtime_id": null,
+        "booking_id": null,
+        "description": "Tìm kiếm phim Dune: Part Two"
+      },
+      {
+        "activity_date": "2026-06-12",
+        "action_type": "VIEW_MOVIE",
+        "event_time": "2026-06-12T09:05:00Z",
+        "event_id": "51000000-0000-4000-8000-000000000003",
+        "user_id": 1,
+        "movie_id": 1,
+        "showtime_id": 1,
+        "booking_id": null,
+        "description": "Xem chi tiết phim và suất chiếu"
+      },
+      {
+        "activity_date": "2026-06-12",
+        "action_type": "BOOKING",
+        "event_time": "2026-06-12T09:10:00Z",
+        "event_id": "51000000-0000-4000-8000-000000000004",
+        "user_id": 1,
+        "movie_id": 1,
+        "showtime_id": 1,
+        "booking_id": 1,
+        "description": "Tạo đơn đặt vé B1"
+      },
+      {
+        "activity_date": "2026-06-12",
+        "action_type": "PAYMENT",
+        "event_time": "2026-06-12T09:12:00Z",
+        "event_id": "51000000-0000-4000-8000-000000000005",
+        "user_id": 1,
+        "movie_id": 1,
+        "showtime_id": 1,
+        "booking_id": 1,
+        "description": "Thanh toán VNPay thành công"
+      },
+      {
+        "activity_date": "2026-07-03",
+        "action_type": "LOGIN",
+        "event_time": "2026-07-03T14:00:00Z",
+        "event_id": "52000000-0000-4000-8000-000000000001",
+        "user_id": 2,
+        "movie_id": null,
+        "showtime_id": null,
+        "booking_id": null,
+        "description": "Đăng nhập thành công"
+      },
+      {
+        "activity_date": "2026-07-03",
+        "action_type": "SEARCH",
+        "event_time": "2026-07-03T14:04:00Z",
+        "event_id": "52000000-0000-4000-8000-000000000002",
+        "user_id": 2,
+        "movie_id": 2,
+        "showtime_id": null,
+        "booking_id": null,
+        "description": "Tìm kiếm phim Inside Out 2"
+      },
+      {
+        "activity_date": "2026-07-03",
+        "action_type": "BOOKING",
+        "event_time": "2026-07-03T14:09:00Z",
+        "event_id": "52000000-0000-4000-8000-000000000003",
+        "user_id": 2,
+        "movie_id": 2,
+        "showtime_id": 2,
+        "booking_id": 2,
+        "description": "Tạo đơn đặt vé B2"
+      },
+      {
+        "activity_date": "2026-08-01",
+        "action_type": "LOGIN",
+        "event_time": "2026-08-01T18:30:00Z",
+        "event_id": "53000000-0000-4000-8000-000000000001",
+        "user_id": 3,
+        "movie_id": null,
+        "showtime_id": null,
+        "booking_id": null,
+        "description": "Đăng nhập thành công"
+      },
+      {
+        "activity_date": "2026-08-01",
+        "action_type": "VIEW_MOVIE",
+        "event_time": "2026-08-01T18:35:00Z",
+        "event_id": "53000000-0000-4000-8000-000000000002",
+        "user_id": 3,
+        "movie_id": 3,
+        "showtime_id": 3,
+        "booking_id": null,
+        "description": "Xem chi tiết phim Deadpool & Wolverine"
+      }
+    ],
+    "booking_history_by_user": [
+      {
+        "user_id": 1,
+        "booking_month": "2026-06-01",
+        "created_at": "2026-06-12T09:10:00Z",
+        "booking_id": 1,
+        "movie_id": 1,
+        "movie_title": "Dune: Part Two",
+        "showtime_id": 1,
+        "showtime_at": "2026-06-12T12:30:00Z",
+        "seat_codes": [
+          "A5",
+          "A6"
+        ],
+        "total_amount": "190000.00",
+        "status": "PAID",
+        "payment_method": "VNPAY"
+      },
+      {
+        "user_id": 1,
+        "booking_month": "2026-07-01",
+        "created_at": "2026-07-20T10:20:00Z",
+        "booking_id": 4,
+        "movie_id": 2,
+        "movie_title": "Inside Out 2",
+        "showtime_id": 2,
+        "showtime_at": "2026-07-20T15:00:00Z",
+        "seat_codes": [
+          "C3"
+        ],
+        "total_amount": "85000.00",
+        "status": "CANCELLED",
+        "payment_method": "MOMO"
+      },
+      {
+        "user_id": 2,
+        "booking_month": "2026-07-01",
+        "created_at": "2026-07-03T14:09:00Z",
+        "booking_id": 2,
+        "movie_id": 2,
+        "movie_title": "Inside Out 2",
+        "showtime_id": 2,
+        "showtime_at": "2026-07-03T16:00:00Z",
+        "seat_codes": [
+          "B7",
+          "B8"
+        ],
+        "total_amount": "170000.00",
+        "status": "PENDING",
+        "payment_method": "MOMO"
+      },
+      {
+        "user_id": 3,
+        "booking_month": "2026-08-01",
+        "created_at": "2026-08-01T18:40:00Z",
+        "booking_id": 3,
+        "movie_id": 3,
+        "movie_title": "Deadpool & Wolverine",
+        "showtime_id": 3,
+        "showtime_at": "2026-08-01T21:00:00Z",
+        "seat_codes": [
+          "D1"
+        ],
+        "total_amount": "110000.00",
+        "status": "PAID",
+        "payment_method": "CASH"
+      }
+    ],
+    "booking_events_by_booking": [
+      {
+        "booking_id": 1,
+        "event_time": "2026-06-12T09:10:00Z",
+        "event_id": "61000000-0000-4000-8000-000000000001",
+        "event_type": "BOOKING_CREATED",
+        "user_id": 1,
+        "showtime_id": 1,
+        "seat_code": null,
+        "old_status": null,
+        "new_status": "PENDING",
+        "amount": "190000.00",
+        "metadata": {
+          "channel": "WEB"
+        }
+      },
+      {
+        "booking_id": 1,
+        "event_time": "2026-06-12T09:11:00Z",
+        "event_id": "61000000-0000-4000-8000-000000000002",
+        "event_type": "SEAT_SELECTED",
+        "user_id": 1,
+        "showtime_id": 1,
+        "seat_code": "A5,A6",
+        "old_status": "AVAILABLE",
+        "new_status": "HELD",
+        "amount": null,
+        "metadata": {
+          "hold_seconds": "300"
+        }
+      },
+      {
+        "booking_id": 1,
+        "event_time": "2026-06-12T09:12:00Z",
+        "event_id": "61000000-0000-4000-8000-000000000003",
+        "event_type": "PAYMENT_SUCCEEDED",
+        "user_id": 1,
+        "showtime_id": 1,
+        "seat_code": null,
+        "old_status": "PENDING",
+        "new_status": "PAID",
+        "amount": "190000.00",
+        "metadata": {
+          "provider": "VNPAY",
+          "transaction": "VNP-001"
+        }
+      },
+      {
+        "booking_id": 2,
+        "event_time": "2026-07-03T14:09:00Z",
+        "event_id": "62000000-0000-4000-8000-000000000001",
+        "event_type": "BOOKING_CREATED",
+        "user_id": 2,
+        "showtime_id": 2,
+        "seat_code": null,
+        "old_status": null,
+        "new_status": "PENDING",
+        "amount": "170000.00",
+        "metadata": {
+          "channel": "MOBILE"
+        }
+      },
+      {
+        "booking_id": 2,
+        "event_time": "2026-07-03T14:10:00Z",
+        "event_id": "62000000-0000-4000-8000-000000000002",
+        "event_type": "SEAT_SELECTED",
+        "user_id": 2,
+        "showtime_id": 2,
+        "seat_code": "B7,B8",
+        "old_status": "AVAILABLE",
+        "new_status": "HELD",
+        "amount": null,
+        "metadata": {
+          "hold_seconds": "300"
+        }
+      },
+      {
+        "booking_id": 3,
+        "event_time": "2026-08-01T18:40:00Z",
+        "event_id": "63000000-0000-4000-8000-000000000001",
+        "event_type": "BOOKING_CREATED",
+        "user_id": 3,
+        "showtime_id": 3,
+        "seat_code": null,
+        "old_status": null,
+        "new_status": "PENDING",
+        "amount": "110000.00",
+        "metadata": {
+          "channel": "COUNTER"
+        }
+      },
+      {
+        "booking_id": 3,
+        "event_time": "2026-08-01T18:42:00Z",
+        "event_id": "63000000-0000-4000-8000-000000000002",
+        "event_type": "PAYMENT_SUCCEEDED",
+        "user_id": 3,
+        "showtime_id": 3,
+        "seat_code": null,
+        "old_status": "PENDING",
+        "new_status": "PAID",
+        "amount": "110000.00",
+        "metadata": {
+          "provider": "CASH"
+        }
+      }
+    ],
+    "seat_timeline_by_showtime": [
+      {
+        "showtime_id": 1,
+        "seat_code": "A5",
+        "event_time": "2026-06-12T09:11:00Z",
+        "event_id": "71000000-0000-4000-8000-000000000001",
+        "booking_id": 1,
+        "user_id": 1,
+        "event_type": "HELD",
+        "old_status": "AVAILABLE",
+        "new_status": "HELD",
+        "expires_at": "2026-06-12T09:16:00Z"
+      },
+      {
+        "showtime_id": 1,
+        "seat_code": "A5",
+        "event_time": "2026-06-12T09:12:00Z",
+        "event_id": "71000000-0000-4000-8000-000000000002",
+        "booking_id": 1,
+        "user_id": 1,
+        "event_type": "SOLD",
+        "old_status": "HELD",
+        "new_status": "SOLD",
+        "expires_at": null
+      },
+      {
+        "showtime_id": 1,
+        "seat_code": "A6",
+        "event_time": "2026-06-12T09:11:00Z",
+        "event_id": "71000000-0000-4000-8000-000000000003",
+        "booking_id": 1,
+        "user_id": 1,
+        "event_type": "HELD",
+        "old_status": "AVAILABLE",
+        "new_status": "HELD",
+        "expires_at": "2026-06-12T09:16:00Z"
+      },
+      {
+        "showtime_id": 2,
+        "seat_code": "B7",
+        "event_time": "2026-07-03T14:10:00Z",
+        "event_id": "72000000-0000-4000-8000-000000000001",
+        "booking_id": 2,
+        "user_id": 2,
+        "event_type": "HELD",
+        "old_status": "AVAILABLE",
+        "new_status": "HELD",
+        "expires_at": "2026-07-03T14:15:00Z"
+      },
+      {
+        "showtime_id": 2,
+        "seat_code": "B8",
+        "event_time": "2026-07-03T14:10:00Z",
+        "event_id": "72000000-0000-4000-8000-000000000002",
+        "booking_id": 2,
+        "user_id": 2,
+        "event_type": "HELD",
+        "old_status": "AVAILABLE",
+        "new_status": "HELD",
+        "expires_at": "2026-07-03T14:15:00Z"
+      },
+      {
+        "showtime_id": 3,
+        "seat_code": "D1",
+        "event_time": "2026-08-01T18:41:00Z",
+        "event_id": "73000000-0000-4000-8000-000000000001",
+        "booking_id": 3,
+        "user_id": 3,
+        "event_type": "SOLD",
+        "old_status": "AVAILABLE",
+        "new_status": "SOLD",
+        "expires_at": null
+      }
+    ],
+    "payment_history_by_user": [
+      {
+        "user_id": 1,
+        "payment_month": "2026-06-01",
+        "paid_at": "2026-06-12T09:12:00Z",
+        "payment_id": "40000000-0000-4000-8000-000000000001",
+        "booking_id": 1,
+        "amount": "190000.00",
+        "method": "VNPAY",
+        "status": "SUCCESS",
+        "transaction_code": "VNP-001"
+      },
+      {
+        "user_id": 2,
+        "payment_month": "2026-07-01",
+        "paid_at": "2026-07-03T14:12:00Z",
+        "payment_id": "40000000-0000-4000-8000-000000000002",
+        "booking_id": 2,
+        "amount": "170000.00",
+        "method": "MOMO",
+        "status": "FAILED",
+        "transaction_code": "MOMO-002"
+      },
+      {
+        "user_id": 3,
+        "payment_month": "2026-08-01",
+        "paid_at": "2026-08-01T18:42:00Z",
+        "payment_id": "40000000-0000-4000-8000-000000000003",
+        "booking_id": 3,
+        "amount": "110000.00",
+        "method": "CASH",
+        "status": "SUCCESS",
+        "transaction_code": "CASH-003"
+      }
+    ],
+    "search_history_by_user": [
+      {
+        "user_id": 1,
+        "search_month": "2026-06-01",
+        "searched_at": "2026-06-12T09:03:05Z",
+        "search_id": 1,
+        "keyword": "Dune",
+        "filters": {
+          "genre": "Sci-Fi",
+          "city": "HCM"
+        },
+        "result_count": 6,
+        "selected_movie_id": 1
+      },
+      {
+        "user_id": 2,
+        "search_month": "2026-07-01",
+        "searched_at": "2026-07-03T14:04:00Z",
+        "search_id": 2,
+        "keyword": "Inside Out",
+        "filters": {
+          "genre": "Animation"
+        },
+        "result_count": 3,
+        "selected_movie_id": 2
+      },
+      {
+        "user_id": 3,
+        "search_month": "2026-08-01",
+        "searched_at": "2026-08-01T18:32:00Z",
+        "search_id": 3,
+        "keyword": "Deadpool",
+        "filters": {
+          "format": "2D"
+        },
+        "result_count": 2,
+        "selected_movie_id": 3
+      }
+    ],
+    "analytics_by_month_metric": [
+      {
+        "metric_month": "2026-06-01",
+        "metric_type": "BOOKING",
+        "dimension": "ALL",
+        "metric_value": "1.00",
+        "event_count": 1,
+        "updated_at": "2026-06-30T23:59:00Z"
+      },
+      {
+        "metric_month": "2026-06-01",
+        "metric_type": "REVENUE",
+        "dimension": "ALL",
+        "metric_value": "190000.00",
+        "event_count": 1,
+        "updated_at": "2026-06-30T23:59:00Z"
+      },
+      {
+        "metric_month": "2026-07-01",
+        "metric_type": "BOOKING",
+        "dimension": "ALL",
+        "metric_value": "2.00",
+        "event_count": 2,
+        "updated_at": "2026-07-31T23:59:00Z"
+      },
+      {
+        "metric_month": "2026-07-01",
+        "metric_type": "PAYMENT_FAILED",
+        "dimension": "MOMO",
+        "metric_value": "1.00",
+        "event_count": 1,
+        "updated_at": "2026-07-31T23:59:00Z"
+      },
+      {
+        "metric_month": "2026-08-01",
+        "metric_type": "REVENUE",
+        "dimension": "ALL",
+        "metric_value": "110000.00",
+        "event_count": 1,
+        "updated_at": "2026-08-05T15:00:00Z"
+      },
+      {
+        "metric_month": "2026-08-01",
+        "metric_type": "LOGIN",
+        "dimension": "ALL",
+        "metric_value": "1.00",
+        "event_count": 1,
+        "updated_at": "2026-08-05T15:00:00Z"
+      }
+    ],
+    "dashboard_by_day": [
+      {
+        "dashboard_date": "2026-06-12",
+        "bucket_hour": 9,
+        "bookings": 1,
+        "paid_bookings": 1,
+        "revenue": "190000.00",
+        "tickets_sold": 2,
+        "active_users": 1,
+        "searches": 1,
+        "page_views": 4,
+        "payment_failures": 0,
+        "updated_at": "2026-06-12T09:59:00Z"
+      },
+      {
+        "dashboard_date": "2026-07-03",
+        "bucket_hour": 14,
+        "bookings": 1,
+        "paid_bookings": 0,
+        "revenue": "0.00",
+        "tickets_sold": 0,
+        "active_users": 1,
+        "searches": 1,
+        "page_views": 5,
+        "payment_failures": 1,
+        "updated_at": "2026-07-03T14:59:00Z"
+      },
+      {
+        "dashboard_date": "2026-08-01",
+        "bucket_hour": 18,
+        "bookings": 1,
+        "paid_bookings": 1,
+        "revenue": "110000.00",
+        "tickets_sold": 1,
+        "active_users": 1,
+        "searches": 1,
+        "page_views": 3,
+        "payment_failures": 0,
+        "updated_at": "2026-08-01T18:59:00Z"
+      }
+    ],
+    "traffic_by_day_path": [
+      {
+        "traffic_date": "2026-06-12",
+        "path": "/login",
+        "request_time": "2026-06-12T09:01:10Z",
+        "request_id": "91000000-0000-4000-8000-000000000001",
+        "user_id": 1,
+        "method": "POST",
+        "status_code": 200,
+        "duration_ms": 120,
+        "ip_address": "10.0.0.11",
+        "user_agent": "Chrome/Windows"
+      },
+      {
+        "traffic_date": "2026-06-12",
+        "path": "/movies/search",
+        "request_time": "2026-06-12T09:03:05Z",
+        "request_id": "91000000-0000-4000-8000-000000000002",
+        "user_id": 1,
+        "method": "GET",
+        "status_code": 200,
+        "duration_ms": 85,
+        "ip_address": "10.0.0.11",
+        "user_agent": "Chrome/Windows"
+      },
+      {
+        "traffic_date": "2026-07-03",
+        "path": "/payments/momo",
+        "request_time": "2026-07-03T14:12:00Z",
+        "request_id": "92000000-0000-4000-8000-000000000001",
+        "user_id": 2,
+        "method": "POST",
+        "status_code": 502,
+        "duration_ms": 1450,
+        "ip_address": "10.0.0.12",
+        "user_agent": "Safari/iPhone"
+      },
+      {
+        "traffic_date": "2026-08-01",
+        "path": "/bookings",
+        "request_time": "2026-08-01T18:40:00Z",
+        "request_id": "93000000-0000-4000-8000-000000000001",
+        "user_id": 3,
+        "method": "POST",
+        "status_code": 201,
+        "duration_ms": 210,
+        "ip_address": "10.0.0.13",
+        "user_agent": "Edge/Windows"
+      }
+    ],
+    "request_logs_by_day": [
+      {
+        "log_date": "2026-06-12",
+        "logged_at": "2026-06-12T09:01:10Z",
+        "request_id": "91000000-0000-4000-8000-000000000001",
+        "level": "INFO",
+        "service": "WEB",
+        "endpoint": "/login",
+        "user_id": 1,
+        "status_code": 200,
+        "duration_ms": 120,
+        "message": "Login request completed"
+      },
+      {
+        "log_date": "2026-07-03",
+        "logged_at": "2026-07-03T14:12:00Z",
+        "request_id": "92000000-0000-4000-8000-000000000001",
+        "level": "ERROR",
+        "service": "PAYMENT",
+        "endpoint": "/payments/momo",
+        "user_id": 2,
+        "status_code": 502,
+        "duration_ms": 1450,
+        "message": "Payment gateway timeout"
+      },
+      {
+        "log_date": "2026-08-01",
+        "logged_at": "2026-08-01T18:40:00Z",
+        "request_id": "93000000-0000-4000-8000-000000000001",
+        "level": "INFO",
+        "service": "BOOKING",
+        "endpoint": "/bookings",
+        "user_id": 3,
+        "status_code": 201,
+        "duration_ms": 210,
+        "message": "Booking created"
+      }
+    ],
+    "audit_logs_by_month_action": [
+      {
+        "audit_month": "2026-06-01",
+        "action_type": "LOGIN",
+        "action_time": "2026-06-12T09:01:10Z",
+        "audit_id": "a1000000-0000-4000-8000-000000000001",
+        "actor_id": 1,
+        "actor_role": "USER",
+        "entity_type": "USER_SESSION",
+        "entity_id": 1,
+        "before_data": null,
+        "after_data": "{\"status\":\"ACTIVE\"}",
+        "ip_address": "10.0.0.11"
+      },
+      {
+        "audit_month": "2026-06-01",
+        "action_type": "PAYMENT",
+        "action_time": "2026-06-12T09:12:00Z",
+        "audit_id": "a1000000-0000-4000-8000-000000000002",
+        "actor_id": 1,
+        "actor_role": "USER",
+        "entity_type": "BOOKING",
+        "entity_id": 1,
+        "before_data": "{\"status\":\"PENDING\"}",
+        "after_data": "{\"status\":\"PAID\"}",
+        "ip_address": "10.0.0.11"
+      },
+      {
+        "audit_month": "2026-07-01",
+        "action_type": "BOOKING",
+        "action_time": "2026-07-03T14:09:00Z",
+        "audit_id": "a2000000-0000-4000-8000-000000000001",
+        "actor_id": 2,
+        "actor_role": "USER",
+        "entity_type": "BOOKING",
+        "entity_id": 2,
+        "before_data": null,
+        "after_data": "{\"status\":\"PENDING\"}",
+        "ip_address": "10.0.0.12"
+      },
+      {
+        "audit_month": "2026-08-01",
+        "action_type": "ADMIN_UPDATE",
+        "action_time": "2026-08-02T08:00:00Z",
+        "audit_id": "a3000000-0000-4000-8000-000000000001",
+        "actor_id": 1,
+        "actor_role": "ADMIN",
+        "entity_type": "MOVIE",
+        "entity_id": 3,
+        "before_data": "{\"status\":\"COMING_SOON\"}",
+        "after_data": "{\"status\":\"NOW_SHOWING\"}",
+        "ip_address": "10.0.0.99"
+      }
+    ]
+  }
+}
