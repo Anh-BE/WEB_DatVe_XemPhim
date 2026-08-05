@@ -1,0 +1,188 @@
+﻿@model List<doan3.Models.Mgdb.MgdbMovieReviewModel>
+@{
+    ViewBag.Title = "Đánh giá & Bình luận Phim (MongoDB Mgdb)";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var stats = ViewBag.MovieStats as doan3.Models.Mgdb.MgdbMovieRatingStats;
+}
+
+<style>
+    .mgdb-container {
+        max-width: 1000px;
+        margin: 30px auto;
+        color: #fff;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .mgdb-header-card {
+        background: linear-gradient(135deg, #1e1e24 0%, #2b2b36 100%);
+        border: 1px solid #d4af37;
+        border-radius: 12px;
+        padding: 25px;
+        margin-bottom: 25px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    }
+    .mgdb-title {
+        color: #f39c12;
+        font-weight: bold;
+        font-size: 24px;
+        margin-bottom: 10px;
+    }
+    .rating-badge {
+        background-color: #f1c40f;
+        color: #111;
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-size: 18px;
+        font-weight: bold;
+        display: inline-block;
+    }
+    .review-card {
+        background-color: #24242e;
+        border-left: 4px solid #f39c12;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 15px;
+        transition: transform 0.2s ease;
+    }
+    .review-card:hover {
+        transform: translateY(-2px);
+    }
+    .btn-mgdb {
+        background: linear-gradient(135deg, #f39c12, #d35400);
+        color: #fff;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 6px;
+        font-weight: bold;
+        cursor: pointer;
+    }
+    .btn-mgdb:hover {
+        background: linear-gradient(135deg, #e67e22, #b9770e);
+        color: #fff;
+    }
+    .tag-pill {
+        background-color: #34495e;
+        color: #ecf0f1;
+        font-size: 12px;
+        padding: 3px 8px;
+        border-radius: 12px;
+        margin-right: 5px;
+    }
+</style>
+
+<div class="mgdb-container">
+    <div class="mgdb-header-card">
+        <div class="row">
+            <div class="col-md-8">
+                <h2 class="mgdb-title">🎬 Đánh giá phim: @(stats != null && !string.IsNullOrEmpty(stats.MovieTitle) ? stats.MovieTitle : "Lật Mặt 7: Một Điều Ước")</h2>
+                <p class="text-muted"><i class="fa fa-database"></i> Dữ liệu lưu trữ trong <strong>MongoDB Document Store (Collection: movie_reviews)</strong></p>
+            </div>
+            <div class="col-md-4 text-right">
+                <div class="rating-badge">
+                    ⭐ @(stats != null ? stats.AvgRating.ToString("0.0") : "5.0") / 5.0
+                </div>
+                <div class="mt-2 text-muted" style="font-size: 13px;">
+                    Dựa trên <strong>@(stats != null ? stats.TotalReviews : 0)</strong> bài đánh giá (MongoDB Aggregation)
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (TempData["Message"] != null)
+    {
+        <div class="alert alert-success">@TempData["Message"]</div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger">@TempData["Error"]</div>
+    }
+
+    <!-- FORM VIẾT BÌNH LUẬN MỚI -->
+    <div class="card bg-dark text-white mb-4 border-warning">
+        <div class="card-body">
+            <h4 style="color: #f39c12;"><i class="fa fa-pencil"></i> Viết đánh giá của bạn</h4>
+            @using (Html.BeginForm("AddReview", "MgdbMovieReview", FormMethod.Post))
+            {
+                <input type="hidden" name="movieId" value="@ViewBag.MovieId" />
+                <input type="hidden" name="movieTitle" value="Lật Mặt 7: Một Điều Ước" />
+                <div class="form-row">
+                    <div class="form-group col-md-4">
+                        <label>Đánh giá số sao:</label>
+                        <select name="rating" class="form-control bg-secondary text-white">
+                            <option value="5">⭐⭐⭐⭐⭐ (5/5 Sao - Rất hay)</option>
+                            <option value="4">⭐⭐⭐⭐ (4/5 Sao - Hay)</option>
+                            <option value="3">⭐⭐⭐ (3/5 Sao - Khá)</option>
+                            <option value="2">⭐⭐ (2/2 Sao - Trung bình)</option>
+                            <option value="1">⭐ (1/5 Sao - Tệ)</option>
+                        </select>
+                    </div>
+                    <div class="form-group col-md-8">
+                        <label>Thẻ cảm nhận (Phân cách bởi dấu phẩy):</label>
+                        <input type="text" name="tags" class="form-control bg-secondary text-white" placeholder="Gia đình, Xúc động, Phim Việt..." value="Gia đình, Phim Việt hay" />
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Nội dung nhận xét:</label>
+                    <textarea name="content" class="form-control bg-secondary text-white" rows="3" placeholder="Nhập cảm nhận của bạn về bộ phim..." required></textarea>
+                </div>
+                <button type="submit" class="btn-mgdb"><i class="fa fa-paper-plane"></i> Gửi bài đánh giá (Lưu MongoDB)</button>
+            }
+        </div>
+    </div>
+
+    <!-- DANH SÁCH BÌNH LUẬN TỪ MONGODB -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3>💬 Bài viết từ cộng đồng (@Model.Count)</h3>
+        <div>
+            <span>Sắp xếp: </span>
+            <a href="@Url.Action("Index", "MgdbMovieReview", new { movieId = ViewBag.MovieId, sortBy = "newest" })" class="btn btn-sm btn-outline-warning @(ViewBag.SortBy == "newest" ? "active" : "")">Mới nhất</a>
+            <a href="@Url.Action("Index", "MgdbMovieReview", new { movieId = ViewBag.MovieId, sortBy = "likes" })" class="btn btn-sm btn-outline-warning @(ViewBag.SortBy == "likes" ? "active" : "")">Nhiều Like nhất</a>
+        </div>
+    </div>
+
+    @if (Model == null || Model.Count == 0)
+    {
+        <div class="alert alert-info">Chưa có bài đánh giá nào trong MongoDB. Hãy là người đầu tiên nhận xét!</div>
+    }
+    else
+    {
+        foreach (var review in Model)
+        {
+            <div class="review-card">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <strong style="color: #f1c40f; font-size: 16px;">👤 @review.Username</strong>
+                        <span class="ml-2 text-warning">
+                            @for (int i = 0; i < review.Rating; i++) { <span>⭐</span> }
+                        </span>
+                    </div>
+                    <small class="text-muted">MongoDB ID: @review.Id</small>
+                </div>
+                <p class="mt-2 mb-2">@review.Content</p>
+                <div>
+                    @if (review.Tags != null)
+                    {
+                        foreach (var tag in review.Tags)
+                        {
+                            <span class="tag-pill">#@tag</span>
+                        }
+                    }
+                    <button class="btn btn-sm btn-outline-danger ml-3" onclick="likeReview('@review.Id')">
+                        ❤️ <span id="like-count-@review.Id">@review.LikesCount</span> Thích
+                    </button>
+                </div>
+            </div>
+        }
+    }
+</div>
+
+<script>
+    function likeReview(reviewId) {
+        $.post('@Url.Action("LikeReview", "MgdbMovieReview")', { reviewId: reviewId }, function (res) {
+            if (res.success) {
+                var el = $('#like-count-' + reviewId);
+                var current = parseInt(el.text());
+                el.text(current + 1);
+            }
+        });
+    }
+</script>

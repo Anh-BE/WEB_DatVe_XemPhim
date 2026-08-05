@@ -1,0 +1,78 @@
+{
+  "movie_reviews": [
+    {
+      "movieId": 101,
+      "movieTitle": "Lật Mặt 7: Một Điều Ước",
+      "userId": 1,
+      "username": "nguyenvana",
+      "rating": 5,
+      "content": "Phim rất cảm động về tình cảm gia đình, dàn diễn viên nhập vai xuất sắc!",
+      "tags": ["Gia đình", "Xúc động", "Phim Việt hay"],
+      "likesCount": 15,
+      "status": "Approved",
+      "createdAt": "2026-08-01T10:00:00Z"
+    },
+    {
+      "movieId": 101,
+      "movieTitle": "Lật Mặt 7: Một Điều Ước",
+      "userId": 2,
+      "username": "tranthib",
+      "rating": 4,
+      "content": "Kịch bản hay nhưng đoạn giữa hơi dài dòng một chút, tổng thể 8.5/10.",
+      "tags": ["Kịch tính", "Phim Việt hay"],
+      "likesCount": 8,
+      "status": "Approved",
+      "createdAt": "2026-08-02T14:30:00Z"
+    },
+    {
+      "movieId": 102,
+      "movieTitle": "Dune: Hành Tinh Cát 2",
+      "userId": 3,
+      "username": "lethi_c",
+      "rating": 5,
+      "content": "Âm thanh sống động, hình ảnh hành tinh Arrakis quá hoành tráng!",
+      "tags": ["Bom tấn", "Kỹ xảo đẹp", "Hành động"],
+      "likesCount": 24,
+      "status": "Approved",
+      "createdAt": "2026-08-03T09:15:00Z"
+    }
+  ],
+  "customer_feedbacks": [
+    {
+      "userId": 1,
+      "username": "nguyenvana",
+      "email": "nguyenvana@gmail.com",
+      "category": "Thanh toán",
+      "subject": "Bị trừ tiền tài khoản Momo nhưng chưa nhận được mã vé QR",
+      "content": "Tôi vừa thanh toán 180.000đ lúc 10h15 qua ví Momo, tiền đã trừ nhưng hệ thống chưa gửi vé về email.",
+      "imageUrls": ["https://example.com/images/proof_momo_123.jpg"],
+      "status": "In Progress",
+      "conversations": [
+        {
+          "sender": "Admin",
+          "message": "Chào bạn, Ban quản trị đã ghi nhận mã giao dịch Momo và đang đối soát với ngân hàng.",
+          "createdAt": "2026-08-01T10:45:00Z"
+        }
+      ],
+      "createdAt": "2026-08-01T10:20:00Z"
+    },
+    {
+      "userId": 2,
+      "username": "tranthib",
+      "email": "tranthib@gmail.com",
+      "category": "Chất lượng rạp",
+      "subject": "Góp ý về thái độ phục vụ tại quầy bắp nước Rạp 3",
+      "content": "Nhân viên phục vụ chưa được thân thiện lúc 19h tối qua.",
+      "imageUrls": [],
+      "status": "Resolved",
+      "conversations": [
+        {
+          "sender": "Admin",
+          "message": "Cảm ơn bạn đã phản hồi. Quản lý rạp đã nhắc nhở ca trực và xin tặng bạn 1 voucher bắp nước.",
+          "createdAt": "2026-08-02T16:00:00Z"
+        }
+      ],
+      "createdAt": "2026-08-02T15:00:00Z"
+    }
+  ]
+}

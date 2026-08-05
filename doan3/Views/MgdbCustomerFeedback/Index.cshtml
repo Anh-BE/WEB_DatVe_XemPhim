@@ -1,0 +1,134 @@
+﻿@model List<doan3.Models.Mgdb.MgdbCustomerFeedbackModel>
+@{
+    ViewBag.Title = "Trung tâm Hỗ trợ & Phản hồi (MongoDB Mgdb)";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var stats = ViewBag.CategoryStats as List<doan3.Models.Mgdb.MgdbFeedbackCategoryStats>;
+}
+
+<style>
+    .mgdb-fb-container {
+        max-width: 1000px;
+        margin: 30px auto;
+        color: #fff;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .ticket-card {
+        background-color: #1e1e24;
+        border: 1px solid #333;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    .status-badge-New { background-color: #e74c3c; color: white; padding: 3px 8px; border-radius: 4px; }
+    .status-badge-InProgress { background-color: #f39c12; color: white; padding: 3px 8px; border-radius: 4px; }
+    .status-badge-Resolved { background-color: #2ecc71; color: white; padding: 3px 8px; border-radius: 4px; }
+</style>
+
+<div class="mgdb-fb-container">
+    <h2>📩 Trung tâm Hỗ trợ & Khiếu nại (MongoDB Document Store)</h2>
+    <p class="text-muted">Quản lý phản hồi khách hàng qua Collection: <code>customer_feedbacks</code></p>
+
+    <!-- HỘP THỐNG KÊ AGGREGATION PIPELINE -->
+    @if (stats != null && stats.Count > 0)
+    {
+        <div class="row mb-4">
+            @foreach (var item in stats)
+            {
+                <div class="col-md-4">
+                    <div class="card bg-secondary text-white text-center p-3 mb-2">
+                        <h5 class="text-warning">Chuyên mục: @item.Category</h5>
+                        <p class="mb-0">Tổng yêu cầu: <strong>@item.TotalTickets</strong></p>
+                        <small class="text-light">Đã giải quyết: @item.ResolvedCount | Đang xử lý: @item.PendingCount</small>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+
+    @if (TempData["Message"] != null)
+    {
+        <div class="alert alert-success">@TempData["Message"]</div>
+    }
+
+    <!-- FORM GỬI YÊU CẦU MỚI -->
+    <div class="card bg-dark text-white border-warning mb-4">
+        <div class="card-body">
+            <h4 class="text-warning"><i class="fa fa-envelope"></i> Gửi yêu cầu hỗ trợ / Khiếu nại</h4>
+            @using (Html.BeginForm("CreateTicket", "MgdbCustomerFeedback", FormMethod.Post))
+            {
+                <div class="form-row">
+                    <div class="form-group col-md-4">
+                        <label>Loại sự cố:</label>
+                        <select name="category" class="form-control bg-secondary text-white">
+                            <option value="Thanh toán">Thanh toán vé / Momo / VNPay</option>
+                            <option value="Chất lượng rạp">Chất lượng rạp & Phục vụ</option>
+                            <option value="Khác">Góp ý khác</option>
+                        </select>
+                    </div>
+                    <div class="form-group col-md-8">
+                        <label>Tiêu đề yêu cầu:</label>
+                        <input type="text" name="subject" class="form-control bg-secondary text-white" placeholder="VD: Bị trừ tiền nhưng chưa thấy vé..." required />
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Mô tả chi tiết sự cố:</label>
+                    <textarea name="content" class="form-control bg-secondary text-white" rows="3" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Đường dẫn hình ảnh bằng chứng (nếu có):</label>
+                    <input type="url" name="imageUrl" class="form-control bg-secondary text-white" placeholder="https://example.com/evidence.jpg" />
+                </div>
+                <button type="submit" class="btn btn-warning"><i class="fa fa-paper-plane"></i> Gửi phản hồi (Lưu MongoDB)</button>
+            }
+        </div>
+    </div>
+
+    <!-- DANH SÁCH YÊU CẦU HỖ TRỢ DẠNG DOCUMENT LỒNG NHAU -->
+    <h3>📋 Lịch sử Yêu cầu đã gửi</h3>
+
+    @if (Model == null || Model.Count == 0)
+    {
+        <div class="alert alert-info">Bạn chưa có yêu cầu hỗ trợ nào trong MongoDB.</div>
+    }
+    else
+    {
+        foreach (var ticket in Model)
+        {
+            <div class="ticket-card">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h4 style="color: #f39c12; margin: 0;">@ticket.Subject</h4>
+                    <span class="status-badge-@ticket.Status">@ticket.Status</span>
+                </div>
+                <p class="mt-2 text-light">@ticket.Content</p>
+                <small class="text-muted">Danh mục: <strong>@ticket.Category</strong> | MongoDB ID: @ticket.Id</small>
+
+                <!-- CONVERSATIONS (MẢNG LỒNG NHAU TRONG MONGODB) -->
+                @if (ticket.Conversations != null && ticket.Conversations.Count > 0)
+                {
+                    <div class="mt-3 p-3 bg-dark border-left border-success rounded">
+                        <h6 class="text-success">💬 Phản hồi từ Ban Quản Trị Admin:</h6>
+                        @foreach (var conv in ticket.Conversations)
+                        {
+                            <div class="mb-1">
+                                <strong>[@conv.Sender]:</strong> @conv.Message
+                            </div>
+                        }
+                    </div>
+                }
+
+                <!-- GIẢ LẬP ADMIN TRẢ LỜI MONGODB -->
+                @if (ticket.Status != "Resolved")
+                {
+                    <div class="mt-3">
+                        @using (Html.BeginForm("ReplyTicket", "MgdbCustomerFeedback", FormMethod.Post, new { @class = "form-inline" }))
+                        {
+                            <input type="hidden" name="feedbackId" value="@ticket.Id" />
+                            <input type="text" name="replyMessage" class="form-control form-control-sm bg-secondary text-white mr-2" placeholder="Admin nhập câu trả lời..." required />
+                            <button type="submit" class="btn btn-sm btn-success">Trả lời & Đổi sang Resolved</button>
+                        }
+                    </div>
+                }
+            </div>
+        }
+    }
+</div>
