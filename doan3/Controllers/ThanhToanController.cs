@@ -34,6 +34,29 @@ namespace doan3.Controllers
                 diemHienCo = LayDiemThanhVien(khachHangId.Value);
             }
 
+            var sessionUserObj = Session["USER_SESSION"] as UserLogin;
+            if (sessionUserObj != null)
+            {
+                var userVouchers = doan3.Models.Mgdb.MgdbService.GetUserClaimedVouchers(sessionUserObj.UserName);
+                ViewBag.UserClaimedVouchers = userVouchers;
+            }
+
+            decimal tongTienGoc = danhSachGheHienThi.Sum(s => s.GiaTien.GetValueOrDefault());
+            decimal discount = 0;
+            string appliedCode = Session["APPLIED_VOUCHER_CODE"] as string;
+            if (!string.IsNullOrEmpty(appliedCode))
+            {
+                var promo = doan3.Models.Mgdb.MgdbService.GetPromotionByCode(appliedCode);
+                if (promo != null)
+                {
+                    discount = promo.DiscountAmount;
+                    ViewBag.AppliedVoucherCode = promo.Code;
+                    ViewBag.VoucherDiscount = discount;
+                }
+            }
+
+            decimal tongTienSauGiam = Math.Max(0, tongTienGoc - discount);
+
             var model = new ThanhToanViewModel
             {
                 LichChieuId = lichChieuId,
@@ -43,19 +66,63 @@ namespace doan3.Controllers
                 PhongChieu = lichChieu.Phong_Chieu.TenPhong,
                 SuatChieu = lichChieu.ThoiGianBatDau.HasValue ? lichChieu.ThoiGianBatDau.Value.ToString("HH:mm dd/MM/yyyy") : "",
                 DanhSachGhe = string.Join(", ", danhSachGheHienThi.Select(s => s.MaGhe)),
-                TongTien = danhSachGheHienThi.Sum(s => s.GiaTien.GetValueOrDefault()),
+                TongTien = tongTienSauGiam,
                 SoGiayConLai = soGiayConLai,
                 DiemThanhVien = diemHienCo
             };
 
             // TÍNH NĂNG REDIS 2: LƯU GIỎ HÀNG THÔNG TIN THANH TOÁN VÀO REDIS (TTL 600s / 10 PHÚT)
-            var sessionUserObj = Session["USER_SESSION"] as UserLogin;
             if (sessionUserObj != null)
             {
                 RedisFeaturesService.SaveCart(sessionUserObj.UserName, lichChieuId, model.DanhSachGhe, model.TongTien, 600);
             }
 
             return View(model);
+        }
+
+        // POST: /ThanhToan/ChonVoucher (Chọn mã Voucher từ Ví cá nhân khi thanh toán vé)
+        [HttpPost]
+        public ActionResult ChonVoucher(string selectedVoucherCode, long lichChieuId, string lockedSeatIds)
+        {
+            if (string.IsNullOrEmpty(selectedVoucherCode) || selectedVoucherCode == "NONE")
+            {
+                Session.Remove("APPLIED_VOUCHER_CODE");
+                TempData["Message"] = "Đã bỏ chọn mã Voucher giảm giá.";
+            }
+            else
+            {
+                var promo = doan3.Models.Mgdb.MgdbService.GetPromotionByCode(selectedVoucherCode);
+                if (promo != null)
+                {
+                    Session["APPLIED_VOUCHER_CODE"] = promo.Code;
+                    TempData["Message"] = "Đã tích chọn mã Voucher MongoDB " + promo.Code + " (Giảm " + string.Format("{0:N0}", promo.DiscountAmount) + " VNĐ)!";
+                }
+                else
+                {
+                    TempData["Error"] = "Mã Voucher này không hợp lệ hoặc đã hết hạn!";
+                }
+            }
+            return RedirectToAction("Index", new { lichChieuId = lichChieuId, lockedSeatIds = lockedSeatIds });
+        }
+
+        // POST: /ThanhToan/ApDungVoucher (Áp dụng mã Voucher từ MongoDB khi thanh toán vé)
+        [HttpPost]
+        public ActionResult ApDungVoucher(string voucherCode, long lichChieuId, string lockedSeatIds)
+        {
+            if (!string.IsNullOrEmpty(voucherCode))
+            {
+                var promo = doan3.Models.Mgdb.MgdbService.GetPromotionByCode(voucherCode);
+                if (promo != null)
+                {
+                    Session["APPLIED_VOUCHER_CODE"] = promo.Code;
+                    TempData["Message"] = "Đã áp dụng thành công mã Voucher MongoDB " + promo.Code + " (Giảm " + string.Format("{0:N0}", promo.DiscountAmount) + " VNĐ)!";
+                }
+                else
+                {
+                    TempData["Error"] = "Mã Voucher này không tồn tại hoặc đã hết hạn trên MongoDB!";
+                }
+            }
+            return RedirectToAction("Index", new { lichChieuId = lichChieuId, lockedSeatIds = lockedSeatIds });
         }
 
         [HttpPost]
@@ -141,14 +208,16 @@ namespace doan3.Controllers
 
             if (maKhachHang == null) return View("PaymentError", (object)"Lỗi: Không tìm thấy thông tin khách hàng.");
 
-            // KIEU TRA XÁC THỰC MÃ OTP REDIS (NẾU CÓ NHẬP)
-            if (!string.IsNullOrWhiteSpace(otpCode))
+            // KIỂM TRA BẮT BUỘC MÃ OTP REDIS (REDIS TTL 120s)
+            if (string.IsNullOrWhiteSpace(otpCode))
             {
-                bool isValidOtp = RedisFeaturesService.VerifyOtp(sessionUser.UserName, otpCode);
-                if (!isValidOtp)
-                {
-                    return View("PaymentError", (object)"Mã OTP không chính xác hoặc đã hết hạn (120s) trên Redis. Vui lòng lấy mã mới.");
-                }
+                return View("PaymentError", (object)"Vui lòng bấm nút 'LẤY MÃ OTP' và nhập mã OTP 6 số xác thực trên Redis trước khi thanh toán!");
+            }
+
+            bool isValidOtp = RedisFeaturesService.VerifyOtp(sessionUser.UserName, otpCode.Trim());
+            if (!isValidOtp)
+            {
+                return View("PaymentError", (object)"Mã OTP không chính xác hoặc đã hết hạn (120s) trên Redis. Vui lòng bấm nút 'LẤY MÃ OTP' để nhận mã mới.");
             }
 
             var danhSachIdGhe = TachChuoiIdGhe(lockedSeatIds);
@@ -186,7 +255,19 @@ namespace doan3.Controllers
                 }
             }
 
-            decimal tongTienPhaiTra = tongTienGoc - soTienGiam;
+            string appliedVoucher = Session["APPLIED_VOUCHER_CODE"] as string;
+            if (!string.IsNullOrEmpty(appliedVoucher))
+            {
+                var promo = doan3.Models.Mgdb.MgdbService.GetPromotionByCode(appliedVoucher);
+                if (promo != null)
+                {
+                    soTienGiam += promo.DiscountAmount;
+                    doan3.Models.Mgdb.MgdbService.UseVoucher(promo.Code, sessionUser.UserName);
+                }
+                Session.Remove("APPLIED_VOUCHER_CODE");
+            }
+
+            decimal tongTienPhaiTra = Math.Max(0, tongTienGoc - soTienGiam);
 
             
             using (var giaoDich = db.Database.BeginTransaction())

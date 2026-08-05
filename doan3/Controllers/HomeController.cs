@@ -42,28 +42,38 @@ namespace doan3.Controllers
                           .OrderByDescending(t => t.NgayKhoiChieu)
                           .ToList();
 
-            // TÍNH NĂNG NEO4J: LOAD BẢNG XẾP HẠNG TOP PHIM TRỰC TIẾP TRÊN TRANG CHỦ
+            // TÍNH NĂNG NEO4J: LOAD BẢNG XẾP HẠNG TOP PHIM TRỰC TIẾP TRÊN TRANG CHỦ (CACHE TỐI ƯU 5 PHÚT)
             try
             {
-                var neo4jService = new Neo4jService();
-                neo4jService.SeedInitialData(db);
-                string username = Session["username"] as string ?? "";
-                var topBooked = neo4jService.GetTopBookedMovies(4, username);
-                var topFavorites = neo4jService.GetTopFavoriteMovies(4, username);
+                var topBooked = HttpRuntime.Cache["TopBookedNeo4j"] as List<Neo4jMovieViewModel>;
+                var topFavorites = HttpRuntime.Cache["TopFavoritesNeo4j"] as List<Neo4jMovieViewModel>;
 
-                // Đồng bộ 100% Tên phim và File ảnh Poster từ SQL Server
-                var listAllPhimSql = db.Phims.ToList();
-                for (int i = 0; i < topBooked.Count; i++)
+                if (topBooked == null || topFavorites == null)
                 {
-                    var item = topBooked[i];
-                    var sqlPhim = listAllPhimSql.FirstOrDefault(p => p.PhimID == item.MovieId) 
-                                 ?? (i < listAllPhimSql.Count ? listAllPhimSql[i] : null);
+                    var neo4jService = new Neo4jService();
+                    neo4jService.SeedInitialData(db);
+                    var userSession = Session["USER_SESSION"] as UserLogin;
+                    string username = userSession != null ? userSession.UserName : "";
 
-                    if (sqlPhim != null)
+                    topBooked = neo4jService.GetTopBookedMovies(4, username);
+                    topFavorites = neo4jService.GetTopFavoriteMovies(4, username);
+
+                    // Đồng bộ 100% Tên phim và File ảnh Poster từ SQL Server
+                    for (int i = 0; i < topBooked.Count; i++)
                     {
-                        item.Title = sqlPhim.TenPhim;
-                        item.Poster = sqlPhim.Poster; // VD: 001.png, 002.png...
+                        var item = topBooked[i];
+                        var sqlPhim = dsphim.FirstOrDefault(p => p.PhimID == item.MovieId) 
+                                     ?? (i < dsphim.Count ? dsphim[i] : null);
+
+                        if (sqlPhim != null)
+                        {
+                            item.Title = sqlPhim.TenPhim;
+                            item.Poster = sqlPhim.Poster; // VD: 001.png, 002.png...
+                        }
                     }
+
+                    HttpRuntime.Cache.Insert("TopBookedNeo4j", topBooked, null, DateTime.Now.AddMinutes(5), System.Web.Caching.Cache.NoSlidingExpiration);
+                    HttpRuntime.Cache.Insert("TopFavoritesNeo4j", topFavorites, null, DateTime.Now.AddMinutes(5), System.Web.Caching.Cache.NoSlidingExpiration);
                 }
 
                 ViewBag.TopBookedNeo4j = topBooked;

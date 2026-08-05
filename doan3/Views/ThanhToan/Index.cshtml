@@ -1,4 +1,4 @@
-﻿﻿@model doan3.Models.ThanhToanViewModel
+﻿@model doan3.Models.ThanhToanViewModel
 @{
     ViewBag.Title = "Thanh Toán";
     Layout = "~/Views/Shared/_Layout.cshtml";
@@ -290,13 +290,85 @@
                         </div>
                     </div>
 
+                    <!-- VOUCHER MONGODB GIẢM GIÁ (TÍNH NĂNG MONGODB KHUYẾN MÃI) -->
+                    <div class="total-box mt-3" style="background: rgba(46, 204, 113, 0.08); border: 1px dashed #2ecc71;">
+                        @{
+                            var userVouchers = ViewBag.UserClaimedVouchers as List<doan3.Models.Mgdb.MgdbPromotionModel>;
+                            string currentAppliedCode = ViewBag.AppliedVoucherCode as string;
+                        }
+
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <div style="color: #2ecc71; font-weight: 700; text-transform: uppercase; font-size: 0.95rem;">
+                                <i class="fa fa-wallet mr-1"></i> VÍ VOUCHER MONGODB CỦA BẠN
+                            </div>
+                            <span class="badge badge-success font-weight-bold">@(userVouchers != null ? userVouchers.Count : 0) mã có sẵn</span>
+                        </div>
+
+                        @if (userVouchers != null && userVouchers.Count > 0)
+                        {
+                            <p class="text-light small mb-2">Chọn 1 mã Voucher từ bảng dưới đây và bấm Áp dụng:</p>
+                            
+                            <div class="table-responsive rounded mb-2 border border-secondary" style="max-height: 200px; overflow-y: auto;">
+                                <table class="table table-dark table-hover table-sm text-center mb-0" style="font-size: 13px;">
+                                    <thead class="bg-secondary text-white">
+                                        <tr>
+                                            <th width="40">Chọn</th>
+                                            <th>Mã Code</th>
+                                            <th class="text-left">Tên Ưu Đãi</th>
+                                            <th width="100">Mức Giảm</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr style="cursor: pointer;" onclick="document.getElementById('v_none').checked = true;">
+                                            <td>
+                                                <input type="radio" id="v_none" name="radioVoucherSelection" value="NONE" @(string.IsNullOrEmpty(currentAppliedCode) ? "checked" : "") />
+                                            </td>
+                                            <td colspan="2" class="text-left text-muted"><em>-- Không sử dụng Voucher --</em></td>
+                                            <td class="text-muted">0đ</td>
+                                        </tr>
+                                        @foreach (var v in userVouchers)
+                                        {
+                                            bool isSelected = currentAppliedCode == v.Code;
+                                            <tr style="cursor: pointer; @(isSelected ? "background-color: rgba(46, 204, 113, 0.25);" : "")" onclick="document.getElementById('v_@v.Code').checked = true;">
+                                                <td>
+                                                    <input type="radio" id="v_@v.Code" name="radioVoucherSelection" value="@v.Code" @(isSelected ? "checked" : "") />
+                                                </td>
+                                                <td><span class="badge badge-warning font-weight-bold">@v.Code</span></td>
+                                                <td class="text-left">@v.Title</td>
+                                                <td class="text-success font-weight-bold">-@string.Format("{0:N0}", v.DiscountAmount)đ</td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <button type="button" onclick="submitVoucherChoice()" class="btn btn-sm btn-success btn-block font-weight-bold shadow-sm" style="border-radius: 6px; padding: 8px;">
+                                <i class="fa fa-check-circle mr-1"></i> ÁP DỤNG MÃ VOUCHER ĐÃ CHỌN
+                            </button>
+                        }
+                        else
+                        {
+                            <div class="p-3 text-center text-muted small bg-dark rounded border border-secondary mb-2">
+                                <i class="fa fa-info-circle mb-1 text-warning d-block" style="font-size: 20px;"></i>
+                                Ví Voucher của bạn đang trống. Hãy ghé trang <a href="@Url.Action("Index", "MgdbPromotion")" class="text-warning font-weight-bold">MONGODB KHUYẾN MÃI</a> để nhận mã!
+                            </div>
+                        }
+
+                        @if (ViewBag.AppliedVoucherCode != null)
+                        {
+                            <div class="p-2 text-success font-weight-bold border border-success rounded bg-dark mt-2" style="font-size: 14px;">
+                                🎉 Đã áp dụng Mã <strong>@ViewBag.AppliedVoucherCode</strong>: Trừ ngay -@string.Format("{0:N0}", ViewBag.VoucherDiscount) VNĐ!
+                            </div>
+                        }
+                    </div>
+
                     <!-- KHUNG XÁC THỰC MÃ OTP REDIS (TÍNH NĂNG REDIS THỨ 2) -->
                     <div class="total-box mt-3" style="background: rgba(249, 224, 0, 0.05); border: 1px dashed #f9e000;">
                         <div style="color: #f9e000; font-weight: 700; margin-bottom: 10px; text-transform: uppercase;">
                             <i class="fa fa-key mr-1"></i> MÃ OTP XÁC THỰC (REDIS TTL 120S)
                         </div>
                         <div class="input-group" style="display: flex;">
-                            <input type="text" id="otpCodeInput" name="otpCode" class="form-control" placeholder="Nhập mã OTP 6 số" style="background: #0a0d29; color: #fff; border: 1px solid #2a2d55; height: 42px; border-radius: 6px 0 0 6px; padding: 0 10px; flex: 1;" />
+                            <input type="text" id="otpCodeInput" name="otpCode" class="form-control" placeholder="Nhập mã OTP 6 số" style="background: #0a0d29; color: #fff; border: 1px solid #2a2d55; height: 42px; border-radius: 6px 0 0 6px; padding: 0 10px; flex: 1;" required />
                             <button type="button" id="btnGetOtp" style="font-weight: 700; background: #f9e000; color: #000; border: none; height: 42px; padding: 0 15px; border-radius: 0 6px 6px 0; cursor: pointer;">LẤY MÃ OTP</button>
                         </div>
                         <small id="otpNotice" style="color: #8899a6; display: block; margin-top: 8px;">
@@ -310,6 +382,13 @@
                 </div>
             </div>
         </div>
+    </form>
+
+    <!-- FORM ĐỘC LẬP CHỌN VOUCHER (ĐẶT BÊN NGOÀI MAIN FORM ĐỂ KHÔNG BỊ TRIGGER THANH TOÁN) -->
+    <form action="@Url.Action("ChonVoucher", "ThanhToan")" method="post" id="formChonVoucher">
+        <input type="hidden" name="lichChieuId" value="@Model.LichChieuId" />
+        <input type="hidden" name="lockedSeatIds" value="@Model.LockedSeatIds" />
+        <input type="hidden" name="selectedVoucherCode" id="hiddenSelectedVoucherCode" value="" />
     </form>
 
     <div class="row justify-content-center mt-3">
@@ -328,6 +407,13 @@
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
+    function submitVoucherChoice() {
+        const selectedRadio = document.querySelector('input[name="radioVoucherSelection"]:checked');
+        if (selectedRadio) {
+            document.getElementById('hiddenSelectedVoucherCode').value = selectedRadio.value;
+            document.getElementById('formChonVoucher').submit();
+        }
+    }
     // --- 1. COUNTDOWN TIMER ---
     let timeLeft = @Model.SoGiayConLai;
     const displayElement = document.getElementById('countdownDisplay');

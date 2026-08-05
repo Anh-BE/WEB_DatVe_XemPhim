@@ -1,4 +1,4 @@
-﻿using doan3.Models;
+using doan3.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,6 +16,7 @@ namespace doan3.Controllers
         {
             return View();
         }
+        [OutputCache(Duration = 3600)]
         public ActionResult TheLoai_PartialView()
         {
             TheLoaiPhim tl = new TheLoaiPhim();

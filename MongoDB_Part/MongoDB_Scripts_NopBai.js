@@ -6,60 +6,68 @@
 // ===============================================================================
 
 // 1. CHUYỂN SANG CSDL 'CinemaNoSQL'
-use CinemaNoSQL;
+db = db.getSiblingDB("CinemaNoSQL");
 
-// 2. KHỞI TẠO COLLECTION 1: 'movie_reviews' (Đánh giá & Bình luận Phim)
-db.createCollection("movie_reviews");
+// 2. KHỞI TẠO COLLECTION 1: 'cinema_promotions' (Tin tức & Kho Voucher Khuyến mãi)
+db.createCollection("cinema_promotions");
 
-// Nạp dữ liệu mẫu JSON vào collection 'movie_reviews'
-db.movie_reviews.insertMany([
+// Nạp dữ liệu mẫu JSON vào collection 'cinema_promotions'
+db.cinema_promotions.insertMany([
   {
-    "movieId": 101,
-    "movieTitle": "Lật Mặt 7: Một Điều Ước",
-    "userId": 1,
-    "username": "nguyenvana",
-    "rating": 5,
-    "content": "Phim rất cảm động về tình cảm gia đình, dàn diễn viên nhập vai xuất sắc!",
-    "tags": ["Gia đình", "Xúc động", "Phim Việt hay"],
-    "likesCount": 15,
-    "status": "Approved",
-    "createdAt": new Date("2026-08-01T10:00:00Z")
+    "code": "MOVANA50K",
+    "title": "Ưu đãi Tháng 8 - Giảm 50K khi mua từ 2 vé xem phim",
+    "category": "Vé xem phim",
+    "discountAmount": 50000,
+    "quantity": 100,
+    "claimedCount": 18,
+    "content": "Áp dụng cho tất cả các suất chiếu từ Thứ 2 đến Thứ 5 tại tất cả các rạp Movana Cinema trên toàn quốc.",
+    "imageUrl": "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=600&auto=format&fit=crop",
+    "tags": ["Vé xem phim", "Giảm 50K", "Tháng 8"],
+    "status": "Active",
+    "startDate": new Date("2026-08-01T00:00:00Z"),
+    "endDate": new Date("2026-08-31T23:59:59Z")
   },
   {
-    "movieId": 101,
-    "movieTitle": "Lật Mặt 7: Một Điều Ước",
-    "userId": 2,
-    "username": "tranthib",
-    "rating": 4,
-    "content": "Kịch bản hay nhưng đoạn giữa hơi dài dòng một chút, tổng thể 8.5/10.",
-    "tags": ["Kịch tính", "Phim Việt hay"],
-    "likesCount": 8,
-    "status": "Approved",
-    "createdAt": new Date("2026-08-02T14:30:00Z")
+    "code": "BAPCOMBO0D",
+    "title": "Tặng Combo Bắp Nước 0đ khi thanh toán qua ví Momo",
+    "category": "Bắp nước",
+    "discountAmount": 35000,
+    "quantity": 50,
+    "claimedCount": 32,
+    "content": "Nhận ngay 1 vé bắp ngọt + 1 nước ngọt size L miễn phí khi thanh toán vé xem phim trực tuyến qua ví Momo.",
+    "imageUrl": "https://images.unsplash.com/photo-1585647347483-22b66260dfff?w=600&auto=format&fit=crop",
+    "tags": ["Bắp nước", "Momo", "Combo 0đ"],
+    "status": "Active",
+    "startDate": new Date("2026-08-01T00:00:00Z"),
+    "endDate": new Date("2026-08-15T23:59:59Z")
   },
   {
-    "movieId": 102,
-    "movieTitle": "Dune: Hành Tinh Cát 2",
-    "userId": 3,
-    "username": "lethi_c",
-    "rating": 5,
-    "content": "Âm thanh sống động, hình ảnh hành tinh Arrakis quá hoành tráng!",
-    "tags": ["Bom tấn", "Kỹ xảo đẹp", "Hành động"],
-    "likesCount": 24,
-    "status": "Approved",
-    "createdAt": new Date("2026-08-03T09:15:00Z")
+    "code": "SINNHATVIP",
+    "title": "Quà tặng Sinh Nhật - Tặng 1 vé phim 2D miễn phí",
+    "category": "Khuyến mãi Sinh nhật",
+    "discountAmount": 110000,
+    "quantity": 200,
+    "claimedCount": 45,
+    "content": "Dành riêng cho thành viên có sinh nhật trong tháng 8. Nhận 1 vé xem phim 2D hoàn toàn miễn phí khi mua cùng 1 vé.",
+    "imageUrl": "https://images.unsplash.com/photo-1513151233558-d860c5398176?w=600&auto=format&fit=crop",
+    "tags": ["Sinh nhật", "Vé 0đ", "Thành viên VIP"],
+    "status": "Active",
+    "startDate": new Date("2026-08-01T00:00:00Z"),
+    "endDate": new Date("2026-08-31T23:59:59Z")
   },
   {
-    "movieId": 102,
-    "movieTitle": "Dune: Hành Tinh Cát 2",
-    "userId": 4,
-    "username": "phamvand",
-    "rating": 3,
-    "content": "Phim dài gần 3 tiếng hơi mệt, fan viễn tưởng chắc sẽ thích hơn.",
-    "tags": ["Viễn tưởng", "Thời lượng dài"],
-    "likesCount": 2,
-    "status": "Pending",
-    "createdAt": new Date("2026-08-04T08:00:00Z")
+    "code": "VNPAY20",
+    "title": "Giảm 20% tổng hóa đơn khi nhập mã VNPAYMOVANA",
+    "category": "Ví điện tử",
+    "discountAmount": 30000,
+    "quantity": 80,
+    "claimedCount": 12,
+    "content": "Quét VNPAY-QR tại bước thanh toán để nhận ngay mức giảm 20% tối đa 30.000đ cho mọi đơn hàng.",
+    "imageUrl": "https://images.unsplash.com/photo-1556742049-0a674640c66d?w=600&auto=format&fit=crop",
+    "tags": ["VNPAY", "Giảm 20%", "Ví điện tử"],
+    "status": "Active",
+    "startDate": new Date("2026-08-01T00:00:00Z"),
+    "endDate": new Date("2026-08-20T23:59:59Z")
   }
 ]);
 
@@ -114,8 +122,14 @@ db.customer_feedbacks.insertMany([
     "subject": "Hỏi về chương trình khuyến mãi sinh nhật tháng 8",
     "content": "Thành viên có sinh nhật trong tháng 8 được giảm bao nhiêu % khi mua vé tại rạp?",
     "imageUrls": [],
-    "status": "New",
-    "conversations": [],
+    "status": "Resolved",
+    "conversations": [
+      {
+        "sender": "Admin",
+        "message": "Chào bạn, thành viên có sinh nhật tháng 8 được tặng 1 vé miễn phí khi mua từ 2 vé trở lên!",
+        "createdAt": new Date("2026-08-04T13:35:31Z")
+      }
+    ],
     "createdAt": new Date("2026-08-04T11:00:00Z")
   }
 ]);
@@ -125,20 +139,20 @@ db.customer_feedbacks.insertMany([
 // ===============================================================================
 
 // --- [CRUD 1] TẠO VÀ ĐỌC (CREATE & READ) ---
-// Lay tat ca danh sach danh gia cua phim 'Lat Mat 7' (movieId = 101) da duoc duyet
-db.movie_reviews.find({ "movieId": 101, "status": "Approved" }).sort({ "likesCount": -1 });
+// Lấy danh sách khuyến mãi đang hoạt động thuộc chuyên mục 'Vé xem phim'
+db.cinema_promotions.find({ "category": "Vé xem phim", "status": "Active" });
 
-// Lay danh sach khieu nai theo chuyen muc 'Thanh toan'
+// Lấy danh sách khiếu nại theo chuyên mục 'Thanh toán'
 db.customer_feedbacks.find({ "category": "Thanh toán" });
 
 // --- [CRUD 2] CẬP NHẬT (UPDATE) ---
-// Tang 1 luot like cho bài review cua user 'nguyenvana'
-db.movie_reviews.updateOne(
-  { "movieId": 101, "username": "nguyenvana" },
-  { "$inc": { "likesCount": 1 } }
+// Khách hàng bấm lấy mã Voucher -> Giảm số lượng còn lại 1 và tăng số lượng đã lấy 1 (Atomic Update)
+db.cinema_promotions.updateOne(
+  { "code": "MOVANA50K" },
+  { "$inc": { "quantity": -1, "claimedCount": 1 } }
 );
 
-// Admin tra loi khieu nai va chuyen trang thai thanh 'Resolved'
+// Admin trả lời khiếu nại và chuyển trạng thái thành 'Resolved'
 db.customer_feedbacks.updateOne(
   { "username": "hoangvan_e", "status": "New" },
   {
@@ -154,40 +168,38 @@ db.customer_feedbacks.updateOne(
 );
 
 // --- [CRUD 3] XÓA (DELETE) ---
-// Xoa mot danh gia bi vi pham quy dinh
-db.movie_reviews.deleteOne({ "username": "phamvand", "status": "Pending" });
+// Admin xóa một mã khuyến mãi đã hết hạn khỏi MongoDB
+db.cinema_promotions.deleteOne({ "code": "VNPAY20" });
+
+// Người dùng xóa một yêu cầu khiếu nại của mình khỏi MongoDB
+db.customer_feedbacks.deleteOne({ "username": "kh1_long", "subject": "tiền chưa về ngân hàng" });
 
 // ===============================================================================
 // 5. BỘ CÂU LỆNH AGGREGATION PIPELINE NÂNG CAO (YÊU CẦU ĐỒ ÁN BẮT BUỘC)
 // ===============================================================================
 
-// --- [AGGREGATION 1] Thong ke diem danh gia trung binh ($avg) va tong so review ($sum) theo từng bộ phim ---
-db.movie_reviews.aggregate([
-  {
-    $match: { "status": "Approved" }
-  },
+// --- [AGGREGATION 1] Thống kê tổng số mã Voucher và lượt cấp theo từng chuyên mục Khuyến mãi ---
+db.cinema_promotions.aggregate([
   {
     $group: {
-      _id: "$movieId",
-      movieTitle: { $first: "$movieTitle" },
-      avgRating: { $avg: "$rating" },
-      totalReviews: { $sum: 1 },
-      totalLikes: { $sum: "$likesCount" }
+      _id: "$category",
+      totalPromotions: { $sum: 1 },
+      totalQuantityLeft: { $sum: "$quantity" },
+      totalClaimed: { $sum: "$claimedCount" }
     }
   },
   {
     $project: {
       _id: 0,
-      movieId: "$_id",
-      movieTitle: 1,
-      avgRating: { $round: ["$avgRating", 1] },
-      totalReviews: 1,
-      totalLikes: 1
+      category: "$_id",
+      totalPromotions: 1,
+      totalQuantityLeft: 1,
+      totalClaimed: 1
     }
   }
 ]);
 
-// --- [AGGREGATION 2] Thong ke so luong phan hoi/khieu nai theo từng chuyen muc (category) ---
+// --- [AGGREGATION 2] Thống kê số lượng phản hồi/khiếu nại theo từng chuyên mục (category) ---
 db.customer_feedbacks.aggregate([
   {
     $group: {

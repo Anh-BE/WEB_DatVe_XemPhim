@@ -37,17 +37,20 @@ namespace doan3.Models
         private static readonly string Neo4jUser = ConfigurationManager.AppSettings["Neo4jUser"] ?? "neo4j";
         private static readonly string Neo4jPassword = ConfigurationManager.AppSettings["Neo4jPassword"] ?? "adminpassword";
 
+        private static string _cachedEndpoint = null;
+
         /// <summary>
         /// Gửi truy vấn Cypher tới Neo4j qua HTTP REST API (Hỗ trợ cả Neo4j 3.x, 4.x và 5.x)
         /// </summary>
         public JObject ExecuteCypher(string cypherQuery, Dictionary<string, object> parameters = null)
         {
-            // Thử danh sách các endpoint HTTP của Neo4j 5.x và 3.x/4.x
-            string[] endpoints = new[]
-            {
-                Neo4jUri.TrimEnd('/') + "/db/neo4j/tx/commit",
-                Neo4jUri.TrimEnd('/') + "/db/data/transaction/commit"
-            };
+            string[] endpoints = !string.IsNullOrEmpty(_cachedEndpoint)
+                ? new[] { _cachedEndpoint }
+                : new[]
+                {
+                    Neo4jUri.TrimEnd('/') + "/db/data/transaction/commit",
+                    Neo4jUri.TrimEnd('/') + "/db/neo4j/tx/commit"
+                };
 
             foreach (var endpoint in endpoints)
             {
@@ -56,7 +59,7 @@ namespace doan3.Models
                     var request = (HttpWebRequest)WebRequest.Create(endpoint);
                     request.Method = "POST";
                     request.ContentType = "application/json";
-                    request.Timeout = 5000; // 5s timeout
+                    request.Timeout = 1500; // 1.5s timeout
 
                     // Header Basic Authentication
                     string authInfo = Convert.ToBase64String(Encoding.UTF8.GetBytes($"{Neo4jUser}:{Neo4jPassword}"));
@@ -91,6 +94,7 @@ namespace doan3.Models
                     using (var reader = new StreamReader(response.GetResponseStream(), Encoding.UTF8))
                     {
                         string responseText = reader.ReadToEnd();
+                        _cachedEndpoint = endpoint;
                         return JObject.Parse(responseText);
                     }
                 }
@@ -116,8 +120,12 @@ namespace doan3.Models
         /// <summary>
         /// Khởi tạo dữ liệu mẫu ban đầu nếu Neo4j đang trống
         /// </summary>
-        public bool SeedInitialData(LTW_DatVeXemPhimEntities db = null)
+        private static bool _isSeeded = false;
+
+        public bool SeedInitialData(LTW_DatVeXemPhimEntities db = null, bool force = false)
         {
+            if (_isSeeded && !force) return true;
+
             if (db == null)
             {
                 db = new LTW_DatVeXemPhimEntities();
@@ -125,6 +133,7 @@ namespace doan3.Models
 
             try
             {
+                _isSeeded = true;
                 // 1. Xóa toàn bộ dữ liệu mẫu cũ trong Neo4j
                 string clearCypher = "MATCH (n) DETACH DELETE n;";
                 ExecuteCypher(clearCypher);

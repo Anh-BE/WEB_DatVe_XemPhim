@@ -10,13 +10,35 @@ namespace doan3.Controllers
     public class MgdbCustomerFeedbackController : Controller
     {
         // GET: /MgdbCustomerFeedback
-        public ActionResult Index()
+        public ActionResult Index(string search = "")
         {
-            var user = Session["User"] as doan3.Models.NguoiDung;
-            string username = user != null ? user.UserName : "nguyenvana";
+            var userSession = Session["USER_SESSION"] as doan3.Models.UserLogin;
+            var groups = Session["SESSION_GROUP"] as List<string>;
+            bool isAdmin = (userSession != null && userSession.GroupID == "1") || (groups != null && groups.Contains("Admin"));
+            string username = userSession != null ? userSession.UserName : "";
+            int userId = userSession != null ? userSession.UserID : 0;
 
-            // Lấy danh sách phản hồi của user từ MongoDB
-            List<MgdbCustomerFeedbackModel> feedbacks = MgdbService.GetFeedbacksByUser(username);
+            ViewBag.UserSession = userSession;
+            ViewBag.IsAdmin = isAdmin;
+            ViewBag.CurrentSearch = search ?? "";
+
+            if (userSession == null)
+            {
+                return View(new List<MgdbCustomerFeedbackModel>());
+            }
+
+            // Nếu là Admin: xem & tìm kiếm toàn bộ khiếu nại của khách hàng trong MongoDB; Nếu là Khách hàng: xem khiếu nại của chính mình
+            List<MgdbCustomerFeedbackModel> feedbacks;
+            if (isAdmin)
+            {
+                feedbacks = !string.IsNullOrWhiteSpace(search)
+                    ? MgdbService.SearchFeedbacksForAdmin(search)
+                    : MgdbService.GetAllFeedbacks();
+            }
+            else
+            {
+                feedbacks = MgdbService.GetFeedbacksByUser(username, userId);
+            }
 
             // Lấy thống kê chuyên mục bằng MongoDB Aggregation Pipeline
             List<MgdbFeedbackCategoryStats> categoryStats = MgdbService.GetFeedbackCategoryStats();
@@ -29,10 +51,10 @@ namespace doan3.Controllers
         [HttpPost]
         public ActionResult CreateTicket(string category, string subject, string content, string imageUrl)
         {
-            var user = Session["User"] as doan3.Models.NguoiDung;
-            string username = user != null ? user.UserName : "nguyenvana";
-            int userId = user != null ? user.UserID : 1;
-            string email = user != null ? (user.Name + "@email.com") : "nguyenvana@gmail.com";
+            var userSession = Session["USER_SESSION"] as doan3.Models.UserLogin;
+            string username = userSession != null ? userSession.UserName : "Khách hàng";
+            int userId = userSession != null ? userSession.UserID : 1;
+            string email = userSession != null ? (userSession.UserName + "@gmail.com") : "nguyenvana@gmail.com";
 
             var feedback = new MgdbCustomerFeedbackModel
             {
@@ -45,27 +67,41 @@ namespace doan3.Controllers
                 ImageUrls = !string.IsNullOrEmpty(imageUrl) ? new List<string> { imageUrl } : new List<string>()
             };
 
-            bool success = MgdbService.AddFeedback(feedback);
-            if (success)
+            string errorMsg = MgdbService.AddFeedback(feedback);
+            if (errorMsg == null)
             {
                 TempData["Message"] = "Gửi yêu cầu hỗ trợ thành công đến MongoDB!";
             }
             else
             {
-                TempData["Error"] = "Không thể gửi yêu cầu đến MongoDB!";
+                TempData["Error"] = "Lỗi MongoDB: " + errorMsg;
             }
 
             return RedirectToAction("Index");
         }
 
-        // POST: /MgdbCustomerFeedback/ReplyTicket (Dành cho Admin trả lời)
+        // POST: /MgdbCustomerFeedback/DeleteTicket (Dành riêng cho Khách hàng xóa khiếu nại của chính mình)
         [HttpPost]
-        public ActionResult ReplyTicket(string feedbackId, string replyMessage)
+        public ActionResult DeleteTicket(string feedbackId)
         {
-            bool success = MgdbService.ReplyFeedback(feedbackId, replyMessage, "Admin");
+            var userSession = Session["USER_SESSION"] as doan3.Models.UserLogin;
+            var groups = Session["SESSION_GROUP"] as List<string>;
+            bool isAdmin = (userSession != null && userSession.GroupID == "1") || (groups != null && groups.Contains("Admin"));
+            string username = userSession != null ? userSession.UserName : "";
+
+            if (userSession == null || isAdmin)
+            {
+                return RedirectToAction("Index");
+            }
+
+            bool success = MgdbService.DeleteFeedback(feedbackId, username, false);
             if (success)
             {
-                TempData["Message"] = "Admin đã phản hồi khiếu nại trên MongoDB!";
+                TempData["Message"] = "Đã xóa yêu cầu khiếu nại thành công khỏi MongoDB!";
+            }
+            else
+            {
+                TempData["Error"] = "Không thể xóa khiếu nại này!";
             }
             return RedirectToAction("Index");
         }
