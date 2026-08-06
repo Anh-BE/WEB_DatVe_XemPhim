@@ -9,8 +9,7 @@ namespace doan3.Controllers
     public class ThongTinCaNhanController : Controller
     {
         private LTW_DatVeXemPhimEntities db = new LTW_DatVeXemPhimEntities();
-
-     
+        private string username;
 
         [HttpGet]
         public ActionResult Index()
@@ -22,6 +21,38 @@ namespace doan3.Controllers
 
            
             if (khachHang == null) return RedirectToAction("SignOut", "Login");
+
+            try
+            {
+                doan3.Models.Cass.CassandraFeaturesService.GhiNhatKyHoatDong(
+                    new doan3.Models.Cass.DTO.NhatKyHoatDongDTO
+                    {
+                        Username = username,
+
+                        HanhDong = "Dang nhap",
+
+                        ChiTiet = "Sai tai khoan hoac mat khau",
+
+                        ControllerName = "Login",
+
+                        ActionName = "Login",
+
+                        RequestMethod = Request.HttpMethod,
+
+                        Browser = Request.Browser.Browser + " " + Request.Browser.Version,
+
+                        Device = Request.Browser.IsMobileDevice ? "Mobile" : "Desktop",
+
+                        HeDieuHanh = Request.Browser.Platform,
+
+                        IpAddress = Request.UserHostAddress,
+
+                        KetQua = "Failed"
+                    });
+            }
+            catch
+            {
+            }
 
             ViewBag.MatKhauCu = LayMatKhauHienTai(userSession.UserID);
 
@@ -51,8 +82,72 @@ namespace doan3.Controllers
                 return View(model);
             }
 
+            try
+            {
+                doan3.Models.Cass.CassandraFeaturesService.GhiNhatKyHoatDong(
+                    new doan3.Models.Cass.DTO.NhatKyHoatDongDTO
+                    {
+                        Username = userSession.UserName,
+
+                        HanhDong = "Doi mat khau",
+
+                        ChiTiet = "Nhap sai mat khau hien tai",
+
+                        ControllerName = "ThongTinCaNhan",
+
+                        ActionName = "DoiMatKhau",
+
+                        RequestMethod = Request.HttpMethod,
+
+                        Browser = Request.Browser.Browser + " " + Request.Browser.Version,
+
+                        Device = Request.Browser.IsMobileDevice ? "Mobile" : "Desktop",
+
+                        HeDieuHanh = Request.Browser.Platform,
+
+                        IpAddress = Request.UserHostAddress,
+
+                        KetQua = "Failed"
+                    });
+            }
+            catch
+            {
+            }
+
             if (model.MatKhauCu == model.MatKhauMoi)
             {
+                try
+                {
+                    doan3.Models.Cass.CassandraFeaturesService.GhiNhatKyHoatDong(
+                       new doan3.Models.Cass.DTO.NhatKyHoatDongDTO
+                       {
+                           Username = username,
+
+                           HanhDong = "Dang nhap",
+
+                           ChiTiet = "Dang nhap thanh cong",
+
+                           ControllerName = "Login",
+
+                           ActionName = "Login",
+
+                           RequestMethod = Request.HttpMethod,
+
+                           Browser = Request.Browser.Browser + " " + Request.Browser.Version,
+
+                           Device = Request.Browser.IsMobileDevice ? "Mobile" : "Desktop",
+
+                           HeDieuHanh = Request.Browser.Platform,
+
+                           IpAddress = Request.UserHostAddress,
+
+                           KetQua = "Success"
+                       });
+                }
+                catch
+                {
+                }
+
                 ModelState.AddModelError("MatKhauMoi", "Mật khẩu mới phải khác mật khẩu hiện tại.");
                 return View(model);
             }
@@ -62,6 +157,30 @@ namespace doan3.Controllers
 
             if (ketQua)
             {
+                try
+                {
+                    doan3.Models.Cass.CassandraFeaturesService.GhiNhatKyHoatDong(
+                        new doan3.Models.Cass.DTO.NhatKyHoatDongDTO
+                        {
+                            Username = userSession.UserName,
+                            HanhDong = "Doi mat khau",
+                            ChiTiet = "Nguoi dung doi mat khau thanh cong",
+                            IpAddress = Request.UserHostAddress,
+
+                            ControllerName = "ThongTinCaNhan",
+                            ActionName = "DoiMatKhau",
+                            RequestMethod = Request.HttpMethod,
+                            Browser = Request.Browser.Browser + " " + Request.Browser.Version,
+                            Device = Request.Browser.IsMobileDevice ? "Mobile" : "Desktop",
+                            HeDieuHanh = Request.Browser.Platform,
+                            KetQua = "Success"
+
+                        });
+                }
+                catch
+                {
+                }
+
                 TempData["SuccessMessage"] = "Đổi mật khẩu thành công!";
                 return RedirectToAction("Index");
             }

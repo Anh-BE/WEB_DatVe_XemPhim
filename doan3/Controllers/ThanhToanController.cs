@@ -133,6 +133,20 @@ namespace doan3.Controllers
             {
                 // Xóa giỏ hàng trên Redis khi hủy giao dịch
                 RedisFeaturesService.ClearCart(sessionUserObj.UserName);
+
+                try
+                {
+                    doan3.Models.Cass.CassandraFeaturesService.GhiNhatKyHoatDong(
+                        new doan3.Models.Cass.DTO.NhatKyHoatDongDTO
+                        {
+                            Username = sessionUserObj.UserName,
+                            HanhDong = "Huy chon ghe",
+                            ChiTiet = "Huy giao dich thanh toan",
+                            IpAddress = Request.UserHostAddress
+                        });
+                }
+                catch { }
+
             }
 
             if (!string.IsNullOrEmpty(lockedSeatIds))
@@ -300,6 +314,44 @@ namespace doan3.Controllers
                     RedisFeaturesService.ClearCart(sessionUser.UserName);
                     db.SaveChanges();
                     giaoDich.Commit();
+
+                    // ===== CASSANDRA =====
+                    try
+                    {
+                        foreach (var ghe in danhSachGheCanMua)
+                        {
+                            doan3.Models.Cass.CassandraFeaturesService.GhiLichSuGhe(
+                                new doan3.Models.Cass.DTO.LichSuGheDTO
+                                {
+                                    LichChieuId = lichChieuId,
+                                    GheId = ghe.GheID,
+                                    TrangThai = "Da thanh toan",
+                                    KhachHangId = maKhachHang.Value,
+                                    GhiChu = "Thanh toan thanh cong"
+                                });
+                        }
+
+                        doan3.Models.Cass.CassandraFeaturesService.GhiLichSuDatVe(
+                            new doan3.Models.Cass.DTO.LichSuDatVeDTO
+                            {
+                                KhachHangId = maKhachHang.Value,
+                                DonDatVeId = maDonHang,
+                                TrangThai = "Thanh toan thanh cong",
+                                TongTien = tongTienPhaiTra
+                            });
+
+                        doan3.Models.Cass.CassandraFeaturesService.GhiNhatKyHoatDong(
+                            new doan3.Models.Cass.DTO.NhatKyHoatDongDTO
+                            {
+                                Username = sessionUser.UserName,
+                                HanhDong = "Thanh toan",
+                                ChiTiet = "Don hang #" + maDonHang,
+                                IpAddress = Request.UserHostAddress
+                            });
+                    }
+                    catch
+                    {
+                    }
 
                     // TÍNH NĂNG NEO4J: TỰ ĐỘNG GHI NHẬN LƯỢT ĐẶT VÉ VÀO NEO4J GRAPH
                     try

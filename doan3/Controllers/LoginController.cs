@@ -83,7 +83,40 @@ namespace doan3.Controllers
                     // TÍNH NĂNG REDIS 4: LƯU SESSION USER VÀO REDIS (TTL 1800s / 30 PHÚT)
                     string roleName = listGroups.FirstOrDefault() ?? "Customer";
                     RedisFeaturesService.SaveUserSession(username, userDb.UserID, userSession.FullName, roleName, 1800);
+                    try
+                    {
+                        System.Diagnostics.Debug.WriteLine("===== BAT DAU GHI CASSANDRA =====");
 
+                        doan3.Models.Cass.CassandraFeaturesService.GhiNhatKyHoatDong(
+                            new doan3.Models.Cass.DTO.NhatKyHoatDongDTO
+                            {
+                                Username = username,
+
+                                HanhDong = "Dang nhap",
+
+                                ChiTiet = "Dang nhap thanh cong",
+
+                                ControllerName = "Login",
+
+                                ActionName = "Login",
+
+                                RequestMethod = Request.HttpMethod,
+
+                                Browser = Request.Browser.Browser + " " + Request.Browser.Version,
+
+                                Device = Request.Browser.IsMobileDevice ? "Mobile" : "Desktop",
+
+                                HeDieuHanh = Request.Browser.Platform,
+
+                                IpAddress = Request.UserHostAddress,
+
+                                KetQua = "Success"
+                            });
+                    }
+                    catch (Exception ex)
+                    {
+                        throw;
+                    }
                     if (ghinho == "on")
                         ghinhotaikhoan(username, password);
 
@@ -122,12 +155,45 @@ namespace doan3.Controllers
 
         }
 
-
-
-
         public ActionResult SignOut()
         {
-            
+            var sessionUser = Session["USER_SESSION"] as UserLogin;
+
+            if(sessionUser != null)
+{
+                try
+                {
+                    doan3.Models.Cass.CassandraFeaturesService.GhiNhatKyHoatDong(
+                        new doan3.Models.Cass.DTO.NhatKyHoatDongDTO
+                        {
+                            Username = sessionUser.UserName,
+
+                            HanhDong = "Dang xuat",
+
+                            ChiTiet = "Nguoi dung dang xuat",
+
+                            ControllerName = "Login",
+
+                            ActionName = "SignOut",
+
+                            RequestMethod = Request.HttpMethod,
+
+                            Browser = Request.Browser.Browser + " " + Request.Browser.Version,
+
+                            Device = Request.Browser.IsMobileDevice ? "Mobile" : "Desktop",
+
+                            HeDieuHanh = Request.Browser.Platform,
+
+                            IpAddress = Request.UserHostAddress,
+
+                            KetQua = "Success"
+                        });
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine(ex.ToString());
+                }
+            }
             Session["USER_SESSION"] = null;
             Session["SESSION_GROUP"] = null;
 
