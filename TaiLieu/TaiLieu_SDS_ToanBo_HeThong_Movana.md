@@ -239,6 +239,13 @@ CREATE TABLE cinemadb_analytics.seat_status_history (
 classDiagram
     class HomeController {
         +PhimDangChieu() ActionResult
+        +FavoriteMovie(movieId) ActionResult
+    }
+
+    class DatVeController {
+        +ChonGhe(suatChieuId) ActionResult
+        +LockSeatRedis(suatChieuId, gheId) JsonResult
+        +ThanhToan(hoaDonId) ActionResult
     }
 
     class MgdbCustomerFeedbackController {
@@ -247,38 +254,54 @@ classDiagram
         +ReplyTicket() ActionResult
     }
 
+    class MgdbPromotionController {
+        +Index() ActionResult
+        +ApplyVoucher(code) JsonResult
+    }
+
+    class CassandraController {
+        +UserLogs(userId) ActionResult
+        +TicketHistory(userId) ActionResult
+    }
+
     class MgdbService {
         -MongoClient Client
-        +GetFeedbacksByUser()
-        +AddFeedback()
-        +ReplyFeedback()
+        +GetFeedbacksByUser(userId)
+        +AddFeedback(doc)
+        +ReplyFeedback(id, replyMsg)
         +GetFeedbackCategoryStats()
         +GetActivePromotions()
-        +ClaimPromotion()
+        +ClaimPromotion(code)
     }
 
     class Neo4jService {
-        +GetTopBookedMovies()
-        +GetTopFavoriteMovies()
-        +ToggleFavorite()
+        +ExecuteCypher(query)
+        +GetTopBookedMovies(limit)
+        +GetTopFavoriteMovies(limit)
+        +ToggleFavorite(userId, movieId)
         +GetGenreAnalytics()
         +SeedInitialData()
     }
 
     class CassandraService {
-        +GetActivityLogsByUser()
-        +LogUserActivity()
+        +GetActivityLogsByUser(userId)
+        +LogUserActivity(userId, activityType, desc)
+        +GetTicketHistoryByUser(userId)
+        +LogTicketHistory(userId, bookingId, amount)
     }
 
     class RedisManager {
-        +LockSeat()
-        +UnlockSeat()
-        +IsSeatLocked()
+        +LockSeat(suatChieuId, gheId, userId)
+        +UnlockSeat(suatChieuId, gheId)
+        +IsSeatLocked(suatChieuId, gheId)
     }
 
-    HomeController --> Neo4jService : Lấy Top Phim
-    MgdbCustomerFeedbackController --> MgdbService : Thao tác Khiếu nại
-    HomeController --> CassandraService : Ghi Logs Hoạt động
+    HomeController --> Neo4jService : Gọi gợi ý & thả tim Phim
+    DatVeController --> RedisManager : Tạm giữ ghế 5 phút
+    DatVeController --> CassandraService : Ghi Log thanh toán vé
+    MgdbCustomerFeedbackController --> MgdbService : Quản lý khiếu nại
+    MgdbPromotionController --> MgdbService : Tra cứu & Trừ kho Voucher
+    CassandraController --> CassandraService : Truy vấn nhật ký Big Data
 ```
 
 ---
