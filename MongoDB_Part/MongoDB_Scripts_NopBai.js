@@ -135,71 +135,104 @@ db.customer_feedbacks.insertMany([
 ]);
 
 // ===============================================================================
-// 4. BỘ CÂU LỆNH TRUY VẤN CRUD TRÊN MONGODB
+// 4. BỘ CÂU LỆNH TRUY VẤN CRUD 
 // ===============================================================================
 
-// --- [CRUD 1] TẠO VÀ ĐỌC (CREATE & READ) ---
-// Lấy danh sách khuyến mãi đang hoạt động thuộc chuyên mục 'Vé xem phim'
-db.cinema_promotions.find({ "category": "Vé xem phim", "status": "Active" });
+// -------------------------------------------------------------------------------
+// 4.1 COLLECTION 1: 'customer_feedbacks' (Trung Tâm Hỗ Trợ & Khiếu Nại)
+// -------------------------------------------------------------------------------
 
-// Lấy danh sách khiếu nại theo chuyên mục 'Thanh toán'
+// [CREATE] Khách hàng tạo mới 1 ticket khiếu nại (InsertOne)
+db.customer_feedbacks.insertOne({
+  "userId": 7,
+  "username": "huy",
+  "email": "huy@gmail.com",
+  "category": "Thanh toán",
+  "subject": "Bị trừ tiền Momo nhưng chưa nhận được mã vé QR",
+  "content": "Tôi vừa thanh toán 180.000đ lúc 10h15 qua ví Momo, tiền đã trừ nhưng chưa có vé.",
+  "imageUrls": [],
+  "status": "New",
+  "conversations": [],
+  "createdAt": new Date()
+});
+
+// [READ - Find & Filter & Regex Search & Sort]
+// a) Đọc danh sách khiếu nại của chính tài khoản đăng nhập (VD: 'huy') và sắp xếp mới nhất
+db.customer_feedbacks.find({ "username": "huy" }).sort({ "createdAt": -1 });
+
+// b) Lọc khiếu nại theo chuyên mục 'Thanh toán'
 db.customer_feedbacks.find({ "category": "Thanh toán" });
 
-// --- [CRUD 2] CẬP NHẬT (UPDATE) ---
-// Khách hàng bấm lấy mã Voucher -> Giảm số lượng còn lại 1 và tăng số lượng đã lấy 1 (Atomic Update)
-db.cinema_promotions.updateOne(
-  { "code": "MOVANA50K" },
-  { "$inc": { "quantity": -1, "claimedCount": 1 } }
-);
+// c) Admin Tìm kiếm khiếu nại theo từ khóa (Regex Search không phân biệt hoa thường)
+db.customer_feedbacks.find({
+  $or: [
+    { "username": { $regex: "huy", $options: "i" } },
+    { "email": { $regex: "huy", $options: "i" } }
+  ]
+});
 
-// Admin trả lời khiếu nại và chuyển trạng thái thành 'Resolved'
+// [UPDATE] Admin trả lời ticket và chuyển trạng thái sang 'Resolved' (Đẩy tin nhắn vào Embedded Array 'conversations')
 db.customer_feedbacks.updateOne(
-  { "username": "hoangvan_e", "status": "New" },
+  { "username": "huy", "status": "New" },
   {
     "$set": { "status": "Resolved" },
     "$push": {
       "conversations": {
         "sender": "Admin",
-        "message": "Chào bạn, thành viên có sinh nhật tháng 8 được tặng 1 vé miễn phí khi mua từ 2 vé trở lên!",
+        "message": "Chào bạn, Ban quản trị đã kiểm tra và hoàn tiền 180.000đ về ví Momo thành công!",
         "createdAt": new Date()
       }
     }
   }
 );
 
-// --- [CRUD 3] XÓA (DELETE) ---
-// Admin xóa một mã khuyến mãi đã hết hạn khỏi MongoDB
+// [DELETE] Người dùng hoặc Admin xóa 1 phiếu khiếu nại khỏi MongoDB
+db.customer_feedbacks.deleteOne({ "username": "huy", "subject": "Bị trừ tiền Momo nhưng chưa nhận được mã vé QR" });
+
+
+// -------------------------------------------------------------------------------
+// 4.2 COLLECTION 2: 'cinema_promotions' (Kho Voucher & Mã Khuyến Mãi)
+// -------------------------------------------------------------------------------
+
+// [CREATE] Admin phát hành 1 mã khuyến mãi / Voucher giảm giá mới (InsertOne)
+db.cinema_promotions.insertOne({
+  "code": "KMTHANG8",
+  "title": "Siêu Ưu Đãi Tháng 8 - Giảm 30K mọi đơn hàng",
+  "category": "Vé xem phim",
+  "discountAmount": 30000,
+  "quantity": 150,
+  "claimedCount": 0,
+  "content": "Áp dụng cho mọi khách hàng đặt vé xem phim trong tháng 8.",
+  "imageUrl": "https://example.com/promo_thang8.jpg",
+  "tags": ["Vé xem phim", "Giảm 30K"],
+  "status": "Active",
+  "startDate": new Date("2026-08-01T00:00:00Z"),
+  "endDate": new Date("2026-08-31T23:59:59Z")
+});
+
+// [READ - Find & Filter & Sort]
+// a) Lấy danh sách Voucher đang hoạt động (Active) thuộc loại 'Vé xem phim' và sắp xếp theo mức giảm giá
+db.cinema_promotions.find({ "category": "Vé xem phim", "status": "Active" }).sort({ "discountAmount": -1 });
+
+// b) Tra cứu thông tin chi tiết của 1 mã Voucher cụ thể
+db.cinema_promotions.find({ "code": "MOVANA50K" });
+
+// [UPDATE] Khách hàng bấm lấy mã Voucher -> Giảm số lượng tồn 1 và tăng số lượt đã lấy 1 ($inc Atomic Update)
+db.cinema_promotions.updateOne(
+  { "code": "MOVANA50K", "quantity": { $gt: 0 } },
+  { "$inc": { "quantity": -1, "claimedCount": 1 } }
+);
+
+// [DELETE] Admin xóa một mã khuyến mãi hết hạn khỏi MongoDB
 db.cinema_promotions.deleteOne({ "code": "VNPAY20" });
 
-// Người dùng xóa một yêu cầu khiếu nại của mình khỏi MongoDB
-db.customer_feedbacks.deleteOne({ "username": "kh1_long", "subject": "tiền chưa về ngân hàng" });
 
 // ===============================================================================
 // 5. BỘ CÂU LỆNH AGGREGATION PIPELINE NÂNG CAO (YÊU CẦU ĐỒ ÁN BẮT BUỘC)
 // ===============================================================================
 
-// --- [AGGREGATION 1] Thống kê tổng số mã Voucher và lượt cấp theo từng chuyên mục Khuyến mãi ---
-db.cinema_promotions.aggregate([
-  {
-    $group: {
-      _id: "$category",
-      totalPromotions: { $sum: 1 },
-      totalQuantityLeft: { $sum: "$quantity" },
-      totalClaimed: { $sum: "$claimedCount" }
-    }
-  },
-  {
-    $project: {
-      _id: 0,
-      category: "$_id",
-      totalPromotions: 1,
-      totalQuantityLeft: 1,
-      totalClaimed: 1
-    }
-  }
-]);
-
-// --- [AGGREGATION 2] Thống kê số lượng phản hồi/khiếu nại theo từng chuyên mục (category) ---
+// --- [AGGREGATION 1 FOR COLLECTION 'customer_feedbacks'] ---
+// Thống kê tổng số ticket khiếu nại, số lượng đã giải quyết (Resolved) và đang xử lý (Pending) theo từng chuyên mục
 db.customer_feedbacks.aggregate([
   {
     $group: {
@@ -220,6 +253,28 @@ db.customer_feedbacks.aggregate([
       totalTickets: 1,
       resolvedCount: 1,
       pendingCount: 1
+    }
+  }
+]);
+
+// --- [AGGREGATION 2 FOR COLLECTION 'cinema_promotions'] ---
+// Thống kê tổng số mã Voucher, tổng số lượng còn lại và tổng lượt đã nhận theo từng loại khuyến mãi
+db.cinema_promotions.aggregate([
+  {
+    $group: {
+      _id: "$category",
+      totalPromotions: { $sum: 1 },
+      totalQuantityLeft: { $sum: "$quantity" },
+      totalClaimed: { $sum: "$claimedCount" }
+    }
+  },
+  {
+    $project: {
+      _id: 0,
+      category: "$_id",
+      totalPromotions: 1,
+      totalQuantityLeft: 1,
+      totalClaimed: 1
     }
   }
 ]);
