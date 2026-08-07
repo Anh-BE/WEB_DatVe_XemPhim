@@ -236,6 +236,8 @@ classDiagram
         +AddFeedback()
         +ReplyFeedback()
         +GetFeedbackCategoryStats()
+        +GetActivePromotions()
+        +ClaimPromotion()
     }
 
     class Neo4jService {
@@ -345,6 +347,34 @@ sequenceDiagram
     Mgdb-->>Web: Cập nhật Document thành công
     Web-->>Admin: Thông báo đã trả lời Ticket
     Web-->>Customer: Hiển thị câu trả lời của Admin trong lịch sử hội thoại
+```
+
+---
+
+### 8.4 Luồng Áp Dụng Mã Khuyến Mãi & Voucher Giảm Giá (MongoDB Collection 'cinema_promotions')
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Customer as Khách Hàng
+    participant Checkout as ThanhToanController / MgdbPromotionController
+    participant Mgdb as MongoDB Database ('cinema_promotions')
+    participant SQL as SQL Server RDBMS
+
+    Customer->>Checkout: Mở trang Đặt Vé & Nhập Mã Voucher (VD: 'MOVANA50K')
+    Checkout->>Mgdb: Find({ code: 'MOVANA50K', status: 'Active', quantity: { $gt: 0 } })
+    alt Mã Voucher Không Hợp Lệ hoặc Đã Hết Số Lượng
+        Mgdb-->>Checkout: Trả về null / Hết lượt
+        Checkout-->>Customer: Thông báo 'Mã giảm giá không tồn tại hoặc đã hết lượt dùng'
+    else Mã Voucher Hợp Lệ
+        Mgdb-->>Checkout: Trả về BSON Document Voucher (discountAmount: 50.000đ)
+        Checkout->>Mgdb: UpdateOne({ code: 'MOVANA50K' }, { $inc: { quantity: -1, claimedCount: 1 } })
+        Mgdb-->>Checkout: Trừ số lượng kho Voucher thành công (Atomic Update)
+        Checkout->>Checkout: Tính Tổng Tiền = Giá Vé Gốc - 50.000đ
+        Checkout->>SQL: Thêm Hóa Đơn đã trừ chiết khấu vào SQL Server
+        SQL-->>Checkout: Lưu Hóa Đơn thành công
+        Checkout-->>Customer: Hiển thị Đơn hàng đã áp mã giảm 50K thành công!
+    end
 ```
 
 ---
