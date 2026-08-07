@@ -15,7 +15,7 @@
 
 # MỤC LỤC TÀI LIỆU SDS TỔNG THỂ
 - [CHƯƠNG 1: TỔNG QUAN HỆ THỐNG VÀ KIẾN TRÚC TỔNG THỂ (SYSTEM OVERVIEW & ARCHITECTURE)](#chuong-1-tong-quan-he-thong-va-kien-truc-tong-the-system-overview--architecture)
-- [CHƯƠNG 2: THIẾT KẾ CSDL QUAN HỆ SQL SERVER (RDBMS CORE & NOSQL INTEGRATION DESIGN)](#chuong-2-thiet-ke-csdl-quan-he-sql-server-rdbms-core--nosql-integration-design)
+- [CHƯƠNG 2: THIẾT KẾ CSDL QUAN HỆ SQL SERVER VÀ TÍCH HỢP NOSQL (RDBMS CORE & NOSQL INTEGRATION)](#chuong-2-thiet-ke-csdl-quan-he-sql-server-va-tich-hop-nosql-rdbms-core--nosql-integration)
 - [CHƯƠNG 3: THIẾT KẾ CSDL NOSQL MONGODB (DOCUMENT STORE DESIGN)](#chuong-3-thiet-ke-csdl-nosql-mongodb-document-store-design)
 - [CHƯƠNG 4: THIẾT KẾ CSDL NOSQL REDIS (KEY-VALUE STORE DESIGN)](#chuong-4-thiet-ke-csdl-nosql-redis-key-value-store-design)
 - [CHƯƠNG 5: THIẾT KẾ CSDL NOSQL NEO4J (GRAPH DATABASE DESIGN)](#chuong-5-thiet-ke-csdl-nosql-neo4j-graph-database-design)
@@ -63,25 +63,23 @@ graph TD
 
 ---
 
-## CHƯƠNG 2: THIẾT KẾ CSDL QUAN HỆ SQL SERVER (RDBMS CORE & NOSQL INTEGRATION DESIGN)
+## CHƯƠNG 2: THIẾT KẾ CSDL QUAN HỆ SQL SERVER VÀ TÍCH HỢP NOSQL (RDBMS CORE & NOSQL INTEGRATION)
 
 ### 2.1 Vai trò Nền tảng RDBMS & Điểm Tích Hợp Với 4 Hệ NoSQL
 Trong mô hình kiến trúc Đa CSDL (Polyglot Persistence), SQL Server 2019 đóng vai trò là **CSDL trung tâm giao dịch tài chính (RDBMS Core)** đảm bảo tính toàn vẹn ACID cho các dữ liệu cố định, đồng thời phối hợp ăn khớp với 4 hệ NoSQL:
 
-- **1. Phối hợp với Redis:** SQL Server lưu trữ danh mục Ghế (`Ghe`) và Suất Chiếu (`SuatChieu`). Khi khách hàng chọn ghế, Redis chịu trách nhiệm tạm khóa ghế `seat_lock:{suatChieuId}:{gheId}` trong 5 phút. Khi thanh toán hoàn tất, dữ liệu hóa đơn chính thức được ghi về SQL Server và Redis giải phóng khóa tạm.
-- **2. Phối hợp với Neo4j:** Dữ liệu Phim, Thể loại và Lịch sử đặt vé từ SQL Server được đồng bộ sang Neo4j dưới dạng các Nút `(:User)`, `(:Movie)`, `(:Genre)` và các Cung `[:BOOKED]`, `[:FAVORITED]`. Neo4j tính toán xong Top Phim sẽ trả danh sách ID về cho SQL Server để lấy ảnh Poster hiển thị lên Trang chủ.
-- **3. Phối hợp với MongoDB:** SQL Server quản lý hóa đơn thanh toán. Khi áp dụng mã giảm giá từ MongoDB (`cinema_promotions`), số tiền chiết khấu `discountAmount` được trừ trực tiếp vào `TongTien` của SQL Server. Nếu xảy ra sự cố thanh toán, ticket khiếu nại của khách được lưu vào MongoDB Collection `customer_feedbacks`.
-- **4. Phối hợp với Cassandra:** Sau khi mỗi đơn đặt vé hoàn tất lưu vào SQL Server, hệ thống tự động ghi bất đồng bộ (Async Write) dữ liệu lịch sử đặt vé sang Cassandra `user_ticket_history` để phục vụ tra cứu Big Data tốc độ cao.
+- **1. Tích hợp với Redis:** SQL Server quản lý danh mục `Ghe` và `SuatChieu`. Khi khách hàng chọn ghế, Redis chịu trách nhiệm tạm khóa ghế `seat_lock:{suatChieuId}:{gheId}` trong 5 phút. Khi thanh toán hoàn tất, dữ liệu hóa đơn chính thức được ghi về SQL Server và Redis giải phóng khóa tạm.
+- **2. Tích hợp với Neo4j:** Dữ liệu Phim, Thể loại và Lịch sử đặt vé từ SQL Server được đồng bộ sang Neo4j dưới dạng các Nút `(:User)`, `(:Movie)`, `(:Genre)` và các Cung `[:BOOKED]`, `[:FAVORITED]`. Neo4j tính toán xong Top Phim sẽ trả danh sách ID về cho SQL Server để lấy ảnh Poster hiển thị lên Trang chủ.
+- **3. Tích hợp với MongoDB:** SQL Server quản lý hóa đơn thanh toán. Khi áp dụng mã giảm giá từ MongoDB (`cinema_promotions`), số tiền chiết khấu `discountAmount` được trừ trực tiếp vào `TongTien` của SQL Server. Nếu xảy ra sự cố thanh toán, ticket khiếu nại của khách được lưu vào MongoDB Collection `customer_feedbacks`.
+- **4. Tích hợp với Cassandra:** Sau khi mỗi đơn đặt vé hoàn tất lưu vào SQL Server, hệ thống tự động ghi bất đồng bộ (Async Write) dữ liệu lịch sử đặt vé sang Cassandra `user_ticket_history` để phục vụ tra cứu Big Data tốc độ cao.
 
-### 2.2 Bảng Mô tả Chi tiết Thực thể SQL Server:
-1. **`NguoiDung`**: `UserID` (PK, int), `TenDangNhap` (nvarchar), `MatKhau` (nvarchar), `HoTen`, `Email`, `SoDienThoai`, `GroupID` (1: Admin, 2: Customer).
-2. **`Phim`**: `PhimID` (PK, int), `TenPhim`, `DaoDien`, `DienVien`, `Poster`, `ThoiLuong`, `NgayKhoiChieu`, `MoTa`.
-3. **`Rap`**: `RapID` (PK, int), `TenRap`, `DiaChi`, `SoDienThoai`.
-4. **`PhongChieu`**: `PhongID` (PK, int), `TenPhong`, `RapID` (FK).
-5. **`SuatChieu`**: `SuatChieuID` (PK, int), `PhimID` (FK), `PhongID` (FK), `NgayChieu`, `GioChieu`, `GiaVe`.
-6. **`Ghe`**: `GheID` (PK, int), `PhongID` (FK), `TenGhe`, `LoaiGhe` (Thường / VIP).
-7. **`HoaDon`**: `HoaDonID` (PK, int), `UserID` (FK), `NgayDat`, `TongTien`, `TrangThai`.
-8. **`Ve`**: `VeID` (PK, int), `SuatChieuID` (FK), `GheID` (FK), `HoaDonID` (FK), `GiaVe`.
+### 2.2 Các Thực thể Cốt lõi SQL Server:
+- `NguoiDung` (`UserID`, `TenDangNhap`, `MatKhau`, `Email`, `GroupID`)
+- `Phim` (`PhimID`, `TenPhim`, `Poster`, `ThoiLuong`, `MoTa`)
+- `Rap` (`RapID`, `TenRap`, `DiaChi`) - `PhongChieu` (`PhongID`, `TenPhong`, `RapID`)
+- `SuatChieu` (`SuatChieuID`, `PhimID`, `PhongID`, `NgayChieu`, `GioChieu`, `GiaVe`)
+- `Ghe` (`GheID`, `PhongID`, `TenGhe`, `LoaiGhe`)
+- `HoaDon` (`HoaDonID`, `UserID`, `NgayDat`, `TongTien`, `TrangThai`) - `Ve` (`VeID`, `SuatChieuID`, `GheID`, `HoaDonID`)
 
 ### 2.3 Sơ đồ Quan hệ Thực thể SQL Server (ERD Diagram):
 
