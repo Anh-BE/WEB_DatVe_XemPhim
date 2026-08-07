@@ -139,27 +139,41 @@ redisDb.KeyDelete($"seat_lock:{suatChieuId}:{gheId}");
 ## CHƯƠNG 5: THIẾT KẾ CSDL NOSQL NEO4J (GRAPH DATABASE DESIGN)
 
 ### 5.1 Phạm vi nhiệm vụ
-Lưu trữ cấu trúc đồ thị mối quan hệ giữa Người Dùng và Bộ Phim để tính toán gợi ý Top Phim Thịnh Hành.
+Lưu trữ cấu trúc đồ thị mối quan hệ giữa Người Dùng, Bộ Phim và Thể Loại Phim để tính toán gợi ý Top Phim Thịnh Hành & Thống kê độ phổ biến.
 
 ### 5.2 Sơ đồ Đồ thị (Graph Model):
 - **Nodes:**
-  - `(:User {userId: 7, username: 'huy'})`
-  - `(:Movie {movieId: 101, title: 'Lật Mặt 7'})`
+  - `(:User {userId: 'huy', username: 'huy'})`
+  - `(:Movie {movieId: 101, title: 'Lật Mặt 7', poster: '001.png', duration: 120})`
+  - `(:Genre {genreId: 1, genreName: 'Hành Động'})`
 - **Relationships:**
-  - `(:User)-[:BOOKED {bookedAt: '2026-08-01'}]->(:Movie)`
+  - `(:User)-[:BOOKED {bookingId: 'HD001', seatCount: 2, date: '2026-08-01'}]->(:Movie)`
   - `(:User)-[:FAVORITED]->(:Movie)`
+  - `(:Movie)-[:BELONGS_TO]->(:Genre)`
 
-### 5.3 Câu lệnh Cypher Query Truy vấn Top Phim:
+### 5.3 Bộ Câu lệnh Cypher Query Đầy Đủ:
 ```cypher
-// Top Phim Được Đặt Vé Nhiều Nhất
+// 1. Top Phim Được Đặt Vé Nhiều Nhất
 MATCH (u:User)-[r:BOOKED]->(m:Movie)
 RETURN m.movieId AS MovieId, m.title AS Title, COUNT(r) AS TotalBookings
 ORDER BY TotalBookings DESC LIMIT 4;
 
-// Top Phim Được Yêu Thích Nhất
+// 2. Top Phim Được Yêu Thích Nhất
 MATCH (u:User)-[r:FAVORITED]->(m:Movie)
 RETURN m.movieId AS MovieId, m.title AS Title, COUNT(r) AS TotalFavorites
 ORDER BY TotalFavorites DESC LIMIT 4;
+
+// 3. Thả Tim Yêu Thích Phim Realtime (Tạo mới hoặc Xóa mối quan hệ)
+MATCH (u:User {userId: 'huy'}), (m:Movie {movieId: 101})
+MERGE (u)-[r:FAVORITED]->(m);
+
+// 4. Thống Kê Phân Tích Độ Phổ Biến Theo Thể Loại Phim Đồ Thị
+MATCH (m:Movie)-[:BELONGS_TO]->(g:Genre)
+OPTIONAL MATCH (u:User)-[b:BOOKED]->(m)
+OPTIONAL MATCH (u2:User)-[f:FAVORITED]->(m)
+RETURN g.genreId AS GenreId, g.genreName AS GenreName, 
+       COUNT(DISTINCT b) AS TotalBookings, COUNT(DISTINCT f) AS TotalFavorites
+ORDER BY TotalBookings DESC;
 ```
 
 ---
@@ -245,6 +259,7 @@ classDiagram
         +GetTopFavoriteMovies()
         +ToggleFavorite()
         +GetGenreAnalytics()
+        +SeedInitialData()
     }
 
     class CassandraService {
@@ -342,6 +357,21 @@ sequenceDiagram
         Neo4j-->>Web: Trả về trạng thái Favorited
         Web-->>User: Cập nhật icon tim đỏ ❤️ & Tăng số lượt yêu thích
     end
+```
+
+#### 8.2.3 Luồng Thống Kê Phân Tích Độ Phổ Biến Theo Thể Loại Phim Đồ Thị (GetGenreAnalytics)
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Admin as Quản Trị Viên (Admin)
+    participant AdminCtrl as AdminController / AnalyticsController
+    participant Neo4j as Neo4j Graph DB Server
+
+    Admin->>AdminCtrl: Truy cập Bảng Thống Kê Phân Tích Thể Loại Phim
+    AdminCtrl->>Neo4j: ExecuteCypher("MATCH (m:Movie)-[:BELONGS_TO]->(g:Genre) OPTIONAL MATCH ...")
+    Neo4j-->>AdminCtrl: Trả về Danh sách Thể loại + Tổng vé đợt đặt + Tổng lượt yêu thích
+    AdminCtrl-->>Admin: Hiển thị Biểu đồ / Bảng Thống kê Độ Phổ Biến Thể Loại Phim Neo4j Graph
 ```
 
 ---
