@@ -14,7 +14,7 @@
 ---
 
 # MỤC LỤC TÀI LIỆU SDS TỔNG THỂ
-- [CHƯƠNG 1: TỔNG QUAN KIẾN TRÚC HỆ THỐNG (SYSTEM ARCHITECTURE OVERVIEW)](#chuong-1-tong-quan-kien-truc-he-thong-system-architecture-overview)
+- [CHƯƠNG 1: TỔNG QUAN HỆ THỐNG VÀ KIẾN TRÚC TỔNG THỂ (SYSTEM OVERVIEW & ARCHITECTURE)](#chuong-1-tong-quan-he-thong-va-kien-truc-tong-the-system-overview--architecture)
 - [CHƯƠNG 2: THIẾT KẾ CSDL QUAN HỆ SQL SERVER (RDBMS CORE DESIGN)](#chuong-2-thiet-ke-csdl-quan-he-sql-server-rdbms-core-design)
 - [CHƯƠNG 3: THIẾT KẾ CSDL NOSQL MONGODB (DOCUMENT STORE DESIGN)](#chuong-3-thiet-ke-csdl-nosql-mongodb-document-store-design)
 - [CHƯƠNG 4: THIẾT KẾ CSDL NOSQL REDIS (KEY-VALUE STORE DESIGN)](#chuong-4-thiet-ke-csdl-nosql-redis-key-value-store-design)
@@ -25,10 +25,22 @@
 
 ---
 
-## CHƯƠNG 1: TỔNG QUAN KIẾN TRÚC HỆ THỐNG (SYSTEM ARCHITECTURE OVERVIEW)
+## CHƯƠNG 1: TỔNG QUAN HỆ THỐNG VÀ KIẾN TRÚC TỔNG THỂ (SYSTEM OVERVIEW & ARCHITECTURE)
 
-### 1.1 Mô hình Kiến trúc Polyglot Persistence (Đa Cơ Sở Dữ Liệu)
-Hệ thống Movana Cinema kết hợp 5 CSDL khác nhau để đạt hiệu năng đọc/ghi và trải nghiệm người dùng tối ưu:
+### 1.1 Giới thiệu Đề tài và Bối cảnh Dự án
+- **Tên dự án:** Hệ Thống Đặt Vé Xem Phim Trực Tuyến Đa CSDL "MOVANA CINEMA".
+- **Bối cảnh xây dựng:** Ngành dịch vụ giải trí chiếu phim trực tuyến đòi hỏi hệ thống thông tin phải phục vụ hàng triệu lượt truy cập đồng thời, xử lý giao dịch tài chính chính xác (ACID), phản hồi tìm kiếm siêu tốc, gợi ý nội dung thông minh và lưu trữ nhật ký truy vết quy mô lớn (Big Data).
+- **Giải pháp kĩ thuật:** Hệ thống áp dụng mô hình kiến trúc **Polyglot Persistence (Đa cơ sở dữ liệu)** kết hợp giữa CSDL Quan hệ SQL Server 2019 truyền thống và 4 hệ NoSQL hiện đại (MongoDB, Redis, Neo4j, Apache Cassandra) nhằm khai thác tối đa ưu thế vượt trội của từng công nghệ CSDL.
+
+### 1.2 Mục tiêu Hệ thống
+1. **Quản lý giao dịch cốt lõi (SQL Server):** Đảm bảo tính toàn vẹn dữ liệu tuyệt đối cho các thực thể Phim, Rạp, Suất chiếu, Vé và Hóa đơn tài chính.
+2. **Khóa tạm giữ ghế đếm ngược thời gian thực (Redis):** Giữ tạm thời ghế ngồi trong 5 phút với độ trễ cực thấp (< 1ms), ngăn ngừa xung đột đụng độ 2 người mua cùng 1 ghế.
+3. **Mạng đồ thị gợi ý phim thông minh (Neo4j):** Phân tích mối quan hệ đặt vé và yêu thích của người dùng để đề xuất Bảng xếp hạng Top Phim thịnh hành.
+4. **Hệ thống Khiếu nại & Khuyến mãi linh hoạt (MongoDB):** Lưu trữ cấu trúc Document linh hoạt dạng mảng lồng `conversations` trao đổi sự cố và quản lý mã Voucher chiết khấu.
+5. **Nhật ký truy vết hoạt động Big Data (Apache Cassandra):** Ghi nhận liên tục nhật ký thao tác và lịch sử vé người dùng với tốc độ ghi cao, khả năng mở rộng hàng triệu bản ghi.
+
+### 1.3 Mô hình Kiến trúc Polyglot Persistence (5 Cơ Sở Dữ Liệu)
+Sơ đồ tổng quan kết nối giữa tầng ứng dụng ASP.NET MVC Backend và 5 hệ CSDL:
 
 ```mermaid
 graph TD
