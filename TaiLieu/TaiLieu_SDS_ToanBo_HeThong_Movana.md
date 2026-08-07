@@ -293,5 +293,61 @@ sequenceDiagram
 
 ---
 
+### 8.2 Luồng Gợi Ý Top Phim Thịnh Hành Trên Trang Chủ (Neo4j Graph DB + HttpRuntime.Cache)
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User as Khách Hàng / Khách vãng cảnh
+    participant Home as HomeController (/Home/PhimDangChieu)
+    participant Cache as HttpRuntime.Cache (RAM 5 phút)
+    participant Neo4j as Neo4j Graph DB Server
+    participant SQL as SQL Server DB
+
+    User->>Home: Truy cập Trang Chủ
+    Home->>Cache: Kiểm tra Cache['TopBookedNeo4j'] & ['TopFavoritesNeo4j']
+    alt Đã có dữ liệu trong RAM (Cache Hit)
+        Cache-->>Home: Trả về danh sách Top Phim lập tức (0.001s)
+    else Chưa có trong RAM (Cache Miss / Lần đầu)
+        Home->>Neo4j: ExecuteCypher("MATCH (u:User)-[r:BOOKED]->(m:Movie) RETURN ...")
+        Neo4j-->>Home: Trả về 4 Node Phim có lượt đặt vé & yêu thích cao nhất
+        Home->>SQL: Sync tên phim & file ảnh Poster từ bảng Phims
+        SQL-->>Home: Trả về dữ liệu đồng bộ
+        Home->>Cache: Insert Cache 5 phút (NoSlidingExpiration)
+    end
+    Home-->>User: Hiển thị Bảng Xếp Hạng Top Phim Thịnh Hành trên Trang Chủ
+```
+
+---
+
+### 8.3 Luồng Tiếp Nhận Khiếu Nại & Trả Lời Của Admin (MongoDB Document Store)
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Customer as Khách Hàng
+    actor Admin as Quản Trị Viên (Admin)
+    participant Web as MgdbCustomerFeedbackController
+    participant Mgdb as MongoDB Database ('customer_feedbacks')
+
+    Customer->>Web: Gửi Ticket khiếu nại (Tiêu đề, Nội dung, Chuyên mục)
+    Web->>Mgdb: InsertOne(doc { status: 'New', conversations: [] })
+    Mgdb-->>Web: Trả về ObjectId thành công
+    Web-->>Customer: Hiển thị Ticket trong Lịch sử Hỗ Trợ
+
+    Admin->>Web: Đăng nhập Admin & Mở trang Quản Lý Phản Hồi
+    Web->>Mgdb: Find(filter) & Aggregate($group theo category)
+    Mgdb-->>Web: Trả về Danh sách Ticket + Bảng Thống Kê Sự Cố
+    Web-->>Admin: Hiển thị Bảng điều khiển Admin
+
+    Admin->>Web: Nhập Lời nhắn trả lời & Bấm Giải quyết
+    Web->>Mgdb: UpdateOne(filter, { $push:conversations, $set:status='Resolved' })
+    Mgdb-->>Web: Cập nhật Document thành công
+    Web-->>Admin: Thông báo đã trả lời Ticket
+    Web-->>Customer: Hiển thị câu trả lời của Admin trong lịch sử hội thoại
+```
+
+---
+
 ### 📌 TỔNG KẾT TÀI LIỆU SDS TỔNG THỂ V3.0
 Tài liệu SDS v3.0 này cung cấp trọn vẹn 100% thiết kế kỹ thuật của cả **SQL Server và 4 hệ NoSQL (MongoDB, Redis, Neo4j, Cassandra)**, hoàn chỉnh theo chuẩn đồ án cấp trường và tài liệu thiết kế hệ thống lớn.
