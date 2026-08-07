@@ -325,7 +325,7 @@ ORDER BY TotalFavorites DESC LIMIT 4;
 
 // 4. Thả Tim Yêu Thích Phim Realtime (Tạo mới hoặc Xóa mối quan hệ)
 MATCH (u:User { userId: 'huy' }), (m:Movie { movieId: 101 })
-MERGE (u)-[r:FAVORITED]->(m);
+MERGE (u)-[:FAVORITED]->(m);
 
 // 5. Thống Kê Phân Tích Độ Phổ Biến Theo Thể Loại Phim Đồ Thị
 MATCH (m:Movie)-[:BELONGS_TO]->(g:Genre)
@@ -435,8 +435,16 @@ public async Task LogUserActivityAsync(int userId, string activityType, string d
 
 ## CHƯƠNG 7: THIẾT KẾ MÔ ĐUN XỬ LÝ VÀ SƠ ĐỒ LỚP (CLASS DIAGRAM)
 
+Sơ đồ Lớp (Class Diagram) tổng thể hệ thống được chia làm **3 Tầng Kiến Trúc (3-Tier Architecture)**:
+1. **Tầng Giao Diện / Điều Hướng (Web Controllers Layer):** Nhận Request từ Khách hàng & Admin.
+2. **Tầng Xử Lý Dữ Liệu NoSQL (Data Access Services Layer):** Thực thi tương tác trực tiếp với 5 hệ CSDL.
+3. **Tầng Thực Thể & Mô Hình Dữ Liệu (Entities & DTOs Layer):** Định nghĩa cấu trúc BSON Document, Graph Nodes và Wide-Column Entities.
+
 ```mermaid
 classDiagram
+    %% ==========================================
+    %% 1. TẦNG WEB CONTROLLERS
+    %% ==========================================
     class HomeController {
         +PhimDangChieu() ActionResult
         +FavoriteMovie(movieId) ActionResult
@@ -444,6 +452,7 @@ classDiagram
 
     class DatVeController {
         +ChonGhe(suatChieuId) ActionResult
+        +AddToCart(suatChieuId, seatName) JsonResult
         +LockSeatRedis(suatChieuId, gheId) JsonResult
         +ThanhToan(hoaDonId) ActionResult
     }
@@ -464,46 +473,92 @@ classDiagram
         +TicketHistory(userId) ActionResult
     }
 
+    %% ==========================================
+    %% 2. TẦNG DATA ACCESS SERVICES (5 DATABASES)
+    %% ==========================================
     class MgdbService {
         -MongoClient Client
-        +GetFeedbacksByUser(userId)
-        +AddFeedback(doc)
-        +ReplyFeedback(id, replyMsg)
-        +GetFeedbackCategoryStats()
-        +GetActivePromotions()
-        +ClaimPromotion(code)
+        +GetFeedbacksByUser(userId) List~CustomerFeedbackDoc~
+        +AddFeedback(doc) void
+        +ReplyFeedback(id, replyMsg) void
+        +GetFeedbackCategoryStats() JArray
+        +GetActivePromotions() List~CinemaPromotionDoc~
+        +ClaimPromotion(code) bool
     }
 
     class Neo4jService {
-        +ExecuteCypher(query)
-        +GetTopBookedMovies(limit)
-        +GetTopFavoriteMovies(limit)
-        +ToggleFavorite(userId, movieId)
-        +GetGenreAnalytics()
-        +SeedInitialData()
+        +ExecuteCypher(query) JObject
+        +GetTopBookedMovies(limit) List~Neo4jMovieViewModel~
+        +GetTopFavoriteMovies(limit) List~Neo4jMovieViewModel~
+        +ToggleFavorite(userId, movieId) bool
+        +GetGenreAnalytics() List~Neo4jGenreViewModel~
+        +SeedInitialData() void
     }
 
     class CassandraService {
-        +GetActivityLogsByUser(userId)
-        +LogUserActivity(userId, activityType, desc)
-        +GetTicketHistoryByUser(userId)
-        +LogTicketHistory(userId, bookingId, amount)
+        +GetActivityLogsByUser(userId) List~UserActivityLog~
+        +LogUserActivity(userId, activityType, desc) Task
+        +GetTicketHistoryByUser(userId) List~UserTicketHistory~
+        +LogTicketHistory(userId, bookingId, amount) Task
     }
 
     class RedisManager {
-        +SaveUserSession(userId, sessionData)
-        +AddToCart(userId, suatChieuId, seatName)
-        +LockSeat(suatChieuId, gheId, userId)
-        +UnlockSeat(suatChieuId, gheId)
-        +IsSeatLocked(suatChieuId, gheId)
+        -ConnectionMultiplexer Redis
+        +SaveUserSession(userId, sessionData) bool
+        +AddToCart(userId, suatChieuId, seatName) bool
+        +LockSeat(suatChieuId, gheId, userId) bool
+        +UnlockSeat(suatChieuId, gheId) bool
+        +IsSeatLocked(suatChieuId, gheId) bool
     }
 
-    HomeController --> Neo4jService : Gọi gợi ý & thả tim Phim
-    DatVeController --> RedisManager : Session, Giỏ hàng & Tạm giữ ghế 5 phút
-    DatVeController --> CassandraService : Ghi Log thanh toán vé
-    MgdbCustomerFeedbackController --> MgdbService : Quản lý khiếu nại
-    MgdbPromotionController --> MgdbService : Tra cứu & Trừ kho Voucher
-    CassandraController --> CassandraService : Truy vấn nhật ký Big Data
+    %% ==========================================
+    %% 3. TẦNG ENTITIES & DATA MODELS (DTOs)
+    %% ==========================================
+    class CustomerFeedbackDoc {
+        +ObjectId Id
+        +int UserId
+        +string Category
+        +string Subject
+        +string Status
+        +List~ConversationItem~ Conversations
+    }
+
+    class CinemaPromotionDoc {
+        +ObjectId Id
+        +string Code
+        +int DiscountAmount
+        +int Quantity
+        +int ClaimedCount
+    }
+
+    class Neo4jMovieViewModel {
+        +int MovieId
+        +string Title
+        +int TotalBookings
+        +int TotalFavorites
+    }
+
+    class UserActivityLog {
+        +int UserId
+        +DateTime ActivityTime
+        +string ActivityType
+        +string Description
+    }
+
+    %% ==========================================
+    %% QUAN HỆ KẾT NỐI GIỮA CÁC LỚP (RELATIONSHIPS)
+    %% ==========================================
+    HomeController --> Neo4jService : Gọi gợi ý & thả tim Phim Neo4j
+    DatVeController --> RedisManager : Active Session, Giỏ hàng & Tạm giữ ghế 5 phút
+    DatVeController --> CassandraService : Ghi Log thanh toán vé Big Data
+    MgdbCustomerFeedbackController --> MgdbService : Quản lý khiếu nại MongoDB
+    MgdbPromotionController --> MgdbService : Tra cứu & Trừ kho Voucher MongoDB
+    CassandraController --> CassandraService : Truy vấn nhật ký Big Data Cassandra
+
+    MgdbService ..> CustomerFeedbackDoc : Thao tác Document
+    MgdbService ..> CinemaPromotionDoc : Thao tác Document
+    Neo4jService ..> Neo4jMovieViewModel : Mapping Graph Node
+    CassandraService ..> UserActivityLog : Mapping Wide-Column Row
 ```
 
 ---
