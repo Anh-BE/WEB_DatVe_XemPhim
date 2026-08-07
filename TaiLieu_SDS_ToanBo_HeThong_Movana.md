@@ -1,8 +1,15 @@
 # TÀI LIỆU THIẾT KẾ PHẦN MỀM TỔNG THỂ HỆ THỐNG
 ## (SOFTWARE DESIGN SPECIFICATION - SDS)
 **Dự án:** Hệ Thống Đặt Vé Xem Phim Trực Tuyến Đa CSDL "MOVANA CINEMA"  
-**Các công nghệ CSDL:** SQL Server (RDBMS), MongoDB (Document Store), Redis (Key-Value), Neo4j (Graph), Apache Cassandra (Wide-Column Store).  
-**Phiên bản tài liệu:** 2.0 (Bản Chính Thức Toàn Bộ Hệ Thống)
+**Công nghệ:** ASP.NET MVC 5 (C#), Entity Framework 6, HTML5/CSS3/Razor, Bootstrap.  
+**Hệ CSDL Polyglot Persistence (5 Databases):**
+1. **SQL Server 2019+** (RDBMS Core: Phim, Rạp, Suất chiếu, Vé, Hóa đơn)
+2. **MongoDB 7.0** (Document Store: Phản hồi/Khiếu nại Khách hàng, Mã Khuyến mãi Voucher)
+3. **Redis 7.0** (Key-Value Store: Tạm khóa giữ ghế Realtime, TTL Đếm ngược 5 phút)
+4. **Neo4j 5.0** (Graph DB: Mạng đồ thị gợi ý Top phim đặt vé & Yêu thích nhiều nhất)
+5. **Apache Cassandra 4.0** (Wide-Column Store: Lưu vết Logs nhật ký hoạt động Big Data)
+
+**Phiên bản tài liệu:** 3.0 (Bản Chi Tiết Hoàn Chỉnh 100% Cho Toàn Bộ Hệ Thống)
 
 ---
 
@@ -21,22 +28,22 @@
 ## CHƯƠNG 1: TỔNG QUAN KIẾN TRÚC HỆ THỐNG (SYSTEM ARCHITECTURE OVERVIEW)
 
 ### 1.1 Mô hình Kiến trúc Polyglot Persistence (Đa Cơ Sở Dữ Liệu)
-Hệ thống Web Đặt Vé Xem Phim Movana áp dụng kiến trúc **Polyglot Persistence**, kết hợp điểm mạnh của 5 loại CSDL khác nhau để tối ưu hiệu năng tối đa:
+Hệ thống Movana Cinema kết hợp 5 CSDL khác nhau để đạt hiệu năng đọc/ghi và trải nghiệm người dùng tối ưu:
 
 ```mermaid
 graph TD
-    Client["Presentation Layer: Trình duyệt Web (Responsive HTML5, Razor CSHTML, AJAX)"]
-    Backend["Application Tier: ASP.NET MVC 5 (C# Backend Server)"]
+    Client["Client Layer: Trình duyệt Web (HTML5, Razor CSHTML, AJAX, JavaScript)"]
+    Backend["Application Tier: ASP.NET MVC 5 (C# Web Controller & Business Logic)"]
     
-    DB_SQL[("1. Primary RDBMS: SQL Server<br/>(Dữ liệu Phim, Rạp, Suất chiếu, Vé, Hóa đơn)")]
-    DB_MGDB[("2. Document Store: MongoDB 7.0<br/>(Khiếu nại Khách hàng, Mã giảm giá Voucher)")]
-    DB_REDIS[("3. Key-Value Store: Redis 7.0<br/>(Khóa giữ ghế đếm ngược Realtime TTL)")]
-    DB_NEO[("4. Graph DB: Neo4j 5.0<br/>(Đồ thị gợi ý Top phim đặt vé & Yêu thích)")]
-    DB_CASS[("5. Wide-Column: Apache Cassandra 4.0<br/>(Lưu vết Logs hoạt động Big Data)")]
+    DB_SQL[("1. SQL Server RDBMS<br/>(Giao dịch Phim, Rạp, Vé, Hóa đơn)")]
+    DB_MGDB[("2. MongoDB 7.0 Document Store<br/>(Khiếu nại Khách hàng, Mã giảm giá)")]
+    DB_REDIS[("3. Redis 7.0 Key-Value<br/>(Khóa ghế đếm ngược TTL 5 phút)")]
+    DB_NEO[("4. Neo4j 5.0 Graph DB<br/>(Gợi ý Top Phim thịnh hành)")]
+    DB_CASS[("5. Apache Cassandra 4.0<br/>(Nhật ký Logs Big Data & Lịch sử vé)")]
 
-    Client <-->|HTTP GET/POST Requests| Backend
+    Client <-->|HTTP POST/GET Requests| Backend
     Backend <-->|Entity Framework 6| DB_SQL
-    Backend <-->|MongoDB C# Official Driver| DB_MGDB
+    Backend <-->|MongoDB C# Driver| DB_MGDB
     Backend <-->|StackExchange.Redis| DB_REDIS
     Backend <-->|REST HTTP API / Cypher| DB_NEO
     Backend <-->|Cassandra C# Driver| DB_CASS
@@ -46,29 +53,26 @@ graph TD
 
 ## CHƯƠNG 2: THIẾT KẾ CSDL QUAN HỆ SQL SERVER (RDBMS CORE DESIGN)
 
-### 2.1 Phạm vi nhiệm vụ SQL Server
-Chịu trách nhiệm quản lý các giao dịch tài chính ACID cố định và cấu trúc rạp chiếu.
+### 2.1 Phạm vi nhiệm vụ
+Quản lý các thực thể cố định và đảm bảo tính toàn vẹn dữ liệu giao dịch tài chính (ACID):
+- `Phim`, `Rap`, `PhongChieu`, `SuatChieu`, `Ghe`, `NguoiDung`, `HoaDon`, `Ve`.
 
-### 2.2 Sơ đồ Quan hệ Thực thể (Entity Relationship Diagram - ERD)
-- **`Phim`**: `PhimID` (PK), `TenPhim`, `DaoDien`, `DienVien`, `Poster`, `NgayKhoiChieu`.
-- **`Rap`**: `RapID` (PK), `TenRap`, `DiaChi`, `SoDienThoai`.
-- **`PhongChieu`**: `PhongID` (PK), `TenPhong`, `RapID` (FK).
-- **`SuatChieu`**: `SuatChieuID` (PK), `PhimID` (FK), `PhongID` (FK), `NgayChieu`, `GioChieu`, `GiaVe`.
-- **`Ghe`**: `GheID` (PK), `PhongID` (FK), `TenGhe`, `LoaiGhe`.
-- **`NguoiDung`**: `UserID` (PK), `TenDangNhap`, `MatKhau`, `HoTen`, `Email`, `SoDienThoai`, `GroupID`.
-- **`HoaDon`**: `HoaDonID` (PK), `UserID` (FK), `NgayDat`, `TongTien`, `TrangThai`.
-- **`Ve`**: `VeID` (PK), `SuatChieuID` (FK), `GheID` (FK), `HoaDonID` (FK), `GiaVe`.
+### 2.2 Bảng Mô tả Chi tiết Thực thể SQL Server:
+1. **`NguoiDung`**: `UserID` (PK, int), `TenDangNhap` (nvarchar), `MatKhau` (nvarchar), `HoTen`, `Email`, `SoDienThoai`, `GroupID` (1: Admin, 2: Customer).
+2. **`Phim`**: `PhimID` (PK, int), `TenPhim`, `DaoDien`, `DienVien`, `Poster`, `ThoiLuong`, `NgayKhoiChieu`, `MoTa`.
+3. **`Rap`**: `RapID` (PK, int), `TenRap`, `DiaChi`, `SoDienThoai`.
+4. **`PhongChieu`**: `PhongID` (PK, int), `TenPhong`, `RapID` (FK).
+5. **`SuatChieu`**: `SuatChieuID` (PK, int), `PhimID` (FK), `PhongID` (FK), `NgayChieu`, `GioChieu`, `GiaVe`.
+6. **`Ghe`**: `GheID` (PK, int), `PhongID` (FK), `TenGhe`, `LoaiGhe` (Thường / VIP).
+7. **`HoaDon`**: `HoaDonID` (PK, int), `UserID` (FK), `NgayDat`, `TongTien`, `TrangThai`.
+8. **`Ve`**: `VeID` (PK, int), `SuatChieuID` (FK), `GheID` (FK), `HoaDonID` (FK), `GiaVe`.
 
 ---
 
 ## CHƯƠNG 3: THIẾT KẾ CSDL NOSQL MONGODB (DOCUMENT STORE DESIGN)
 
-### 3.1 Phạm vi nhiệm vụ MongoDB
-Lưu trữ và xử lý dữ liệu bán cấu trúc linh hoạt với độ trễ phản hồi thấp (<0.01s).
-
-### 3.2 Sơ đồ Thiết kế BSON Collection 1: `customer_feedbacks`
-- **Tên Database:** `CinemaNoSQL`
-- **Mô hình:** Embedded Array `conversations` lưu lịch sử chat Admin và Khách hàng trong cùng 1 Document.
+### 3.1 Cấu trúc Collection 1: `customer_feedbacks` (Trung tâm Khiếu nại Hỗ trợ)
+Lưu trữ ticket sự cố với mảng lồng `conversations` (Embedded Document Array) ghi nhận lịch sử phản hồi giữa Admin và Khách hàng.
 
 ```json
 {
@@ -91,64 +95,128 @@ Lưu trữ và xử lý dữ liệu bán cấu trúc linh hoạt với độ tr�
 }
 ```
 
-### 3.3 Sơ đồ Thiết kế BSON Collection 2: `cinema_promotions`
-- Lưu trữ danh sách mã giảm giá, voucher chiết khấu (`code`, `discountAmount`, `quantity`, `claimedCount`, `startDate`, `endDate`).
+### 3.2 Cấu trúc Collection 2: `cinema_promotions` (Kho Mã Giảm Giá Voucher)
+Lưu trữ danh sách mã ưu đãi (`code`, `title`, `discountAmount`, `quantity`, `claimedCount`, `status`, `startDate`, `endDate`).
+
+### 3.3 Thuật toán Aggregation Pipeline (`$group`, `$sum`, `$cond`, `$project`):
+```javascript
+db.customer_feedbacks.aggregate([
+  {
+    $group: {
+      _id: "$category",
+      totalTickets: { $sum: 1 },
+      resolvedCount: { $sum: { $cond: [{ $eq: ["$status", "Resolved"] }, 1, 0] } },
+      pendingCount: { $sum: { $cond: [{ $ne: ["$status", "Resolved"] }, 1, 0] } }
+    }
+  },
+  { $project: { _id: 0, category: "$_id", totalTickets: 1, resolvedCount: 1, pendingCount: 1 } }
+]);
+```
 
 ---
 
 ## CHƯƠNG 4: THIẾT KẾ CSDL NOSQL REDIS (KEY-VALUE STORE DESIGN)
 
-### 4.1 Phạm vi nhiệm vụ Redis
-Tạm giữ ghế ngồi đếm ngược theo thời gian thực (Realtime Seat Locking) khi khách hàng chọn ghế đặt vé.
+### 4.1 Phạm vi nhiệm vụ
+Thực hiện khóa tạm thời ghế ngồi (Realtime Seat Locking) khi người dùng đang chọn ghế đặt vé, ngăn chặn đụng độ 2 người mua cùng 1 ghế.
 
-### 4.2 Thiết kế Cấu trúc Key-Value & TTL
-- **Cấu trúc Key:** `seat_lock:{SuatChieuID}:{GheID}`
-- **Value:** `UserID:{UserID}` (VD: `UserID:7`)
-- **Thời gian sống (TTL):** 300 giây (5 phút). Hết 5 phút ghế tự động giải phóng nếu không thanh toán.
+### 4.2 Thiết kế Key Pattern & TTL:
+- **Cấu trúc Key:** `seat_lock:{SuatChieuID}:{GheID}` (Ví dụ: `seat_lock:101:A1`)
+- **Giá trị (Value):** `UserID:{UserID}` (Ví dụ: `UserID:7`)
+- **Thời gian hết hạn (TTL):** `300` giây (5 phút). Sau 5 phút, Key tự động xóa để giải phóng ghế.
+
+### 4.3 Mã lệnh C# Tương tác Redis (StackExchange.Redis):
+```csharp
+// Đặt khóa giữ ghế trong 5 phút
+bool isLocked = redisDb.StringSet($"seat_lock:{suatChieuId}:{gheId}", $"UserID:{userId}", TimeSpan.FromMinutes(5), When.NotExists);
+
+// Xóa khóa giữ ghế khi thanh toán xong
+redisDb.KeyDelete($"seat_lock:{suatChieuId}:{gheId}");
+```
 
 ---
 
 ## CHƯƠNG 5: THIẾT KẾ CSDL NOSQL NEO4J (GRAPH DATABASE DESIGN)
 
-### 5.1 Phạm vi nhiệm vụ Neo4j
-Xây dựng mạng đồ thị tri thức gợi ý sản phẩm (Recommendation System).
+### 5.1 Phạm vi nhiệm vụ
+Lưu trữ cấu trúc đồ thị mối quan hệ giữa Người Dùng và Bộ Phim để tính toán gợi ý Top Phim Thịnh Hành.
 
-### 5.2 Mô hình Đồ thị Nodes & Relationships
+### 5.2 Sơ đồ Đồ thị (Graph Model):
+- **Nodes:**
+  - `(:User {userId: 7, username: 'huy'})`
+  - `(:Movie {movieId: 101, title: 'Lật Mặt 7'})`
+- **Relationships:**
+  - `(:User)-[:BOOKED {bookedAt: '2026-08-01'}]->(:Movie)`
+  - `(:User)-[:FAVORITED]->(:Movie)`
 
-```mermaid
-graph LR
-    User["(:User {username: 'huy'})"]
-    Movie["(:Movie {movieId: 101, title: 'Lật Mặt 7'})"]
-    
-    User -->|:BOOKED {bookedAt: '2026-08-01'}| Movie
-    User -->|:FAVORITED| Movie
+### 5.3 Câu lệnh Cypher Query Truy vấn Top Phim:
+```cypher
+// Top Phim Được Đặt Vé Nhiều Nhất
+MATCH (u:User)-[r:BOOKED]->(m:Movie)
+RETURN m.movieId AS MovieId, m.title AS Title, COUNT(r) AS TotalBookings
+ORDER BY TotalBookings DESC LIMIT 4;
+
+// Top Phim Được Yêu Thích Nhất
+MATCH (u:User)-[r:FAVORITED]->(m:Movie)
+RETURN m.movieId AS MovieId, m.title AS Title, COUNT(r) AS TotalFavorites
+ORDER BY TotalFavorites DESC LIMIT 4;
 ```
-
-- **Cypher Query gợi ý Top Phim Đặt Vé:**
-  ```cypher
-  MATCH (u:User)-[r:BOOKED]->(m:Movie)
-  RETURN m.movieId AS MovieId, m.title AS Title, COUNT(r) AS TotalBookings
-  ORDER BY TotalBookings DESC LIMIT 4
-  ```
 
 ---
 
 ## CHƯƠNG 6: THIẾT KẾ CSDL NOSQL APACHE CASSANDRA (WIDE-COLUMN STORE DESIGN)
 
-### 6.1 Phạm vi nhiệm vụ Cassandra
-Ghi nhật ký hoạt động Big Data với tốc độ ghi nhanh (High Write Throughput).
+### 6.1 Phạm vi nhiệm vụ
+Lưu nhật ký hoạt động người dùng (User Activity Logs) và lịch sử vé theo mô hình Big Data với tốc độ ghi nhanh (High Write Performance).
 
-### 6.2 Cấu trúc Bảng Keyspace `cinemadb_analytics`
-- **Bảng `user_activity_logs`:**
-  - Partition Key: `user_id` | Clustering Key: `activity_time` (DESC).
-  - Lưu chi tiết lượt đăng nhập, bấm xem phim, tìm kiếm của người dùng.
-- **Bảng `user_ticket_history`:**
-  - Partition Key: `user_id` | Clustering Key: `booking_time` (DESC).
-  - Lưu chi tiết lịch sử vé đã thanh toán.
+### 6.2 Cấu trúc Keyspace & Các Bảng CQL:
+- **Keyspace:** `cinemadb_analytics` (Replication Strategy: `SimpleStrategy`, `replication_factor: 1`).
+
+#### Bảng 1: `user_activity_logs` (Nhật ký hoạt động)
+```sql
+CREATE TABLE cinemadb_analytics.user_activity_logs (
+    user_id int,
+    activity_time timestamp,
+    log_id uuid,
+    activity_type text,
+    description text,
+    ip_address text,
+    device_info text,
+    PRIMARY KEY (user_id, activity_time)
+) WITH CLUSTERING ORDER BY (activity_time DESC);
+```
+
+#### Bảng 2: `user_ticket_history` (Lịch sử đặt vé)
+```sql
+CREATE TABLE cinemadb_analytics.user_ticket_history (
+    user_id int,
+    booking_time timestamp,
+    booking_id uuid,
+    movie_title text,
+    seat_names list<text>,
+    total_amount decimal,
+    payment_method text,
+    status text,
+    PRIMARY KEY (user_id, booking_time)
+) WITH CLUSTERING ORDER BY (booking_time DESC);
+```
+
+#### Bảng 3: `seat_status_history` (Nhật ký biến động trạng thái ghế)
+```sql
+CREATE TABLE cinemadb_analytics.seat_status_history (
+    showtime_id int,
+    status_time timestamp,
+    seat_id int,
+    seat_name text,
+    status text,
+    user_id int,
+    PRIMARY KEY (showtime_id, status_time)
+) WITH CLUSTERING ORDER BY (status_time DESC);
+```
 
 ---
 
-## CHƯƠNG 7: THIẾT KẾ MÔ ĐUN XỬ LÝ VÀ SƠ ĐỒ LỚP (CLASS & COMPONENT DESIGN)
+## CHƯƠNG 7: THIẾT KẾ MÔ ĐUN XỬ LÝ VÀ SƠ ĐỒ LỚP (CLASS DIAGRAM)
 
 ```mermaid
 classDiagram
@@ -180,42 +248,50 @@ classDiagram
         +LogUserActivity()
     }
 
+    class RedisManager {
+        +LockSeat()
+        +UnlockSeat()
+    }
+
     HomeController --> Neo4jService : Lấy Top Phim
     MgdbCustomerFeedbackController --> MgdbService : Thao tác Khiếu nại
+    HomeController --> CassandraService : Ghi Logs Hoạt động
 ```
 
 ---
 
 ## CHƯƠNG 8: QUY TRÌNH LUỒNG NGHIỆP VỤ HỆ THỐNG (SYSTEM SEQUENCE DIAGRAMS)
 
-### 8.1 Luồng Khách Hàng Đặt Vé & Tạm Giữ Ghế Realtime (Redis + SQL Server)
+### 8.1 Luồng Khách Hàng Đặt Vé & Tạm Giữ Ghế Realtime (Redis + SQL Server + Cassandra)
 
 ```mermaid
 sequenceDiagram
     autonumber
     actor User as Khách Hàng
-    participant Web as Web Controller
-    participant Redis as Redis Cache
-    participant SQL as SQL Server DB
+    participant Web as ASP.NET MVC Backend
+    participant Redis as Redis Key-Value
+    participant SQL as SQL Server RDBMS
+    participant Cass as Cassandra Log DB
 
     User->>Web: Chọn ghế A1 Suất chiếu 101
-    Web->>Redis: Kiểm tra Key 'seat_lock:101:A1'
-    alt Ghế đã bị người khác khóa
-        Redis-->>Web: Trả về trạng thái locked bởi User khác
-        Web-->>User: Thông báo ghế đã có người chọn
+    Web->>Redis: Lock key 'seat_lock:101:A1' (TTL 300s)
+    alt Ghế đã bị người khác chọn
+        Redis-->>Web: Trả về Key đã tồn tại
+        Web-->>User: Báo lỗi ghế đã bị giữ
     else Ghế còn trống
-        Web->>Redis: Set key 'seat_lock:101:A1' = UserID (EX 300s)
-        Redis-->>Web: Đặt thành công
-        Web-->>User: Khóa ghế 5 phút & Mở đếm ngược thanh toán
+        Redis-->>Web: Khóa ghế thành công
+        Web->>Cass: LogUserActivity("Chon_Ghe_A1")
+        Web-->>User: Hiển thị đếm ngược 5 phút thanh toán
     end
 
-    User->>Web: Xác nhận thanh toán thành công
-    Web->>SQL: Lưu Hóa Đơn & Vé vào SQL Server
-    Web->>Redis: Xóa key 'seat_lock:101:A1'
-    Web-->>User: Trả về mã vé QR Code
+    User->>Web: Xác nhận thanh toán đơn hàng
+    Web->>SQL: Lưu Hóa Đơn & Mã Vé
+    Web->>Redis: Delete Key 'seat_lock:101:A1'
+    Web->>Cass: LogUserActivity("Thanh_Toan_Thanh_Cong")
+    Web-->>User: Hiển thị mã vé QR Code thành công
 ```
 
 ---
 
-### 📌 TỔNG KẾT TÀI LIỆU SDS TỔNG THỂ
-Tài liệu SDS v2.0 này cung cấp toàn bộ bức tranh kiến trúc kỹ thuật của đồ án Web Đặt Vé Xem Phim Movana, đáp ứng chuẩn mực quy mô doanh nghiệp và hồ sơ nộp bài đồ án tốt nghiệp.
+### 📌 TỔNG KẾT TÀI LIỆU SDS TỔNG THỂ V3.0
+Tài liệu SDS v3.0 này cung cấp trọn vẹn 100% thiết kế kỹ thuật của cả **SQL Server và 4 hệ NoSQL (MongoDB, Redis, Neo4j, Cassandra)**, hoàn chỉnh theo chuẩn đồ án cấp trường và tài liệu thiết kế hệ thống lớn.
