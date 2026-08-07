@@ -127,10 +127,13 @@ Thực hiện khóa tạm thời ghế ngồi (Realtime Seat Locking) khi ngư�
 
 ### 4.3 Mã lệnh C# Tương tác Redis (StackExchange.Redis):
 ```csharp
-// Đặt khóa giữ ghế trong 5 phút
+// 1. Đặt khóa giữ ghế trong 5 phút (TTL 300s)
 bool isLocked = redisDb.StringSet($"seat_lock:{suatChieuId}:{gheId}", $"UserID:{userId}", TimeSpan.FromMinutes(5), When.NotExists);
 
-// Xóa khóa giữ ghế khi thanh toán xong
+// 2. Kiểm tra trạng thái ghế realtime
+bool isCurrentlyLocked = redisDb.KeyExists($"seat_lock:{suatChieuId}:{gheId}");
+
+// 3. Giải phóng / Xóa khóa giữ ghế khi thanh toán xong hoặc khách bỏ chọn
 redisDb.KeyDelete($"seat_lock:{suatChieuId}:{gheId}");
 ```
 
@@ -270,6 +273,7 @@ classDiagram
     class RedisManager {
         +LockSeat()
         +UnlockSeat()
+        +IsSeatLocked()
     }
 
     HomeController --> Neo4jService : Lấy Top Phim
@@ -282,6 +286,7 @@ classDiagram
 ## CHƯƠNG 8: QUY TRÌNH LUỒNG NGHIỆP VỤ HỆ THỐNG (SYSTEM SEQUENCE DIAGRAMS)
 
 ### 8.1 Phân hệ CSDL Redis (Key-Value Store)
+
 #### 8.1.1 Luồng Khách Hàng Chọn Ghế & Khóa Ghế Đếm Ngược Realtime (TTL 5 Phút)
 
 ```mermaid
@@ -301,11 +306,36 @@ sequenceDiagram
         Redis-->>Web: Khóa ghế thành công (True)
         Web-->>User: Hiển thị đếm ngược 5 phút thanh toán
     end
+```
 
-    User->>Web: Xác nhận thanh toán đơn hàng
-    Web->>SQL: Lưu Hóa Đơn & Mã Vé vào SQL Server
-    Web->>Redis: Delete Key 'seat_lock:101:A1'
-    Web-->>User: Trả về mã vé QR Code thành công
+#### 8.1.2 Luồng Giải Phóng Khóa Giữ Ghế Khi Hủy Chọn Hoặc Thanh Toán Hoàn Tất (Redis Key Delete)
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User as Khách Hàng
+    participant Web as ASP.NET MVC Backend
+    participant Redis as Redis Key-Value
+    participant SQL as SQL Server RDBMS
+
+    alt Trường hợp 1: Khách hàng bấm Bỏ Chọn Ghế hoặc Hủy Đơn
+        User->>Web: Bấm Bỏ chọn ghế A1 Suất chiếu 101
+        Web->>Redis: KeyDelete('seat_lock:101:A1')
+        Redis-->>Web: Xóa Key giữ ghế thành công
+        Web-->>User: Ghế A1 trở về trạng thái trống cho người khác chọn
+    else Trường hợp 2: Khách hàng Hoàn Tất Thanh Toán Hóa Đơn
+        User->>Web: Nhấp Thanh Toán Đơn Hàng Thành Công
+        Web->>SQL: Lưu Hóa Đơn & Mã Vé vào SQL Server
+        Web->>Redis: KeyDelete('seat_lock:101:A1') (Giải phóng khóa tạm)
+        Redis-->>Web: Xóa Key thành công
+        Web-->>User: Trả về Vé Xem Phim & Mã QR Code thành công
+    else Trường hợp 3: Quá 5 Phút Không Thanh Toán (Hết hạn TTL)
+        Redis->>Redis: Tự động xóa Key 'seat_lock:101:A1' do TTL = 0
+        User->>Web: Bấm Thanh Toán muộn (sau 5 phút)
+        Web->>Redis: KeyExists('seat_lock:101:A1')
+        Redis-->>Web: Trả về False (Key đã hết hạn)
+        Web-->>User: Thông báo 'Đã hết thời gian giữ ghế 5 phút, vui lòng chọn lại!'
+    end
 ```
 
 ---
