@@ -5,7 +5,7 @@
 **Hệ CSDL Polyglot Persistence (5 Databases):**
 1. **SQL Server 2019+** (RDBMS Core: Phim, Rạp, Suất chiếu, Vé, Hóa đơn)
 2. **MongoDB 7.0** (Document Store: Phản hồi/Khiếu nại Khách hàng, Mã Khuyến mãi Voucher)
-3. **Redis 7.0** (Key-Value Store: Tạm khóa giữ ghế Realtime, TTL Đếm ngược 5 phút)
+3. **Redis 7.0** (Key-Value Store: Tạm khóa giữ ghế Realtime, Session Đăng nhập, Giỏ hàng đếm ngược)
 4. **Neo4j 5.0** (Graph DB: Mạng đồ thị gợi ý Top phim đặt vé & Yêu thích nhiều nhất)
 5. **Apache Cassandra 4.0** (Wide-Column Store: Lưu vết Logs nhật ký hoạt động Big Data)
 
@@ -34,7 +34,7 @@
 
 ### 1.2 Mục tiêu Hệ thống
 1. **Quản lý giao dịch cốt lõi (SQL Server):** Đảm bảo tính toàn vẹn dữ liệu tuyệt đối cho các thực thể Phim, Rạp, Suất chiếu, Vé và Hóa đơn tài chính.
-2. **Khóa tạm giữ ghế đếm ngược thời gian thực (Redis):** Giữ tạm thời ghế ngồi trong 5 phút với độ trễ cực thấp (< 1ms), ngăn ngừa xung đột đụng độ 2 người mua cùng 1 ghế.
+2. **Khóa tạm giữ ghế & Giỏ hàng đếm ngược thời gian thực (Redis):** Quản lý Session đăng nhập (TTL 1h), giữ tạm ghế ngồi và giỏ hàng trong 5 phút với độ trễ cực thấp (< 1ms), ngăn ngừa xung đột đụng độ 2 người mua cùng 1 ghế.
 3. **Mạng đồ thị gợi ý phim thông minh (Neo4j):** Phân tích mối quan hệ đặt vé và yêu thích của người dùng để đề xuất Bảng xếp hạng Top Phim thịnh hành.
 4. **Hệ thống Khiếu nại & Khuyến mãi linh hoạt (MongoDB):** Lưu trữ cấu trúc Document linh hoạt dạng mảng lồng `conversations` trao đổi sự cố và quản lý mã Voucher chiết khấu.
 5. **Nhật ký truy vết hoạt động Big Data (Apache Cassandra):** Ghi nhận liên tục nhật ký thao tác và lịch sử vé người dùng với tốc độ ghi cao, khả năng mở rộng hàng triệu bản ghi.
@@ -49,7 +49,7 @@ graph TD
     
     DB_SQL[("1. SQL Server RDBMS<br/>(Giao dịch Phim, Rạp, Vé, Hóa đơn)")]
     DB_MGDB[("2. MongoDB 7.0 Document Store<br/>(Khiếu nại Khách hàng, Mã giảm giá)")]
-    DB_REDIS[("3. Redis 7.0 Key-Value<br/>(Khóa ghế đếm ngược TTL 5 phút)")]
+    DB_REDIS[("3. Redis 7.0 Key-Value<br/>(Session Đăng nhập, Khóa ghế & Giỏ hàng đếm ngược)")]
     DB_NEO[("4. Neo4j 5.0 Graph DB<br/>(Gợi ý Top Phim thịnh hành)")]
     DB_CASS[("5. Apache Cassandra 4.0<br/>(Nhật ký Logs Big Data & Lịch sử vé)")]
 
@@ -68,7 +68,7 @@ graph TD
 ### 2.1 Vai trò Nền tảng RDBMS & Điểm Tích Hợp Với 4 Hệ NoSQL
 Trong mô hình kiến trúc Đa CSDL (Polyglot Persistence), SQL Server 2019 đóng vai trò là **CSDL trung tâm giao dịch tài chính (RDBMS Core)** đảm bảo tính toàn vẹn ACID cho các dữ liệu cố định, đồng thời phối hợp ăn khớp với 4 hệ NoSQL:
 
-- **1. Tích hợp với Redis:** SQL Server quản lý danh mục `Ghe` và `SuatChieu`. Khi khách hàng chọn ghế, Redis chịu trách nhiệm tạm khóa ghế `seat_lock:{suatChieuId}:{gheId}` trong 5 phút. Khi thanh toán hoàn tất, dữ liệu hóa đơn chính thức được ghi về SQL Server và Redis giải phóng khóa tạm.
+- **1. Tích hợp với Redis:** SQL Server quản lý danh mục `Ghe` và `SuatChieu`. Khi khách hàng đăng nhập, Redis lưu giữ Session người dùng `user_session:{userId}` (TTL 3600s). Khi chọn ghế và combo nước uống, Redis quản lý Giỏ hàng tạm thời `cart:{userId}:{suatChieuId}` và khóa ghế `seat_lock:{suatChieuId}:{gheId}` trong 5 phút. Khi thanh toán hoàn tất, dữ liệu hóa đơn chính thức được ghi về SQL Server và Redis giải phóng giỏ hàng / khóa tạm.
 - **2. Tích hợp với Neo4j:** Dữ liệu Phim, Thể loại và Lịch sử đặt vé từ SQL Server được đồng bộ sang Neo4j dưới dạng các Nút `(:User)`, `(:Movie)`, `(:Genre)` và các Cung `[:BOOKED]`, `[:FAVORITED]`. Neo4j tính toán xong Top Phim sẽ trả danh sách ID về cho SQL Server để lấy ảnh Poster hiển thị lên Trang chủ.
 - **3. Tích hợp với MongoDB:** SQL Server quản lý hóa đơn thanh toán. Khi áp dụng mã giảm giá từ MongoDB (`cinema_promotions`), số tiền chiết khấu `discountAmount` được trừ trực tiếp vào `TongTien` của SQL Server. Nếu xảy ra sự cố thanh toán, ticket khiếu nại của khách được lưu vào MongoDB Collection `customer_feedbacks`.
 - **4. Tích hợp với Cassandra:** Sau khi mỗi đơn đặt vé hoàn tất lưu vào SQL Server, hệ thống tự động ghi bất đồng bộ (Async Write) dữ liệu lịch sử đặt vé sang Cassandra `user_ticket_history` để phục vụ tra cứu Big Data tốc độ cao.
@@ -207,44 +207,80 @@ FeedbacksCollection.UpdateOne(filter, update);
 
 ## CHƯƠNG 4: THIẾT KẾ CSDL NOSQL REDIS (KEY-VALUE STORE DESIGN)
 
-### 4.1 Phạm vi nhiệm vụ & Cơ chế TTL
+### 4.1 Phạm vi nhiệm vụ & Cơ chế TTL In-Memory
 - **Loại CSDL:** Key-Value In-Memory Store (Redis Server 7.0).
-- **Phạm vi:** Khóa tạm thời ghế ngồi (Realtime Seat Locking) khi Khách hàng thao tác chọn ghế đặt vé, ngăn đụng độ 2 người mua cùng 1 ghế.
-- **Thời gian đếm ngược (TTL):** `300` giây (5 phút). Sau 5 phút, Key tự động hủy để trả lại ghế cho người khác.
+- **Phạm vi nhiệm vụ:**
+  1. **Quản lý Session Đăng Nhập (User Session Store):** Lưu phiên đăng nhập người dùng với TTL = `3600` giây (1 giờ), giúp xác thực truy cập siêu tốc mà không cần query lại SQL Server.
+  2. **Quản lý Giỏ Hàng Chọn Vé (Realtime Cart Reservation):** Lưu tạm thời các ghế và combo nước uống đang chọn trong Giỏ hàng với TTL = `300` giây (5 phút).
+  3. **Khóa Tạm Giữ Ghế Thời Gian Thực (Realtime Seat Locking):** Tạm giữ ghế ngồi tránh xung đột đụng độ 2 người mua cùng 1 ghế với TTL = `300` giây (5 phút).
 
-### 4.2 Cấu trúc Key Pattern & Kiểu Dữ Liệu:
-- **Key Pattern giữ ghế:** `seat_lock:{SuatChieuID}:{GheID}` (Ví dụ: `seat_lock:101:A1`).
-- **Value:** `UserID:{UserID}` (Ví dụ: `UserID:7`).
-- **Data Type:** `String`.
+### 4.2 Cấu trúc Key Patterns & Kiểu Dữ Liệu Redis:
 
-### 4.3 Bộ Lệnh Redis Shell Command:
+| STT | Chức Năng Nghiệp Vụ | Cấu Trúc Key Pattern | Kiểu Dữ Liệu | Giá Trị (Value) Sample | Thời Gian Tồn Tại (TTL) |
+|---|---|---|---|---|---|
+| **1** | Session Đăng Nhập | `user_session:{UserID}` | `String` (JSON) | `{"userId":7,"username":"huy","email":"huy@gmail.com","role":"Customer"}` | `3600`s (1 Giờ) |
+| **2** | Giỏ Hàng Đặt Vé | `cart:{UserID}:{SuatChieuID}` | `Set` / `Hash` | `["A1", "A2", "ComboPopcornVIP"]` | `300`s (5 Phút) |
+| **3** | Khóa Tạm Giữ Ghế | `seat_lock:{SuatChieuID}:{GheID}` | `String` | `UserID:7` | `300`s (5 Phút) |
+
+### 4.3 Bộ Lệnh Redis Shell Command Đầy Đủ:
 ```redis
-# 1. Đặt khóa tạm giữ ghế A1 suất chiếu 101 trong 5 phút (300 giây) nếu ghế chưa bị khóa (NX)
+# ==========================================
+# 1. PHÂN HỆ SESSION ĐĂNG NHẬP (USER SESSION)
+# ==========================================
+# Khởi tạo Session đăng nhập lưu trữ thông tin User trong Redis 1 giờ (3600s)
+SET user_session:7 "{\"userId\":7,\"username\":\"huy\",\"role\":\"Customer\"}" EX 3600
+
+# Kiểm tra thông tin Session khi người dùng chuyển trang
+GET user_session:7
+
+# Đăng xuất: Xóa Session đăng nhập khỏi Redis
+DEL user_session:7
+
+# ==========================================
+# 2. PHÂN HỆ GIỎ HÀNG CHỌN VÉ (REALTIME CART FLOW)
+# ==========================================
+# Thêm ghế A1 và A2 vào Giỏ hàng đặt vé suất chiếu 101 của khách hàng User 7
+SADD cart:7:101 "A1" "A2"
+EXPIRE cart:7:101 300
+
+# Lấy danh sách toàn bộ items ghế có trong giỏ hàng hiện tại
+SMEMBERS cart:7:101
+
+# Xóa giỏ hàng khi người dùng hủy hoặc thanh toán thành công
+DEL cart:7:101
+
+# ==========================================
+# 3. PHÂN HỆ KHÓA TẠM GIỮ GHẾ (REALTIME SEAT LOCK)
+# ==========================================
+# Đặt khóa giữ ghế A1 suất 101 trong 5 phút (NX: chỉ khóa khi ghế còn trống)
 SET seat_lock:101:A1 "UserID:7" NX EX 300
-
-# 2. Kiểm tra xem ghế A1 suất 101 có đang bị ai giữ không
 EXISTS seat_lock:101:A1
-
-# 3. Xem thời gian giữ ghế còn lại bao nhiêu giây
 TTL seat_lock:101:A1
-
-# 4. Giải phóng khóa giữ ghế khi khách bỏ chọn hoặc hoàn tất thanh toán
 DEL seat_lock:101:A1
 ```
 
 ### 4.4 Mã Lệnh C# StackExchange.Redis Integration (`RedisManager.cs`):
 ```csharp
-// Đặt khóa giữ ghế 5 phút
+// 1. Quản lý Session Đăng Nhập
+public bool SaveUserSession(int userId, object userSessionData) {
+    string key = $"user_session:{userId}";
+    string jsonValue = JsonConvert.SerializeObject(userSessionData);
+    return redisDb.StringSet(key, jsonValue, TimeSpan.FromHours(1));
+}
+
+// 2. Quản lý Giỏ Hàng Đặt Vé
+public bool AddToCart(int userId, int suatChieuId, string seatName) {
+    string key = $"cart:{userId}:{suatChieuId}";
+    bool added = redisDb.SetAdd(key, seatName);
+    redisDb.KeyExpire(key, TimeSpan.FromMinutes(5));
+    return added;
+}
+
+// 3. Quản lý Khóa Giữ Ghế 5 Phút
 public bool LockSeat(int suatChieuId, int gheId, int userId) {
     string key = $"seat_lock:{suatChieuId}:{gheId}";
     string val = $"UserID:{userId}";
     return redisDb.StringSet(key, val, TimeSpan.FromMinutes(5), When.NotExists);
-}
-
-// Xóa khóa giữ ghế
-public bool UnlockSeat(int suatChieuId, int gheId) {
-    string key = $"seat_lock:{suatChieuId}:{gheId}";
-    return redisDb.KeyDelete(key);
 }
 ```
 
@@ -455,13 +491,15 @@ classDiagram
     }
 
     class RedisManager {
+        +SaveUserSession(userId, sessionData)
+        +AddToCart(userId, suatChieuId, seatName)
         +LockSeat(suatChieuId, gheId, userId)
         +UnlockSeat(suatChieuId, gheId)
         +IsSeatLocked(suatChieuId, gheId)
     }
 
     HomeController --> Neo4jService : Gọi gợi ý & thả tim Phim
-    DatVeController --> RedisManager : Tạm giữ ghế 5 phút
+    DatVeController --> RedisManager : Session, Giỏ hàng & Tạm giữ ghế 5 phút
     DatVeController --> CassandraService : Ghi Log thanh toán vé
     MgdbCustomerFeedbackController --> MgdbService : Quản lý khiếu nại
     MgdbPromotionController --> MgdbService : Tra cứu & Trừ kho Voucher
@@ -474,28 +512,50 @@ classDiagram
 
 ### 8.1 Phân hệ CSDL Redis (Key-Value Store)
 
-#### 8.1.1 Luồng Khách Hàng Chọn Ghế & Khóa Ghế Đếm Ngược Realtime (TTL 5 Phút)
+#### 8.1.1 Luồng Đăng Nhập & Khởi Tạo Active Session Trong Redis (TTL 1 Giờ)
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User as Khách Hàng / User
+    participant Web as AccountController (C# Backend)
+    participant SQL as SQL Server RDBMS
+    participant Redis as Redis Key-Value
+
+    User->>Web: Nhập Username & Password bấm Đăng Nhập
+    Web->>SQL: SELECT * FROM NguoiDung WHERE TenDangNhap = ...
+    alt Mật khẩu sai
+        SQL-->>Web: Trả về null
+        Web-->>User: Hiển thị báo lỗi Đăng nhập thất bại
+    else Đăng nhập thành công
+        SQL-->>Web: Trả về thông tin NguoiDung (UserID: 7)
+        Web->>Redis: SET 'user_session:7' "{'userId':7, 'role':'Customer'}" EX 3600
+        Redis-->>Web: Lưu Session thành công (TTL 1 Giờ)
+        Web-->>User: Chuyển hướng Trang Chủ & Đăng nhập hoàn tất
+    end
+```
+
+#### 8.1.2 Luồng Quản Lý Giỏ Hàng Chọn Vé & Khóa Ghế Đếm Ngược Realtime (TTL 5 Phút)
 
 ```mermaid
 sequenceDiagram
     autonumber
     actor User as Khách Hàng
-    participant Web as ASP.NET MVC Backend
+    participant Web as DatVeController (C# Backend)
     participant Redis as Redis Key-Value
-    participant SQL as SQL Server RDBMS
 
-    User->>Web: Chọn ghế A1 Suất chiếu 101
-    Web->>Redis: Lock key 'seat_lock:101:A1' (TTL 300s)
-    alt Ghế đã bị người khác chọn
+    User->>Web: Thao tác chọn ghế A1 & A2 Suất chiếu 101
+    Web->>Redis: SADD 'cart:7:101' "A1" "A2" & SET 'seat_lock:101:A1' "UserID:7" EX 300
+    alt Ghế đã bị người khác giữ trước
         Redis-->>Web: Trả về Key đã tồn tại
         Web-->>User: Báo lỗi ghế đã bị giữ bởi người khác
     else Ghế còn trống
-        Redis-->>Web: Khóa ghế thành công (True)
-        Web-->>User: Hiển thị đếm ngược 5 phút thanh toán
+        Redis-->>Web: Thêm vào Giỏ hàng & Khóa ghế thành công (True)
+        Web-->>User: Cập nhật Giỏ hàng & Đếm ngược 5 phút thanh toán
     end
 ```
 
-#### 8.1.2 Luồng Giải Phóng Khóa Giữ Ghế Khi Hủy Chọn Hoặc Thanh Toán Hoàn Tất (Redis Key Delete)
+#### 8.1.3 Luồng Giải Phóng Khóa Giữ Ghế / Giỏ Hàng Khi Hủy Hoặc Thanh Toán Hoàn Tất (Redis Key Delete)
 
 ```mermaid
 sequenceDiagram
@@ -506,22 +566,22 @@ sequenceDiagram
     participant SQL as SQL Server RDBMS
 
     alt Trường hợp 1: Khách hàng bấm Bỏ Chọn Ghế hoặc Hủy Đơn
-        User->>Web: Bấm Bỏ chọn ghế A1 Suất chiếu 101
-        Web->>Redis: KeyDelete('seat_lock:101:A1')
-        Redis-->>Web: Xóa Key giữ ghế thành công
+        User->>Web: Bấm Bỏ chọn ghế A1 / Hủy giỏ hàng
+        Web->>Redis: DEL 'cart:7:101' & DEL 'seat_lock:101:A1'
+        Redis-->>Web: Xóa Key giỏ hàng & giữ ghế thành công
         Web-->>User: Ghế A1 trở về trạng thái trống cho người khác chọn
     else Trường hợp 2: Khách hàng Hoàn Tất Thanh Toán Hóa Đơn
         User->>Web: Nhấp Thanh Toán Đơn Hàng Thành Công
         Web->>SQL: Lưu Hóa Đơn & Mã Vé vào SQL Server
-        Web->>Redis: KeyDelete('seat_lock:101:A1') (Giải phóng khóa tạm)
-        Redis-->>Web: Xóa Key thành công
+        Web->>Redis: DEL 'cart:7:101' & DEL 'seat_lock:101:A1'
+        Redis-->>Web: Xóa Key giỏ hàng & giải phóng khóa tạm
         Web-->>User: Trả về Vé Xem Phim & Mã QR Code thành công
-    else Trường hợp 3: Quá 5 Phút Không Thanh Toán (Hết hạn TTL)
-        Redis->>Redis: Tự động xóa Key 'seat_lock:101:A1' do TTL = 0
+    else Trường hợp 3: Quá 5 Phút Không Thanh Toán (Hết hạn TTL = 0)
+        Redis->>Redis: Tự động xóa Key 'cart:7:101' & 'seat_lock:101:A1' do TTL = 0
         User->>Web: Bấm Thanh Toán muộn (sau 5 phút)
         Web->>Redis: KeyExists('seat_lock:101:A1')
         Redis-->>Web: Trả về False (Key đã hết hạn)
-        Web-->>User: Thông báo 'Đã hết thời gian giữ ghế 5 phút, vui lòng chọn lại!'
+        Web-->>User: Thông báo 'Đã hết thời gian 5 phút giữ giỏ hàng, vui lòng chọn lại!'
     end
 ```
 
