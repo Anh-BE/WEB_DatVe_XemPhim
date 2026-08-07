@@ -243,6 +243,8 @@ classDiagram
     class Neo4jService {
         +GetTopBookedMovies()
         +GetTopFavoriteMovies()
+        +ToggleFavorite()
+        +GetGenreAnalytics()
     }
 
     class CassandraService {
@@ -264,7 +266,8 @@ classDiagram
 
 ## CHƯƠNG 8: QUY TRÌNH LUỒNG NGHIỆP VỤ HỆ THỐNG (SYSTEM SEQUENCE DIAGRAMS)
 
-### 8.1 Luồng Khách Hàng Đặt Vé & Tạm Giữ Ghế Realtime (Redis + SQL Server + Cassandra)
+### 8.1 Phân hệ CSDL Redis (Key-Value Store)
+#### 8.1.1 Luồng Khách Hàng Chọn Ghế & Khóa Ghế Đếm Ngược Realtime (TTL 5 Phút)
 
 ```mermaid
 sequenceDiagram
@@ -273,29 +276,28 @@ sequenceDiagram
     participant Web as ASP.NET MVC Backend
     participant Redis as Redis Key-Value
     participant SQL as SQL Server RDBMS
-    participant Cass as Cassandra Log DB
 
     User->>Web: Chọn ghế A1 Suất chiếu 101
     Web->>Redis: Lock key 'seat_lock:101:A1' (TTL 300s)
     alt Ghế đã bị người khác chọn
         Redis-->>Web: Trả về Key đã tồn tại
-        Web-->>User: Báo lỗi ghế đã bị giữ
+        Web-->>User: Báo lỗi ghế đã bị giữ bởi người khác
     else Ghế còn trống
-        Redis-->>Web: Khóa ghế thành công
-        Web->>Cass: LogUserActivity("Chon_Ghe_A1")
+        Redis-->>Web: Khóa ghế thành công (True)
         Web-->>User: Hiển thị đếm ngược 5 phút thanh toán
     end
 
     User->>Web: Xác nhận thanh toán đơn hàng
-    Web->>SQL: Lưu Hóa Đơn & Mã Vé
+    Web->>SQL: Lưu Hóa Đơn & Mã Vé vào SQL Server
     Web->>Redis: Delete Key 'seat_lock:101:A1'
-    Web->>Cass: LogUserActivity("Thanh_Toan_Thanh_Cong")
-    Web-->>User: Hiển thị mã vé QR Code thành công
+    Web-->>User: Trả về mã vé QR Code thành công
 ```
 
 ---
 
-### 8.2 Luồng Gợi Ý Top Phim Thịnh Hành Trên Trang Chủ (Neo4j Graph DB + HttpRuntime.Cache)
+### 8.2 Phân hệ CSDL Neo4j (Graph Database)
+
+#### 8.2.1 Luồng Gợi Ý Top Phim Thịnh Hành Trên Trang Chủ (Neo4j Graph DB + HttpRuntime.Cache)
 
 ```mermaid
 sequenceDiagram
@@ -320,9 +322,33 @@ sequenceDiagram
     Home-->>User: Hiển thị Bảng Xếp Hạng Top Phim Thịnh Hành trên Trang Chủ
 ```
 
+#### 8.2.2 Luồng Khách Hàng Thả Tim Yêu Thích Phim Realtime (Relationship [:FAVORITED])
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User as Khách Hàng Đã Đăng Nhập
+    participant Web as HomeController / MovieController
+    participant Neo4j as Neo4j Graph DB Server
+
+    User->>Web: Nhấp nút Thả Tim / Yêu Thích ❤️ trên Phim (MovieId: 101)
+    Web->>Neo4j: ExecuteCypher("MATCH (u:User {userId: 'huy'}), (m:Movie {movieId: 101}) ...")
+    alt Đã có mối quan hệ [:FAVORITED]
+        Neo4j->>Neo4j: DELETE r (Xóa tim yêu thích)
+        Neo4j-->>Web: Trả về trạng thái Unfavorited
+        Web-->>User: Cập nhật icon tim rỗng 🤍
+    else Chưa có mối quan hệ [:FAVORITED]
+        Neo4j->>Neo4j: MERGE (u)-[:FAVORITED]->(m) (Tạo tim mới)
+        Neo4j-->>Web: Trả về trạng thái Favorited
+        Web-->>User: Cập nhật icon tim đỏ ❤️ & Tăng số lượt yêu thích
+    end
+```
+
 ---
 
-### 8.3 Luồng Tiếp Nhận Khiếu Nại & Trả Lời Của Admin (MongoDB Document Store)
+### 8.3 Phân hệ CSDL MongoDB (Document Store)
+
+#### 8.3.1 Luồng Tiếp Nhận Khiếu Nại & Trả Lời Của Admin (Collection 'customer_feedbacks')
 
 ```mermaid
 sequenceDiagram
@@ -349,9 +375,7 @@ sequenceDiagram
     Web-->>Customer: Hiển thị câu trả lời của Admin trong lịch sử hội thoại
 ```
 
----
-
-### 8.4 Luồng Áp Dụng Mã Khuyến Mãi & Voucher Giảm Giá (MongoDB Collection 'cinema_promotions')
+#### 8.3.2 Luồng Áp Dụng Mã Khuyến Mãi & Voucher Giảm Giá (Collection 'cinema_promotions')
 
 ```mermaid
 sequenceDiagram
@@ -375,6 +399,29 @@ sequenceDiagram
         SQL-->>Checkout: Lưu Hóa Đơn thành công
         Checkout-->>Customer: Hiển thị Đơn hàng đã áp mã giảm 50K thành công!
     end
+```
+
+---
+
+### 8.4 Phân hệ CSDL Apache Cassandra (Wide-Column Store)
+
+#### 8.4.1 Luồng Ghi Nhật Ký Hoạt Động Big Data & Lịch Sử Vé (Keyspace 'cinemadb_analytics')
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User as Khách Hàng
+    participant Web as ASP.NET MVC Backend
+    participant Cass as Apache Cassandra Database Server
+
+    User->>Web: Thực hiện thao tác trên Web (Đăng nhập, Xem phim, Đặt vé)
+    Web->>Cass: ExecuteAsync("INSERT INTO user_activity_logs (user_id, activity_time, ...)")
+    Cass-->>Web: Ghi Log Big Data thành công (Tốc độ cực nhanh < 1ms)
+
+    User->>Web: Xem trang Thông Tin Cá Nhân / Lịch Sử Vé
+    Web->>Cass: Execute("SELECT * FROM user_ticket_history WHERE user_id = 7")
+    Cass-->>Web: Trả về danh sách Lịch sử đặt vé được sắp xếp theo thời gian mới nhất (ORDER BY booking_time DESC)
+    Web-->>User: Hiển thị Lịch sử vé và Nhật ký hoạt động cá nhân
 ```
 
 ---
