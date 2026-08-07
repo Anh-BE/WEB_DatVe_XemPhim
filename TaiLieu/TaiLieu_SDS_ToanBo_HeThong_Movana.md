@@ -83,8 +83,12 @@ Quản lý các thực thể cố định và đảm bảo tính toàn vẹn d�
 
 ## CHƯƠNG 3: THIẾT KẾ CSDL NOSQL MONGODB (DOCUMENT STORE DESIGN)
 
-### 3.1 Cấu trúc Collection 1: `customer_feedbacks` (Trung tâm Khiếu nại Hỗ trợ)
-Lưu trữ ticket sự cố với mảng lồng `conversations` (Embedded Document Array) ghi nhận lịch sử phản hồi giữa Admin và Khách hàng.
+### 3.1 Phạm vi nhiệm vụ & Database Name
+- **Database Name:** `CinemaNoSQL`
+- **Nhiệm vụ:** Lưu trữ dữ liệu tài liệu bán cấu trúc (Semi-structured Document Data), hỗ trợ mảng lồng động (Embedded Array) cho phản hồi giao tiếp giữa Admin và Khách hàng, quản lý danh mục mã Voucher ưu đãi và thực thi Aggregation thống kê báo cáo sự cố.
+
+### 3.2 Cấu trúc Collection 1: `customer_feedbacks` (Trung tâm Khiếu nại Hỗ trợ)
+Lưu trữ ticket sự cố với mảng lồng `conversations` (Embedded Document Array) ghi nhận lịch sử phản hồi thời gian thực.
 
 ```json
 {
@@ -95,6 +99,7 @@ Lưu trữ ticket sự cố với mảng lồng `conversations` (Embedded Docume
   "category": "Thanh toán",
   "subject": "Bị trừ tiền tài khoản Momo nhưng chưa nhận được mã vé QR",
   "content": "Tôi vừa thanh toán 180.000đ lúc 10h15 qua ví Momo, tiền đã trừ nhưng chưa có vé.",
+  "imageUrls": ["/uploads/momo_bill_001.png"],
   "status": "Resolved",
   "conversations": [
     {
@@ -107,11 +112,58 @@ Lưu trữ ticket sự cố với mảng lồng `conversations` (Embedded Docume
 }
 ```
 
-### 3.2 Cấu trúc Collection 2: `cinema_promotions` (Kho Mã Giảm Giá Voucher)
-Lưu trữ danh sách mã ưu đãi (`code`, `title`, `discountAmount`, `quantity`, `claimedCount`, `status`, `startDate`, `endDate`).
+### 3.3 Cấu trúc Collection 2: `cinema_promotions` (Kho Mã Giảm Giá Voucher)
+Lưu trữ danh sách các chương trình khuyến mãi ưu đãi đặt vé.
 
-### 3.3 Thuật toán Aggregation Pipeline (`$group`, `$sum`, `$cond`, `$project`):
+```json
+{
+  "_id": { "$oid": "6a71eaa38676d746beb73499" },
+  "code": "MOVANA50K",
+  "title": "Giảm ngay 50.000đ cho đơn hàng từ 150.000đ",
+  "discountAmount": 50000,
+  "quantity": 100,
+  "claimedCount": 45,
+  "status": "Active",
+  "startDate": { "$date": "2026-08-01T00:00:00.000Z" },
+  "endDate": { "$date": "2026-08-31T23:59:59.000Z" }
+}
+```
+
+### 3.4 Thiết lập Chỉ Mục (Indexing) Tối Ưu Truy Vấn MongoDB:
 ```javascript
+// Chỉ mục tìm kiếm theo tài khoản Khách hàng
+db.customer_feedbacks.createIndex({ "username": 1 });
+
+// Chỉ mục tìm kiếm theo Trạng thái Ticket
+db.customer_feedbacks.createIndex({ "status": 1 });
+
+// Chỉ mục duy nhất (Unique Index) mã Voucher Khuyến mãi
+db.cinema_promotions.createIndex({ "code": 1 }, { unique: true });
+```
+
+### 3.5 Bộ Thao Tác Lệnh Mongo Shell CRUD & Aggregation Pipeline:
+```javascript
+// 1. Create - Gửi khiếu nại mới
+db.customer_feedbacks.insertOne({
+  "userId": 7, "username": "huy", "email": "huy@gmail.com",
+  "category": "Thanh toán", "subject": "Sự cố giao dịch Momo",
+  "content": "Đã trừ tiền nhưng chưa nhận mã vé", "status": "New",
+  "conversations": [], "createdAt": new Date()
+});
+
+// 2. Read - Xem lịch sử ticket của tài khoản
+db.customer_feedbacks.find({ "username": "huy" }).sort({ "createdAt": -1 });
+
+// 3. Update - Admin trả lời ticket và đổi trạng thái sang Resolved
+db.customer_feedbacks.updateOne(
+  { "_id": ObjectId("6a71eaa38676d746beb73484") },
+  {
+    $push: { "conversations": { "sender": "Admin", "message": "Đã xử lý xong", "createdAt": new Date() } },
+    $set: { "status": "Resolved" }
+  }
+);
+
+// 4. Aggregation Pipeline - Thống kê số lượng ticket theo Chuyên mục
 db.customer_feedbacks.aggregate([
   {
     $group: {
@@ -125,64 +177,105 @@ db.customer_feedbacks.aggregate([
 ]);
 ```
 
+### 3.6 Mã C# Tương Tác MongoDB Driver (`MgdbService.cs`):
+```csharp
+// Đẩy câu trả lời Admin vào mảng lồng conversations
+var filter = Builders<CustomerFeedbackDoc>.Filter.Eq(x => x.Id, ticketId);
+var update = Builders<CustomerFeedbackDoc>.Update
+    .Push(x => x.Conversations, new ConversationItem { Sender = "Admin", Message = replyMsg, CreatedAt = DateTime.Now })
+    .Set(x => x.Status, "Resolved");
+FeedbacksCollection.UpdateOne(filter, update);
+```
+
 ---
 
 ## CHƯƠNG 4: THIẾT KẾ CSDL NOSQL REDIS (KEY-VALUE STORE DESIGN)
 
-### 4.1 Phạm vi nhiệm vụ
-Thực hiện khóa tạm thời ghế ngồi (Realtime Seat Locking) khi người dùng đang chọn ghế đặt vé, ngăn chặn đụng độ 2 người mua cùng 1 ghế.
+### 4.1 Phạm vi nhiệm vụ & Cơ chế TTL
+- **Loại CSDL:** Key-Value In-Memory Store (Redis Server 7.0).
+- **Phạm vi:** Khóa tạm thời ghế ngồi (Realtime Seat Locking) khi Khách hàng thao tác chọn ghế đặt vé, ngăn đụng độ 2 người mua cùng 1 ghế.
+- **Thời gian đếm ngược (TTL):** `300` giây (5 phút). Sau 5 phút, Key tự động hủy để trả lại ghế cho người khác.
 
-### 4.2 Thiết kế Key Pattern & TTL:
-- **Cấu trúc Key:** `seat_lock:{SuatChieuID}:{GheID}` (Ví dụ: `seat_lock:101:A1`)
-- **Giá trị (Value):** `UserID:{UserID}` (Ví dụ: `UserID:7`)
-- **Thời gian hết hạn (TTL):** `300` giây (5 phút). Sau 5 phút, Key tự động xóa để giải phóng ghế.
+### 4.2 Cấu trúc Key Pattern & Kiểu Dữ Liệu:
+- **Key Pattern giữ ghế:** `seat_lock:{SuatChieuID}:{GheID}` (Ví dụ: `seat_lock:101:A1`).
+- **Value:** `UserID:{UserID}` (Ví dụ: `UserID:7`).
+- **Data Type:** `String`.
 
-### 4.3 Mã lệnh C# Tương tác Redis (StackExchange.Redis):
+### 4.3 Bộ Lệnh Redis Shell Command:
+```redis
+# 1. Đặt khóa tạm giữ ghế A1 suất chiếu 101 trong 5 phút (300 giây) nếu ghế chưa bị khóa (NX)
+SET seat_lock:101:A1 "UserID:7" NX EX 300
+
+# 2. Kiểm tra xem ghế A1 suất 101 có đang bị ai giữ không
+EXISTS seat_lock:101:A1
+
+# 3. Xem thời gian giữ ghế còn lại bao nhiêu giây
+TTL seat_lock:101:A1
+
+# 4. Giải phóng khóa giữ ghế khi khách bỏ chọn hoặc hoàn tất thanh toán
+DEL seat_lock:101:A1
+```
+
+### 4.4 Mã Lệnh C# StackExchange.Redis Integration (`RedisManager.cs`):
 ```csharp
-// 1. Đặt khóa giữ ghế trong 5 phút (TTL 300s)
-bool isLocked = redisDb.StringSet($"seat_lock:{suatChieuId}:{gheId}", $"UserID:{userId}", TimeSpan.FromMinutes(5), When.NotExists);
+// Đặt khóa giữ ghế 5 phút
+public bool LockSeat(int suatChieuId, int gheId, int userId) {
+    string key = $"seat_lock:{suatChieuId}:{gheId}";
+    string val = $"UserID:{userId}";
+    return redisDb.StringSet(key, val, TimeSpan.FromMinutes(5), When.NotExists);
+}
 
-// 2. Kiểm tra trạng thái ghế realtime
-bool isCurrentlyLocked = redisDb.KeyExists($"seat_lock:{suatChieuId}:{gheId}");
-
-// 3. Giải phóng / Xóa khóa giữ ghế khi thanh toán xong hoặc khách bỏ chọn
-redisDb.KeyDelete($"seat_lock:{suatChieuId}:{gheId}");
+// Xóa khóa giữ ghế
+public bool UnlockSeat(int suatChieuId, int gheId) {
+    string key = $"seat_lock:{suatChieuId}:{gheId}";
+    return redisDb.KeyDelete(key);
+}
 ```
 
 ---
 
 ## CHƯƠNG 5: THIẾT KẾ CSDL NOSQL NEO4J (GRAPH DATABASE DESIGN)
 
-### 5.1 Phạm vi nhiệm vụ
-Lưu trữ cấu trúc đồ thị mối quan hệ giữa Người Dùng, Bộ Phim và Thể Loại Phim để tính toán gợi ý Top Phim Thịnh Hành & Thống kê độ phổ biến.
+### 5.1 Phạm vi nhiệm vụ & Mô hình Đồ thị
+- **Loại CSDL:** Graph Database (Neo4j 5.0).
+- **Nhiệm vụ:** Lưu trữ mạng lưới mối quan hệ người dùng, bộ phim và thể loại để tính toán Bảng xếp hạng gợi ý Top Phim Thịnh Hành & Thống kê độ phổ biến.
 
-### 5.2 Sơ đồ Đồ thị (Graph Model):
-- **Nodes:**
-  - `(:User {userId: 'huy', username: 'huy'})`
-  - `(:Movie {movieId: 101, title: 'Lật Mặt 7', poster: '001.png', duration: 120})`
-  - `(:Genre {genreId: 1, genreName: 'Hành Động'})`
-- **Relationships:**
-  - `(:User)-[:BOOKED {bookingId: 'HD001', seatCount: 2, date: '2026-08-01'}]->(:Movie)`
-  - `(:User)-[:FAVORITED]->(:Movie)`
-  - `(:Movie)-[:BELONGS_TO]->(:Genre)`
+### 5.2 Sơ đồ Đồ thị Đầy Đủ (Graph Model Schema):
 
-### 5.3 Bộ Câu lệnh Cypher Query Đầy Đủ:
+```mermaid
+graph LR
+    User["(:User {userId: 'huy', username: 'huy'})"]
+    Movie["(:Movie {movieId: 101, title: 'Lật Mặt 7', poster: '001.png', duration: 120})"]
+    Genre["(:Genre {genreId: 1, genreName: 'Hành Động'})"]
+
+    User -->|":BOOKED {bookingId: 'HD001', seatCount: 2, date: '2026-08-01'}"| Movie
+    User -->|":FAVORITED"| Movie
+    Movie -->|":BELONGS_TO"| Genre
+```
+
+### 5.3 Bộ Câu Lệnh Cypher Query Shell Chi Tiết:
 ```cypher
-// 1. Top Phim Được Đặt Vé Nhiều Nhất
+// 1. Khởi tạo Node và Mối quan hệ mẫu
+MERGE (u:User { userId: 'huy' }) SET u.username = 'Huy Vu'
+MERGE (m:Movie { movieId: 101 }) SET m.title = 'Lật Mặt 7', m.poster = 'poster01.jpg'
+MERGE (g:Genre { genreId: 1 }) SET g.genreName = 'Hành Động'
+MERGE (m)-[:BELONGS_TO]->(g);
+
+// 2. Truy vấn Top Phim Được Đặt Vé Nhiều Nhất
 MATCH (u:User)-[r:BOOKED]->(m:Movie)
 RETURN m.movieId AS MovieId, m.title AS Title, COUNT(r) AS TotalBookings
 ORDER BY TotalBookings DESC LIMIT 4;
 
-// 2. Top Phim Được Yêu Thích Nhất
+// 3. Truy vấn Top Phim Được Yêu Thích Nhất
 MATCH (u:User)-[r:FAVORITED]->(m:Movie)
 RETURN m.movieId AS MovieId, m.title AS Title, COUNT(r) AS TotalFavorites
 ORDER BY TotalFavorites DESC LIMIT 4;
 
-// 3. Thả Tim Yêu Thích Phim Realtime (Tạo mới hoặc Xóa mối quan hệ)
-MATCH (u:User {userId: 'huy'}), (m:Movie {movieId: 101})
+// 4. Thả Tim Yêu Thích Phim Realtime (Tạo mới hoặc Xóa mối quan hệ)
+MATCH (u:User { userId: 'huy' }), (m:Movie { movieId: 101 })
 MERGE (u)-[r:FAVORITED]->(m);
 
-// 4. Thống Kê Phân Tích Độ Phổ Biến Theo Thể Loại Phim Đồ Thị
+// 5. Thống Kê Phân Tích Độ Phổ Biến Theo Thể Loại Phim Đồ Thị
 MATCH (m:Movie)-[:BELONGS_TO]->(g:Genre)
 OPTIONAL MATCH (u:User)-[b:BOOKED]->(m)
 OPTIONAL MATCH (u2:User)-[f:FAVORITED]->(m)
@@ -191,17 +284,34 @@ RETURN g.genreId AS GenreId, g.genreName AS GenreName,
 ORDER BY TotalBookings DESC;
 ```
 
+### 5.4 Mã C# Neo4j REST API Client (`Neo4jService.cs`):
+```csharp
+// Gửi câu lệnh Cypher tới Neo4j HTTP REST Endpoint
+public JObject ExecuteCypher(string cypherQuery, Dictionary<string, object> parameters = null) {
+    var request = (HttpWebRequest)WebRequest.Create("http://localhost:7474/db/data/transaction/commit");
+    request.Method = "POST";
+    request.ContentType = "application/json";
+    string authInfo = Convert.ToBase64String(Encoding.UTF8.GetBytes("neo4j:adminpassword"));
+    request.Headers["Authorization"] = "Basic " + authInfo;
+    // ... Serialize Payload & Return JObject
+}
+```
+
 ---
 
 ## CHƯƠNG 6: THIẾT KẾ CSDL NOSQL APACHE CASSANDRA (WIDE-COLUMN STORE DESIGN)
 
-### 6.1 Phạm vi nhiệm vụ
-Lưu nhật ký hoạt động người dùng (User Activity Logs) và lịch sử vé theo mô hình Big Data với tốc độ ghi nhanh (High Write Performance).
+### 6.1 Phạm vi nhiệm vụ & Keyspace Architecture
+- **Loại CSDL:** Wide-Column Distributed Store (Apache Cassandra 4.0).
+- **Keyspace Name:** `cinemadb_analytics`
+- **Replication Strategy:** `SimpleStrategy`, `replication_factor: 1`.
+- **Nhiệm vụ:** Lưu vết nhật ký hoạt động Big Data (User Activity Logs) và lịch sử vé đặt với tốc độ ghi cực nhanh (High Write Throughput).
 
-### 6.2 Cấu trúc Keyspace & Các Bảng CQL:
-- **Keyspace:** `cinemadb_analytics` (Replication Strategy: `SimpleStrategy`, `replication_factor: 1`).
+### 6.2 Cấu trúc Các Bảng CQL (Wide-Column Tables):
 
 #### Bảng 1: `user_activity_logs` (Nhật ký hoạt động)
+- **Partition Key:** `user_id`
+- **Clustering Key:** `activity_time DESC`
 ```sql
 CREATE TABLE cinemadb_analytics.user_activity_logs (
     user_id int,
@@ -216,6 +326,8 @@ CREATE TABLE cinemadb_analytics.user_activity_logs (
 ```
 
 #### Bảng 2: `user_ticket_history` (Lịch sử đặt vé)
+- **Partition Key:** `user_id`
+- **Clustering Key:** `booking_time DESC`
 ```sql
 CREATE TABLE cinemadb_analytics.user_ticket_history (
     user_id int,
@@ -231,6 +343,8 @@ CREATE TABLE cinemadb_analytics.user_ticket_history (
 ```
 
 #### Bảng 3: `seat_status_history` (Nhật ký biến động trạng thái ghế)
+- **Partition Key:** `showtime_id`
+- **Clustering Key:** `status_time DESC`
 ```sql
 CREATE TABLE cinemadb_analytics.seat_status_history (
     showtime_id int,
@@ -241,6 +355,28 @@ CREATE TABLE cinemadb_analytics.seat_status_history (
     user_id int,
     PRIMARY KEY (showtime_id, status_time)
 ) WITH CLUSTERING ORDER BY (status_time DESC);
+```
+
+### 6.3 Bộ Lệnh Truy Vấn CQL Shell:
+```sql
+-- 1. Ghi nhận Nhật ký hoạt động đăng nhập của người dùng
+INSERT INTO cinemadb_analytics.user_activity_logs (user_id, activity_time, log_id, activity_type, description, ip_address, device_info)
+VALUES (7, toTimestamp(now()), uuid(), 'LOGIN', 'Đăng nhập hệ thống thành công', '192.168.1.10', 'Chrome Windows 11');
+
+-- 2. Truy vấn Lịch sử đặt vé của người dùng (Tự động sắp xếp thời gian mới nhất lên đầu)
+SELECT * FROM cinemadb_analytics.user_ticket_history WHERE user_id = 7;
+```
+
+### 6.4 Mã C# Cassandra C# Driver Integration (`CassandraService.cs`):
+```csharp
+// Ghi nhận nhật ký bất đồng bộ (High Speed Write)
+public async Task LogUserActivityAsync(int userId, string activityType, string description) {
+    var statement = new SimpleStatement(
+        "INSERT INTO cinemadb_analytics.user_activity_logs (user_id, activity_time, log_id, activity_type, description) VALUES (?, ?, ?, ?, ?)",
+        userId, DateTimeOffset.UtcNow, Guid.NewGuid(), activityType, description
+    );
+    await session.ExecuteAsync(statement);
+}
 ```
 
 ---
