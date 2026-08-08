@@ -1,12 +1,8 @@
 -- ============================================================================
 -- APACHE CASSANDRA - MODULE LỊCH SỬ / LOG / TIMELINE (ĐỘC LẬP)
--- Website Đặt Vé Xem Phim (doan3)
--- SQL Server vẫn là CSDL chính. Cassandra CHỈ lưu Log / Timeline / History.
--- Chạy file này 1 lần duy nhất để khởi tạo Keyspace + 3 bảng.
+-- Website Đặt Vé Xem Phim (MOVANA CINEMA)
 -- ============================================================================
 
--- KEYSPACE: cinema_history
--- SimpleStrategy + replication_factor=1: phù hợp môi trường 1 node (Docker dev/local).
 CREATE KEYSPACE IF NOT EXISTS cinema_history
 WITH replication = {
     'class': 'SimpleStrategy',
@@ -16,36 +12,17 @@ WITH replication = {
 USE cinema_history;
 
 -- ============================================================================
--- BẢNG 1: lich_su_ghe — LỊCH SỬ THAY ĐỔI TRẠNG THÁI GHẾ (SEAT RESERVATION TIMELINE)
--- ----------------------------------------------------------------------------
--- Vòng đời: LOCK -> BOOKED -> CHECK_IN   hoặc   LOCK -> CANCEL
---
--- QUERY CHÍNH:
---   "Lịch sử 1 GHẾ trong 1 SUẤT CHIẾU theo thứ tự thời gian tăng dần"
---   SELECT * FROM lich_su_ghe WHERE lich_chieu_id = ? AND ghe_id = ?;
---
--- PARTITION KEY: (lich_chieu_id, ghe_id)
---   -> Mỗi cặp (suất chiếu, ghế) = 1 partition riêng, tối đa vài dòng.
---   -> Ghi song song cực nhanh dù có 100.000 người cùng chọn ghế.
---
--- CLUSTERING KEY: thoi_gian ASC, id ASC
---   -> ASC: xem timeline theo thứ tự LOCK -> BOOKED -> CHECK_IN/CANCEL
---   -> id (uuid) chống trùng khi 2 sự kiện cùng millisecond
---
--- HOT PARTITION: KHÔNG có. Số dòng/partition bị giới hạn tự nhiên bởi số
--- trạng thái trong vòng đời (thường 2-4 dòng/ghế/suất).
+-- BẢNG 1: lich_su_ghe — LỊCH SỬ THAY ĐỔI TRẠNG THÁI GHẾ
 -- ============================================================================
 CREATE TABLE IF NOT EXISTS lich_su_ghe (
     lich_chieu_id    bigint,
     ghe_id           bigint,
     thoi_gian        timestamp,
     id               uuid,
-    -- Trạng thái: LOCK | BOOKED | CHECK_IN | CANCEL
     trang_thai       text,
     khach_hang_id    bigint,
     don_dat_ve_id    bigint,
     ghi_chu          text,
-    -- Thông tin kỹ thuật (điền đầy đủ để tránh NULL gây lỗi INSERT)
     controller_name  text,
     action_name      text,
     request_method   text,
@@ -58,16 +35,8 @@ CREATE TABLE IF NOT EXISTS lich_su_ghe (
 ) WITH CLUSTERING ORDER BY (thoi_gian ASC, id ASC)
   AND comment = 'Seat Reservation Timeline: LOCK -> BOOKED -> CHECK_IN | LOCK -> CANCEL';
 
-
 -- ============================================================================
 -- BẢNG 2: lich_su_dat_ve — LỊCH SỬ ĐẶT VÉ CỦA KHÁCH HÀNG
--- ----------------------------------------------------------------------------
--- QUERY CHÍNH:
---   "Lịch sử đặt vé của 1 KHÁCH HÀNG, mới nhất trước"
---   SELECT * FROM lich_su_dat_ve WHERE khach_hang_id = ?;
---
--- PARTITION KEY: khach_hang_id
--- CLUSTERING KEY: thoi_gian DESC, id ASC
 -- ============================================================================
 CREATE TABLE IF NOT EXISTS lich_su_dat_ve (
     khach_hang_id   bigint,
@@ -84,29 +53,8 @@ CREATE TABLE IF NOT EXISTS lich_su_dat_ve (
 ) WITH CLUSTERING ORDER BY (thoi_gian DESC, id ASC)
   AND comment = 'Booking lifecycle: Dat ve -> Thanh toan -> Xuat ve -> Huy';
 
-
 -- ============================================================================
--- BẢNG 3: nhat_ky_hoat_dong — NHẬT KÝ HOẠT ĐỘNG NGƯỜI DÙNG (USER ACTIVITY LOG)
--- ----------------------------------------------------------------------------
--- Hành động: REGISTER|LOGIN|LOGOUT|SEARCH_MOVIE|VIEW_MOVIE_DETAIL|
---            VIEW_MOVIE_BY_GENRE|VIEW_CINEMA|VIEW_SHOWTIME|
---            LOCK_SEAT|BOOK_SEAT|CANCEL_SEAT|
---            PAYMENT_REQUEST|OTP_REQUEST|PAYMENT_SUCCESS|PAYMENT_FAILED|
---            CHANGE_PASSWORD
---
--- Kết quả: SUCCESS | FAILED
---
--- QUERY CHÍNH:
---   "Hoạt động của 1 USER trong 1 NGÀY"
---   SELECT * FROM nhat_ky_hoat_dong WHERE username = ? AND ngay = ?;
---
--- PARTITION KEY: (username, ngay)
---   -> Bucket theo NGÀY (format 'yyyy-MM-dd', giờ VN UTC+7)
---   -> Chặn Hot Partition: kể cả khach_vang_lai cũng chỉ phình theo ngày,
---      không vô hạn.
---
--- CLUSTERING KEY: thoi_gian DESC, id ASC
---   -> Hoạt động mới nhất lên đầu khi query không có ORDER BY
+-- BẢNG 3: nhat_ky_hoat_dong — NHẬT KÝ HOẠT ĐỘNG NGƯỜI DÙNG
 -- ============================================================================
 CREATE TABLE IF NOT EXISTS nhat_ky_hoat_dong (
     username         text,
@@ -127,28 +75,35 @@ CREATE TABLE IF NOT EXISTS nhat_ky_hoat_dong (
 ) WITH CLUSTERING ORDER BY (thoi_gian DESC, id ASC)
   AND comment = 'User Activity Log: REGISTER|LOGIN|LOGOUT|SEARCH|BOOK|PAYMENT|CHANGE_PASSWORD - SUCCESS/FAILED';
 
-
 -- ============================================================================
--- ALTER TABLE: Thêm cột còn thiếu nếu đã tạo bảng từ phiên bản cũ hơn
--- Lệnh này an toàn: nếu cột đã tồn tại sẽ báo lỗi nhưng không làm hỏng dữ liệu.
--- Bạn có thể chạy lại toàn bộ file này nhiều lần mà không lo.
+-- DỮ LIỆU MẪU (SEED DATA)
 -- ============================================================================
 
--- Thêm cột kỹ thuật vào lich_su_ghe (nếu bảng tạo từ schema cũ thiếu cột)
-ALTER TABLE lich_su_ghe ADD controller_name text;
-ALTER TABLE lich_su_ghe ADD action_name     text;
-ALTER TABLE lich_su_ghe ADD request_method  text;
-ALTER TABLE lich_su_ghe ADD browser         text;
-ALTER TABLE lich_su_ghe ADD device          text;
-ALTER TABLE lich_su_ghe ADD he_dieu_hanh    text;
-ALTER TABLE lich_su_ghe ADD ip_address      text;
-ALTER TABLE lich_su_ghe ADD ket_qua         text;
+-- ---------- 1) lich_su_ghe ----------
+INSERT INTO lich_su_ghe (lich_chieu_id, ghe_id, thoi_gian, id, trang_thai, khach_hang_id, don_dat_ve_id, ghi_chu)
+VALUES (1, 1, '2026-08-06T19:50:00.000+07:00', uuid(), 'Giu ghe', 1, null, 'Khach giu ghe A1 tren so do');
 
--- Thêm cột kỹ thuật vào nhat_ky_hoat_dong (nếu bảng tạo từ schema cũ)
-ALTER TABLE nhat_ky_hoat_dong ADD ket_qua          text;
-ALTER TABLE nhat_ky_hoat_dong ADD controller_name  text;
-ALTER TABLE nhat_ky_hoat_dong ADD action_name      text;
-ALTER TABLE nhat_ky_hoat_dong ADD request_method   text;
-ALTER TABLE nhat_ky_hoat_dong ADD browser          text;
-ALTER TABLE nhat_ky_hoat_dong ADD device           text;
-ALTER TABLE nhat_ky_hoat_dong ADD he_dieu_hanh     text;
+INSERT INTO lich_su_ghe (lich_chieu_id, ghe_id, thoi_gian, id, trang_thai, khach_hang_id, don_dat_ve_id, ghi_chu)
+VALUES (1, 1, '2026-08-06T19:51:20.000+07:00', uuid(), 'Thanh toan', 1, 1, 'Thanh toan thanh cong don DV00000001');
+
+INSERT INTO lich_su_ghe (lich_chieu_id, ghe_id, thoi_gian, id, trang_thai, khach_hang_id, don_dat_ve_id, ghi_chu)
+VALUES (1, 1, '2026-08-06T19:51:21.000+07:00', uuid(), 'Xuat ve', 1, 1, 'Xuat ve thanh cong');
+
+
+-- ---------- 2) lich_su_dat_ve ----------
+INSERT INTO lich_su_dat_ve (khach_hang_id, thoi_gian, id, don_dat_ve_id, ma_dat_ve, buoc, lich_chieu_id, so_ghe, tong_tien, ghi_chu)
+VALUES (1, '2026-08-06T19:51:20.000+07:00', uuid(), 1, 'DV00000001', 'Thanh toan', 1, 2, 190000.00, 'Thanh toan 2 ghe thuong');
+
+INSERT INTO lich_su_dat_ve (khach_hang_id, thoi_gian, id, don_dat_ve_id, ma_dat_ve, buoc, lich_chieu_id, so_ghe, tong_tien, ghi_chu)
+VALUES (1, '2026-08-06T19:51:21.000+07:00', uuid(), 1, 'DV00000001', 'Xuat ve', 1, 2, 190000.00, 'Ve dien tu da gui qua Gmail');
+
+
+-- ---------- 3) nhat_ky_hoat_dong ----------
+INSERT INTO nhat_ky_hoat_dong (username, ngay, thoi_gian, id, hanh_dong, chi_tiet, ip_address)
+VALUES ('kh1_long', '2026-08-06', '2026-08-06T19:45:00.000+07:00', uuid(), 'Dang nhap', 'Dang nhap thanh cong', '127.0.0.1');
+
+INSERT INTO nhat_ky_hoat_dong (username, ngay, thoi_gian, id, hanh_dong, chi_tiet, ip_address)
+VALUES ('kh1_long', '2026-08-06', '2026-08-06T19:47:10.000+07:00', uuid(), 'Xem chi tiet phim', 'PhimID=1 - Vung dat chet choc', '127.0.0.1');
+
+INSERT INTO nhat_ky_hoat_dong (username, ngay, thoi_gian, id, hanh_dong, chi_tiet, ip_address)
+VALUES ('kh1_long', '2026-08-06', '2026-08-06T19:51:21.000+07:00', uuid(), 'Thanh toan', 'Don DV00000001 - 190000 VND', '127.0.0.1');
