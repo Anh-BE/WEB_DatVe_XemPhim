@@ -1,16 +1,20 @@
 ﻿using doan3.Models;
-using System.Linq;
+using doan3.Models.Cass;
+using doan3.Models.Cass.DTO;
 using System;
-using System.Web.Mvc;
 using System.Data.Entity;
+using System.Linq;
+using System.Web.Mvc;
 
 namespace doan3.Controllers
 {
     public class ThongTinCaNhanController : Controller
     {
         private LTW_DatVeXemPhimEntities db = new LTW_DatVeXemPhimEntities();
-        private string username;
 
+        // =====================================================================
+        // GET: /ThongTinCaNhan/Index
+        // =====================================================================
         [HttpGet]
         public ActionResult Index()
         {
@@ -18,47 +22,15 @@ namespace doan3.Controllers
             if (userSession == null) return RedirectToAction("Index_DangNhap", "Login");
 
             var khachHang = LayThongTinKhachHang(userSession.UserID);
-
-           
             if (khachHang == null) return RedirectToAction("SignOut", "Login");
 
-            try
-            {
-                doan3.Models.Cass.CassandraFeaturesService.GhiNhatKyHoatDong(
-                    new doan3.Models.Cass.DTO.NhatKyHoatDongDTO
-                    {
-                        Username = username,
-
-                        HanhDong = "Dang nhap",
-
-                        ChiTiet = "Sai tai khoan hoac mat khau",
-
-                        ControllerName = "Login",
-
-                        ActionName = "Login",
-
-                        RequestMethod = Request.HttpMethod,
-
-                        Browser = Request.Browser.Browser + " " + Request.Browser.Version,
-
-                        Device = Request.Browser.IsMobileDevice ? "Mobile" : "Desktop",
-
-                        HeDieuHanh = Request.Browser.Platform,
-
-                        IpAddress = Request.UserHostAddress,
-
-                        KetQua = "Failed"
-                    });
-            }
-            catch
-            {
-            }
-
             ViewBag.MatKhauCu = LayMatKhauHienTai(userSession.UserID);
-
             return View(khachHang);
         }
 
+        // =====================================================================
+        // GET: /ThongTinCaNhan/DoiMatKhau
+        // =====================================================================
         [HttpGet]
         public ActionResult DoiMatKhau()
         {
@@ -66,6 +38,14 @@ namespace doan3.Controllers
             return View();
         }
 
+        // =====================================================================
+        // POST: /ThongTinCaNhan/DoiMatKhau
+        //
+        // Log Cassandra 3 trường hợp:
+        //   CASE 1: Sai mật khẩu cũ          -> CHANGE_PASSWORD FAILED
+        //   CASE 2: Mật khẩu mới trùng cũ    -> CHANGE_PASSWORD FAILED
+        //   CASE 3: Đổi thành công            -> CHANGE_PASSWORD SUCCESS
+        // =====================================================================
         [HttpPost]
         [ValidateAntiForgeryToken]
         public ActionResult DoiMatKhau(DoiMatKhauViewModel model)
@@ -73,126 +53,105 @@ namespace doan3.Controllers
             var userSession = LayUserSession();
             if (userSession == null) return RedirectToAction("Index_DangNhap", "Login");
 
-            if (!ModelState.IsValid) return View(model);
+            string browser = Request.Browser.Browser + " " + Request.Browser.Version;
+            string device = Request.Browser.IsMobileDevice ? "Mobile" : "Desktop";
+            string os = Request.Browser.Platform;
+            string ip = Request.UserHostAddress;
+            string httpMethod = Request.HttpMethod;
 
-            
+            // ------------------------------------------------------------------
+            // CASE 1: Kiểm tra mật khẩu cũ có đúng không
+            // ------------------------------------------------------------------
             if (!KiemTraMatKhauDung(userSession.UserID, model.MatKhauCu))
             {
                 ModelState.AddModelError("MatKhauCu", "Mật khẩu hiện tại không đúng.");
+
+                // Cassandra: CHANGE_PASSWORD FAILED — sai mật khẩu cũ
+                CassandraFeaturesService.GhiNhatKyHoatDong(new NhatKyHoatDongDTO
+                {
+                    Username = userSession.UserName,
+                    HanhDong = "CHANGE_PASSWORD",
+                    KetQua = "FAILED",
+                    ChiTiet = "That bai: sai mat khau hien tai",
+                    ControllerName = "ThongTinCaNhan",
+                    ActionName = "DoiMatKhau",
+                    RequestMethod = httpMethod,
+                    Browser = browser,
+                    Device = device,
+                    HeDieuHanh = os,
+                    IpAddress = ip
+                });
+
                 return View(model);
             }
 
-            try
+            // ModelState bao gồm các validation annotation (Required, StringLength, Compare)
+            if (!ModelState.IsValid)
+                return View(model);
+
+            // ------------------------------------------------------------------
+            // CASE 2: Mật khẩu mới không được trùng mật khẩu cũ
+            // ------------------------------------------------------------------
+            if (model.MatKhauMoi == model.MatKhauCu)
             {
-                doan3.Models.Cass.CassandraFeaturesService.GhiNhatKyHoatDong(
-                    new doan3.Models.Cass.DTO.NhatKyHoatDongDTO
-                    {
-                        Username = userSession.UserName,
+                ModelState.AddModelError("MatKhauMoi", "Mật khẩu mới không được trùng mật khẩu cũ.");
 
-                        HanhDong = "Doi mat khau",
-
-                        ChiTiet = "Nhap sai mat khau hien tai",
-
-                        ControllerName = "ThongTinCaNhan",
-
-                        ActionName = "DoiMatKhau",
-
-                        RequestMethod = Request.HttpMethod,
-
-                        Browser = Request.Browser.Browser + " " + Request.Browser.Version,
-
-                        Device = Request.Browser.IsMobileDevice ? "Mobile" : "Desktop",
-
-                        HeDieuHanh = Request.Browser.Platform,
-
-                        IpAddress = Request.UserHostAddress,
-
-                        KetQua = "Failed"
-                    });
-            }
-            catch
-            {
-            }
-
-            if (model.MatKhauCu == model.MatKhauMoi)
-            {
-                try
+                // Cassandra: CHANGE_PASSWORD FAILED — mật khẩu mới trùng cũ
+                CassandraFeaturesService.GhiNhatKyHoatDong(new NhatKyHoatDongDTO
                 {
-                    doan3.Models.Cass.CassandraFeaturesService.GhiNhatKyHoatDong(
-                       new doan3.Models.Cass.DTO.NhatKyHoatDongDTO
-                       {
-                           Username = username,
+                    Username = userSession.UserName,
+                    HanhDong = "CHANGE_PASSWORD",
+                    KetQua = "FAILED",
+                    ChiTiet = "That bai: mat khau moi khong duoc trung mat khau cu",
+                    ControllerName = "ThongTinCaNhan",
+                    ActionName = "DoiMatKhau",
+                    RequestMethod = httpMethod,
+                    Browser = browser,
+                    Device = device,
+                    HeDieuHanh = os,
+                    IpAddress = ip
+                });
 
-                           HanhDong = "Dang nhap",
-
-                           ChiTiet = "Dang nhap thanh cong",
-
-                           ControllerName = "Login",
-
-                           ActionName = "Login",
-
-                           RequestMethod = Request.HttpMethod,
-
-                           Browser = Request.Browser.Browser + " " + Request.Browser.Version,
-
-                           Device = Request.Browser.IsMobileDevice ? "Mobile" : "Desktop",
-
-                           HeDieuHanh = Request.Browser.Platform,
-
-                           IpAddress = Request.UserHostAddress,
-
-                           KetQua = "Success"
-                       });
-                }
-                catch
-                {
-                }
-
-                ModelState.AddModelError("MatKhauMoi", "Mật khẩu mới phải khác mật khẩu hiện tại.");
                 return View(model);
             }
 
-           
+            // ------------------------------------------------------------------
+            // CASE 3: Cập nhật mật khẩu mới vào SQL Server
+            // ------------------------------------------------------------------
             bool ketQua = CapNhatMatKhau(userSession.UserID, model.MatKhauMoi);
 
             if (ketQua)
             {
-                try
+                // Cassandra: CHANGE_PASSWORD SUCCESS
+                CassandraFeaturesService.GhiNhatKyHoatDong(new NhatKyHoatDongDTO
                 {
-                    doan3.Models.Cass.CassandraFeaturesService.GhiNhatKyHoatDong(
-                        new doan3.Models.Cass.DTO.NhatKyHoatDongDTO
-                        {
-                            Username = userSession.UserName,
-                            HanhDong = "Doi mat khau",
-                            ChiTiet = "Nguoi dung doi mat khau thanh cong",
-                            IpAddress = Request.UserHostAddress,
-
-                            ControllerName = "ThongTinCaNhan",
-                            ActionName = "DoiMatKhau",
-                            RequestMethod = Request.HttpMethod,
-                            Browser = Request.Browser.Browser + " " + Request.Browser.Version,
-                            Device = Request.Browser.IsMobileDevice ? "Mobile" : "Desktop",
-                            HeDieuHanh = Request.Browser.Platform,
-                            KetQua = "Success"
-
-                        });
-                }
-                catch
-                {
-                }
+                    Username = userSession.UserName,
+                    HanhDong = "CHANGE_PASSWORD",
+                    KetQua = "SUCCESS",
+                    ChiTiet = "Doi mat khau thanh cong",
+                    ControllerName = "ThongTinCaNhan",
+                    ActionName = "DoiMatKhau",
+                    RequestMethod = httpMethod,
+                    Browser = browser,
+                    Device = device,
+                    HeDieuHanh = os,
+                    IpAddress = ip
+                });
 
                 TempData["SuccessMessage"] = "Đổi mật khẩu thành công!";
                 return RedirectToAction("Index");
             }
             else
             {
-                ModelState.AddModelError("", "Đã xảy ra lỗi khi cập nhật dữ liệu.");
+                // Lỗi kỹ thuật khi SaveChanges (hiếm gặp)
+                ModelState.AddModelError("", "Đã xảy ra lỗi khi cập nhật dữ liệu. Vui lòng thử lại.");
                 return View(model);
             }
         }
 
-       
-
+        // =====================================================================
+        // Helpers (private)
+        // =====================================================================
         private UserLogin LayUserSession()
         {
             return Session["USER_SESSION"] as UserLogin;
@@ -200,11 +159,8 @@ namespace doan3.Controllers
 
         private Khach_Hang LayThongTinKhachHang(int userId)
         {
-            
             var nguoiDung = db.NguoiDungs.FirstOrDefault(u => u.UserID == userId);
             if (nguoiDung == null) return null;
-
-           
             return db.Khach_Hang.FirstOrDefault(k => k.UserID == userId);
         }
 
@@ -216,11 +172,9 @@ namespace doan3.Controllers
                 .FirstOrDefault();
         }
 
-     
         private bool KiemTraMatKhauDung(int userId, string matKhauNhap)
         {
             var matKhauDb = LayMatKhauHienTai(userId);
-         
             return matKhauDb == matKhauNhap;
         }
 
@@ -231,16 +185,14 @@ namespace doan3.Controllers
                 var nguoiDung = db.NguoiDungs.Find(userId);
                 if (nguoiDung == null) return false;
 
-              
                 nguoiDung.Password = matKhauMoi;
-
                 db.Entry(nguoiDung).State = EntityState.Modified;
                 db.SaveChanges();
                 return true;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                
+                System.Diagnostics.Debug.WriteLine("[CapNhatMatKhau] Loi: " + ex.Message);
                 return false;
             }
         }

@@ -28,7 +28,7 @@ services:
     container_name: docker_neo4j
     ports:
       - "7474:7474" # Web Browser UI
-      - "7687:7687" # Bolt protocol
+      - "8500:7687" # Bolt protocol
     environment:
       NEO4J_AUTH: neo4j/adminpassword
     volumes:

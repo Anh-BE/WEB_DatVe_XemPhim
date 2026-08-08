@@ -35,6 +35,29 @@ namespace doan3.Controllers
             if (!string.IsNullOrEmpty(loiKiemTra))
             {
                 ViewBag.Error = loiKiemTra;
+
+                try
+                {
+                    doan3.Models.Cass.CassandraFeaturesService.GhiNhatKyHoatDong(
+                        new doan3.Models.Cass.DTO.NhatKyHoatDongDTO
+                        {
+                            Username = username,
+                            HanhDong = "Dang ky",
+                            ChiTiet = "That bai: " + loiKiemTra,
+                            ControllerName = "Register",
+                            ActionName = "DangKy",
+                            RequestMethod = Request.HttpMethod,
+                            Browser = Request.Browser.Browser + " " + Request.Browser.Version,
+                            Device = Request.Browser.IsMobileDevice ? "Mobile" : "Desktop",
+                            HeDieuHanh = Request.Browser.Platform,
+                            IpAddress = Request.UserHostAddress,
+                            KetQua = "Failed"
+                        });
+                }
+                catch
+                {
+                }
+
                 return View("Index_DangKy");
             }
 
@@ -42,6 +65,28 @@ namespace doan3.Controllers
             {
                 int newUserId = TaoTaiKhoanNguoiDung(username, password, name);
                 TaoThongTinKhachHang(newUserId, name, email, phone, ngaysinh);
+
+                try
+                {
+                    doan3.Models.Cass.CassandraFeaturesService.GhiNhatKyHoatDong(
+                        new doan3.Models.Cass.DTO.NhatKyHoatDongDTO
+                        {
+                            Username = username,
+                            HanhDong = "Dang ky",
+                            ChiTiet = "Dang ky tai khoan thanh cong",
+                            ControllerName = "Register",
+                            ActionName = "DangKy",
+                            RequestMethod = Request.HttpMethod,
+                            Browser = Request.Browser.Browser + " " + Request.Browser.Version,
+                            Device = Request.Browser.IsMobileDevice ? "Mobile" : "Desktop",
+                            HeDieuHanh = Request.Browser.Platform,
+                            IpAddress = Request.UserHostAddress,
+                            KetQua = "Success"
+                        });
+                }
+                catch
+                {
+                }
 
                 TempData["SuccessMessage"] = "Đăng ký tài khoản thành công! Mời bạn đăng nhập.";
                 return RedirectToAction("Index_DangNhap", "Login");

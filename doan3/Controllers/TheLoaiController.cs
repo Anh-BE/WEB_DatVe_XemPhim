@@ -20,7 +20,7 @@ namespace doan3.Controllers
         public ActionResult TheLoai_PartialView()
         {
             TheLoaiPhim tl = new TheLoaiPhim();
-            
+
             return PartialView(tl.GetTheLoai());
         }
     }
