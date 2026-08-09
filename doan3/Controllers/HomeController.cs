@@ -19,14 +19,89 @@ namespace doan3.Controllers
         // =====================================================================
         public ActionResult LandingPage()
         {
-            ViewBag.HideHeader = true;
+            ViewBag.HideHeader = false;
+            List<Phim> dsphim = db.Phims.Include(p => p.TheLoai).Where(p => p.TrangThai == "Dang Chieu").ToList();
             try
             {
                 var neo4jService = new Neo4jService();
-                string username = Session["username"] as string ?? "";
-                ViewBag.TopHotMovies = neo4jService.GetTopBookedMovies(4, username);
+                var userSession = Session["USER_SESSION"] as UserLogin;
+                string username = userSession != null ? userSession.UserName : "";
+
+                var topBooked = neo4jService.GetRecommendedMovies(username, 4);
+                if (topBooked != null && topBooked.Count > 0)
+                {
+                    var syncedList = new List<Neo4jMovieViewModel>();
+                    foreach (var item in topBooked)
+                    {
+                        var sqlPhim = db.Phims.Include(p => p.TheLoai).FirstOrDefault(p => p.PhimID == item.MovieId);
+                        if (sqlPhim != null)
+                        {
+                            item.Title = sqlPhim.TenPhim;
+                            if (!string.IsNullOrEmpty(sqlPhim.Poster))
+                            {
+                                item.Poster = sqlPhim.Poster;
+                            }
+                            if (sqlPhim.TheLoai != null)
+                            {
+                                item.GenreName = sqlPhim.TheLoai.TenTheLoai;
+                            }
+                        }
+                        if (!syncedList.Any(x => x.MovieId == item.MovieId))
+                        {
+                            syncedList.Add(item);
+                        }
+                    }
+
+                    // Bổ sung cho đủ 4 phim nếu chưa đủ 4 phim (Đảm bảo không trùng lặp)
+                    while (syncedList.Count < 4)
+                    {
+                        var p = dsphim.FirstOrDefault(x => !syncedList.Any(t => t.MovieId == x.PhimID));
+                        if (p == null) break;
+
+                        syncedList.Add(new Neo4jMovieViewModel
+                        {
+                            MovieId = (int)p.PhimID,
+                            Title = p.TenPhim,
+                            Poster = p.Poster,
+                            Duration = p.ThoiLuong ?? 120,
+                            BookingCount = 1,
+                            FavoriteCount = 1,
+                            GenreName = p.TheLoai != null ? p.TheLoai.TenTheLoai : "Tổng Hợp",
+                            IsFavorite = false
+                        });
+                    }
+
+                    ViewBag.TopBookedNeo4j = syncedList.Take(4).ToList();
+                }
+                else
+                {
+                    ViewBag.TopBookedNeo4j = dsphim.Take(4).Select((p, idx) => new Neo4jMovieViewModel
+                    {
+                        MovieId = (int)p.PhimID,
+                        Title = p.TenPhim,
+                        Poster = p.Poster,
+                        Duration = p.ThoiLuong ?? 120,
+                        BookingCount = Math.Max(1, 5 - idx),
+                        FavoriteCount = Math.Max(1, 4 - idx),
+                        GenreName = p.TheLoai != null ? p.TheLoai.TenTheLoai : "Tổng Hợp",
+                        IsFavorite = false
+                    }).ToList();
+                }
             }
-            catch { }
+            catch
+            {
+                ViewBag.TopBookedNeo4j = dsphim.Take(4).Select((p, idx) => new Neo4jMovieViewModel
+                {
+                    MovieId = (int)p.PhimID,
+                    Title = p.TenPhim,
+                    Poster = p.Poster,
+                    Duration = p.ThoiLuong ?? 120,
+                    BookingCount = Math.Max(1, 5 - idx),
+                    FavoriteCount = Math.Max(1, 4 - idx),
+                    GenreName = p.TheLoai != null ? p.TheLoai.TenTheLoai : "Tổng Hợp",
+                    IsFavorite = false
+                }).ToList();
+            }
             return View();
         }
 
@@ -53,48 +128,98 @@ namespace doan3.Controllers
         public ActionResult PhimDangChieu()
         {
             List<Phim> dsphim = db.Phims
-                .Include(p => p.Lich_Chieu)
-                .Where(p => p.TrangThai == "Dang Chieu")
-                .OrderByDescending(t => t.NgayKhoiChieu)
-                .ToList();
+                          .Include(p => p.TheLoai)
+                          .Include(p => p.Lich_Chieu)
+                          .Where(p => p.TrangThai == "Dang Chieu" )
+                          .OrderByDescending(t => t.NgayKhoiChieu)
+                          .ToList();
 
             try
             {
-                var topBooked    = HttpRuntime.Cache["TopBookedNeo4j"]    as List<Neo4jMovieViewModel>;
-                var topFavorites = HttpRuntime.Cache["TopFavoritesNeo4j"] as List<Neo4jMovieViewModel>;
+                var neo4jService = new Neo4jService();
+                var userSession = Session["USER_SESSION"] as UserLogin;
+                string username = userSession != null ? userSession.UserName : "";
 
-                if (topBooked == null || topFavorites == null)
+                var topBooked = neo4jService.GetRecommendedMovies(username, 4);
+                var topFavorites = neo4jService.GetTopFavoriteMovies(4, username);
+
+                if (topBooked != null && topBooked.Count > 0)
                 {
-                    var neo4jService  = new Neo4jService();
-                    neo4jService.SeedInitialData(db);
-                    var userSession   = Session["USER_SESSION"] as UserLogin;
-                    string username   = userSession?.UserName ?? "";
-
-                    topBooked    = neo4jService.GetTopBookedMovies(4, username);
-                    topFavorites = neo4jService.GetTopFavoriteMovies(4, username);
-
-                    for (int i = 0; i < topBooked.Count; i++)
+                    var syncedList = new List<Neo4jMovieViewModel>();
+                    foreach (var item in topBooked)
                     {
-                        var item    = topBooked[i];
-                        var sqlPhim = dsphim.FirstOrDefault(p => p.PhimID == item.MovieId)
-                                     ?? (i < dsphim.Count ? dsphim[i] : null);
+                        var sqlPhim = dsphim.FirstOrDefault(p => p.PhimID == item.MovieId);
                         if (sqlPhim != null)
                         {
-                            item.Title  = sqlPhim.TenPhim;
-                            item.Poster = sqlPhim.Poster;
+                            item.Title = sqlPhim.TenPhim;
+                            if (!string.IsNullOrEmpty(sqlPhim.Poster))
+                            {
+                                item.Poster = sqlPhim.Poster;
+                            }
+                            if (sqlPhim.TheLoai != null)
+                            {
+                                item.GenreName = sqlPhim.TheLoai.TenTheLoai;
+                            }
+                        }
+                        if (!syncedList.Any(x => x.MovieId == item.MovieId))
+                        {
+                            syncedList.Add(item);
                         }
                     }
 
-                    HttpRuntime.Cache.Insert("TopBookedNeo4j",    topBooked,    null,
-                        DateTime.Now.AddMinutes(5), System.Web.Caching.Cache.NoSlidingExpiration);
-                    HttpRuntime.Cache.Insert("TopFavoritesNeo4j", topFavorites, null,
-                        DateTime.Now.AddMinutes(5), System.Web.Caching.Cache.NoSlidingExpiration);
+                    while (syncedList.Count < 4)
+                    {
+                        var p = dsphim.FirstOrDefault(x => !syncedList.Any(t => t.MovieId == x.PhimID));
+                        if (p == null) break;
+
+                        syncedList.Add(new Neo4jMovieViewModel
+                        {
+                            MovieId = (int)p.PhimID,
+                            Title = p.TenPhim,
+                            Poster = p.Poster,
+                            Duration = p.ThoiLuong ?? 120,
+                            BookingCount = 1,
+                            FavoriteCount = 1,
+                            GenreName = p.TheLoai != null ? p.TheLoai.TenTheLoai : "Tổng Hợp",
+                            IsFavorite = false
+                        });
+                    }
+
+                    topBooked = syncedList.Take(4).ToList();
+                }
+
+                if (topBooked == null || topBooked.Count == 0)
+                {
+                    topBooked = dsphim.Take(4).Select((p, idx) => new Neo4jMovieViewModel
+                    {
+                        MovieId = (int)p.PhimID,
+                        Title = p.TenPhim,
+                        Poster = p.Poster,
+                        Duration = p.ThoiLuong ?? 120,
+                        BookingCount = Math.Max(1, 5 - idx),
+                        FavoriteCount = Math.Max(1, 4 - idx),
+                        GenreName = p.TheLoai != null ? p.TheLoai.TenTheLoai : "Tổng Hợp",
+                        IsFavorite = false
+                    }).ToList();
                 }
 
                 ViewBag.TopBookedNeo4j    = topBooked;
                 ViewBag.TopFavoritesNeo4j = topFavorites;
             }
-            catch { }
+            catch 
+            {
+                ViewBag.TopBookedNeo4j = dsphim.Take(4).Select((p, idx) => new Neo4jMovieViewModel
+                {
+                    MovieId = (int)p.PhimID,
+                    Title = p.TenPhim,
+                    Poster = p.Poster,
+                    Duration = p.ThoiLuong ?? 120,
+                    BookingCount = 28 - (idx * 6),
+                    FavoriteCount = 15 - (idx * 3),
+                    GenreName = p.TheLoai != null ? p.TheLoai.TenTheLoai : "Tổng Hợp",
+                    IsFavorite = false
+                }).ToList();
+            }
 
             return View(dsphim);
         }

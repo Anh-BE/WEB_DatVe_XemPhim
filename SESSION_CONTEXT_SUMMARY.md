@@ -8,6 +8,10 @@
 
 ### 1. Thông tin cấu hình môi trường:
 * **Đường dẫn thư mục dự án:** `C:\Users\Le Ngoc Anh\Desktop\09_WebDatVeXemPhim\09_WebDatVeXemPhim\doan3`
+* **Sinh viên thực hiện:** 
+  1. Tăng Gia Huy
+  2. Lê Ngọc Anh
+  3. Đào Trọng Nguyên Vũ
 * **GitHub Repository:** `https://github.com/Anh-BE/WEB_DatVe_XemPhim.git` (Nhánh: `main`)
 * **CSDL Quan hệ (RDBMS):** MS SQL Server 2022 Instance `LAPTOP-6APG6279\SQLSERVER2022`, Database `LTW_DatVeXemPhim`.
 * **CSDL NoSQL 1 (Redis):** Running `localhost:6379`.
@@ -19,7 +23,7 @@
 
 | # | Tính năng Redis | Tên Key trên Redis | TTL (Thời gian sống) | Mô tả & Cách thức xử lý |
 | :---: | :--- | :--- | :---: | :--- |
-| 1 | **Khóa ghế tạm thời** | `seatlock:{lichChieuId}:{gheId}` | 60 giây | Khóa nguyên tử (Atomic Lock) giữ ghế khi chọn trên sơ đồ, tự giải phóng sau 60s. |
+| 1 | **Khóa ghế tạm thời** | `seatlock:{lichChieuId}:{gheId}` | 90 giây (1.5 phút) | Khóa nguyên tử (Atomic Lock) giữ ghế khi chọn trên sơ đồ, tự giải phóng sau 90s. |
 | 2 | **Giỏ hàng thanh toán** | `cart:{username}` *(Hash)* | 600 giây (10 phút) | Lưu tạm danh sách ghế, suất chiếu và tổng tiền chờ thanh toán. |
 | 3 | **Xác thực OTP Gmail** | `otp:checkout:{username}` | 120 giây (2 phút) | Sinh mã OTP 6 số, lưu Redis đếm ngược 120s và gửi Mail thật qua Gmail SMTP. Xóa ngay sau khi dùng. |
 | 4 | **Redis User Session** | `session:user:{username}` *(Hash)* | 1800 giây (30 phút) | Lưu phiên đăng nhập người dùng trên RAM. Xóa khi người dùng Sign Out. |

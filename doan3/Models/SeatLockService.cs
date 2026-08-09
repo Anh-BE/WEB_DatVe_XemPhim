@@ -42,9 +42,9 @@ namespace doan3.Models
         }
 
         /// <summary>
-        /// Khóa nguyên tử (Atomic Lock) tập hợp nhiều ghế trong Redis với TTL (mặc định 60s)
+        /// Khóa nguyên tử (Atomic Lock) tập hợp nhiều ghế trong Redis với TTL (mặc định 90s - 1.5 phút)
         /// </summary>
-        public static bool LockSeats(long lichChieuId, List<long> gheIds, long khachHangId, int durationSeconds = 60)
+        public static bool LockSeats(long lichChieuId, List<long> gheIds, long khachHangId, int durationSeconds = 90)
         {
             var db = RedisService.GetDatabase();
             var acquiredLocks = new List<string>();

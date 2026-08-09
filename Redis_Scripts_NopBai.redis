@@ -5,13 +5,13 @@
 # =========================================================================
 
 # -------------------------------------------------------------------------
-# TÍNH NĂNG 1: KHÓA GHẾ TẠM THỜI (ATOMIC SEAT LOCK - STRING + TTL 60S)
+# TÍNH NĂNG 1: KHÓA GHẾ TẠM THỜI (ATOMIC SEAT LOCK - STRING + TTL 90S / 1.5 PHÚT)
 # Mục đích: Đảm bảo tính nguyên tử (Atomic), tránh 2 người đặt trùng 1 ghế.
 # Key format: seatlock:{lichChieuId}:{gheId}
 # -------------------------------------------------------------------------
 
-# 1. Khóa ghế số 15 của Suất chiếu 102 cho Khách hàng ID 5 trong 60 giây
-SET seatlock:102:15 "LockedBy_Customer_5" NX EX 60
+# 1. Khóa ghế số 15 của Suất chiếu 102 cho Khách hàng ID 5 trong 90 giây (1.5 phút)
+SET seatlock:102:15 "LockedBy_Customer_5" NX EX 90
 
 # 2. Kiểm tra thời gian khóa ghế còn lại (TTL)
 TTL seatlock:102:15

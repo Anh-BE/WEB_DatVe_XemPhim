@@ -452,10 +452,10 @@ namespace doan3.Controllers
                     // Neo4j: ghi lượt đặt vé
                     try
                     {
-                        var idPhim = LayIdPhimTuLichChieu(lichChieuId);
-                        var neo4j = new Neo4jService();
-                        neo4j.AddBooking(sessionUser.UserName, (int)idPhim,
-                            "BK" + maDonHang, danhSachGheCanMua.Count, tongTienPhaiTra);
+                        var phimObj = db.Phims.FirstOrDefault(p => p.PhimID == idPhim);
+                        string movieTitle = phimObj != null ? phimObj.TenPhim : "";
+                        var neo4jService = new Neo4jService();
+                        neo4jService.AddBooking(sessionUser.UserName, (int)idPhim, "BK" + maDonHang, danhSachGheCanMua.Count, tongTienPhaiTra, movieTitle);
                     }
                     catch { }
 

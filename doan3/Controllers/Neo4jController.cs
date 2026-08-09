@@ -12,15 +12,18 @@ namespace doan3.Controllers
         // GET: /Neo4j/
         public ActionResult Index()
         {
-            string username = Session["username"] as string ?? "";
+            var userSession = Session["USER_SESSION"] as UserLogin;
+            string username = userSession != null ? userSession.UserName : (Session["username"] as string ?? "");
             
             // Tự động kiểm tra và khởi tạo dữ liệu mẫu nếu Neo4j chưa có dữ liệu
             _neo4jService.SeedInitialData();
 
+            var recommendedMovies = _neo4jService.GetRecommendedMovies(username, 6);
             var topBooked = _neo4jService.GetTopBookedMovies(6, username);
             var topFavorites = _neo4jService.GetTopFavoriteMovies(6, username);
             var trendingGenres = _neo4jService.GetTrendingGenres(5);
 
+            ViewBag.RecommendedMovies = recommendedMovies;
             ViewBag.TopBooked = topBooked;
             ViewBag.TopFavorites = topFavorites;
             ViewBag.TrendingGenres = trendingGenres;
@@ -33,7 +36,9 @@ namespace doan3.Controllers
         [HttpPost]
         public ActionResult ToggleFavorite(int movieId, string title, string poster)
         {
-            string username = Session["username"] as string;
+            var userSession = Session["USER_SESSION"] as UserLogin;
+            string username = userSession != null ? userSession.UserName : (Session["username"] as string);
+
             if (string.IsNullOrEmpty(username))
             {
                 return Json(new { success = false, message = "Vui lòng đăng nhập để sử dụng tính năng Yêu thích (❤️)!" });

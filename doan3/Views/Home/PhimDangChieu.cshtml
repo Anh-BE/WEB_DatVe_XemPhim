@@ -1,4 +1,4 @@
-﻿﻿﻿@Html.Partial("_BannerPartial")
+@Html.Partial("_BannerPartial")
 
 @using doan3.Models; 
 
@@ -23,13 +23,13 @@
     <!-- KHỐI TÍNH NĂNG NEO4J: BẢNG XẾP HẠNG TOP PHIM TRÊN TRANG CHỦ              -->
     <!-- ========================================================================= -->
     <!-- ========================================================================= -->
-    <!-- KHỐI TÍNH NĂNG NEO4J: TOP PHIM THỊNH HÀNH (ĐỒNG BỘ NATIVE PHIM-CARD)    -->
+    <!-- KHỐI TÍNH NĂNG NEO4J: GỢI Ý PHIM DÀNH CHO BẠN (ĐỒNG BỘ NATIVE PHIM-CARD)    -->
     <!-- ========================================================================= -->
     @if (topBookedNeo4j.Count > 0)
     {
         <div class="header-clean" style="margin-top: 10px !important; margin-bottom: 25px !important; text-align: center !important;">
-            <h2 class="title-silver" style="font-family: 'Montserrat', sans-serif !important; font-weight: 700 !important; font-size: 26px !important; color: #adc1ff !important; text-transform: uppercase !important; letter-spacing: 2px !important; display: inline-block !important; border-bottom: 3px solid #ffeb00; padding-bottom: 8px !important; margin: 0 !important; text-shadow: 0 0 10px rgba(173, 193, 255, 0.3) !important;">
-                🏆 TOP PHIM THỊNH HÀNH
+            <h2 class="title-silver" style="font-family: 'Montserrat', sans-serif !important; font-weight: 700 !important; font-size: 26px !important; color: #adc1ff !important; text-transform: uppercase !important; letter-spacing: 2px !important; display: inline-block !important; border-bottom: 3px solid #2ecc71; padding-bottom: 8px !important; margin: 0 !important; text-shadow: 0 0 10px rgba(46, 204, 113, 0.4) !important;">
+                ✨ GỢI Ý PHIM DÀNH CHO BẠN (NEO4J GRAPH)
             </h2>
         </div>
 
@@ -38,10 +38,13 @@
                 int rank = 1;
                 foreach (var m in topBookedNeo4j.Take(4))
                 {
-                    <div class="phim-card" style="position: relative;">
-                        <span style="position: absolute; top: 10px; left: 10px; background: rgba(0, 0, 0, 0.85); color: #ffeb00; width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.1rem; border: 2px solid #ffeb00; z-index: 2; box-shadow: 0 4px 10px rgba(0,0,0,0.6);">
+                    <div class="phim-card" style="position: relative; border-color: rgba(46, 204, 113, 0.4);">
+                        <span style="position: absolute; top: 10px; left: 10px; background: rgba(0, 0, 0, 0.85); color: #2ecc71; width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.1rem; border: 2px solid #2ecc71; z-index: 2; box-shadow: 0 4px 10px rgba(0,0,0,0.6);">
                             #@rank
                         </span>
+                        <button onclick="toggleFavPhim(@m.MovieId, '@m.Title', '@m.Poster', this)" style="position: absolute; top: 10px; right: 10px; background: rgba(0, 0, 0, 0.85); color: #e74c3c; border: 1px solid #e74c3c; width: 36px; height: 36px; border-radius: 50%; cursor: pointer; font-size: 1.1rem; display: flex; align-items: center; justify-content: center; z-index: 3; transition: transform 0.2s;" title="Thả tim yêu thích (Neo4j Graph)">
+                            <i class="fa @(m.IsFavorite ? "fa-heart" : "fa-heart-o")"></i>
+                        </button>
                         <img src="@Url.Content("~/Content/HinhAnhSP/" + m.Poster)" alt="@m.Title" />
 
                         <div class="phim-info">
@@ -50,8 +53,8 @@
                             </p>
 
                             <div style="margin-bottom: 12px;">
-                                <span style="background: rgba(255, 235, 0, 0.15); color: #ffeb00; border: 1px solid rgba(255, 235, 0, 0.4); padding: 4px 12px; border-radius: 15px; font-size: 0.82rem; font-weight: 700;">
-                                    <i class="fa fa-ticket"></i> @m.BookingCount Lượt Đặt Vé
+                                <span style="background: rgba(46, 204, 113, 0.15); color: #2ecc71; border: 1px solid rgba(46, 204, 113, 0.4); padding: 4px 12px; border-radius: 15px; font-size: 0.82rem; font-weight: 700;">
+                                    <i class="fa fa-magic"></i> Gợi Ý Cho Bạn
                                 </span>
                             </div>
 
@@ -74,6 +77,32 @@
         </div>
     }
 
+    <script>
+        function toggleFavPhim(movieId, title, poster, btnObj) {
+            $.ajax({
+                url: '@Url.Action("ToggleFavorite", "Neo4j")',
+                type: 'POST',
+                data: { movieId: movieId, title: title, poster: poster },
+                success: function (res) {
+                    if (res.success) {
+                        var icon = $(btnObj).find('i');
+                        if (res.isFavorite) {
+                            icon.removeClass('fa-heart-o').addClass('fa-heart');
+                        } else {
+                            icon.removeClass('fa-heart').addClass('fa-heart-o');
+                        }
+                        alert(res.message);
+                    } else {
+                        alert(res.message);
+                    }
+                },
+                error: function () {
+                    alert('Không thể kết nối tới server Neo4j!');
+                }
+            });
+        }
+    </script>
+
     <div class="header-clean" style="margin-top: 40px !important; margin-bottom: 25px !important; text-align: center !important;">
         <h2 class="title-silver" style="font-family: 'Montserrat', sans-serif !important; font-weight: 700 !important; font-size: 26px !important; color: #adc1ff !important; text-transform: uppercase !important; letter-spacing: 2px !important; display: inline-block !important; border-bottom: 3px solid #ffeb00; padding-bottom: 8px !important; margin: 0 !important; text-shadow: 0 0 10px rgba(173, 193, 255, 0.3) !important;">
             PHIM ĐANG CHIẾU
@@ -83,7 +112,10 @@
     <div class="phim-container">
         @foreach (Phim s in Model)
         {
-            <div class="phim-card">
+            <div class="phim-card" style="position: relative;">
+                <button onclick="toggleFavPhim(@s.PhimID, '@s.TenPhim', '@s.Poster', this)" style="position: absolute; top: 10px; right: 10px; background: rgba(0, 0, 0, 0.85); color: #e74c3c; border: 1px solid #e74c3c; width: 38px; height: 38px; border-radius: 50%; cursor: pointer; font-size: 1.2rem; display: flex; align-items: center; justify-content: center; z-index: 3; transition: transform 0.2s;" title="Thả tim yêu thích (Neo4j Graph)">
+                    <i class="fa fa-heart-o"></i>
+                </button>
                 <img src="@Url.Content("~/Content/HinhAnhSP/" + s.Poster)" alt="@s.TenPhim" />
 
                 <div class="phim-info">

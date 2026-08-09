@@ -1,4 +1,4 @@
-﻿﻿@model doan3.Models.Phim
+﻿@model doan3.Models.Phim
 @{
     ViewBag.Title = "Chi Tiết Phim";
     Layout = "~/Views/Shared/_Layout.cshtml";
@@ -37,13 +37,46 @@
             </div>
 
             <!-- BUTTON -->
-            <a href="@Url.Action("ChonSuat", "DatVe", new { idPhim = Model.PhimID })" class="btn-booking">
-                ĐẶT VÉ
-            </a>
+            <div style="display: flex; gap: 15px; align-items: center; margin-top: 20px;">
+                <a href="@Url.Action("ChonSuat", "DatVe", new { idPhim = Model.PhimID })" class="btn-booking">
+                    ĐẶT VÉ
+                </a>
+                <button onclick="toggleFavDetail(@Model.PhimID, '@Model.TenPhim', '@Model.Poster', this)" class="btn-booking" style="background: linear-gradient(45deg, #e74c3c, #c0392b); border: none; cursor: pointer;">
+                    <i class="fa fa-heart-o mr-1"></i> YÊU THÍCH
+                </button>
+            </div>
 
         </div>
     </div>
 </div>
+
+<script>
+    function toggleFavDetail(movieId, title, poster, btnObj) {
+        $.ajax({
+            url: '@Url.Action("ToggleFavorite", "Neo4j")',
+            type: 'POST',
+            data: { movieId: movieId, title: title, poster: poster },
+            success: function (res) {
+                if (res.success) {
+                    var icon = $(btnObj).find('i');
+                    if (res.isFavorite) {
+                        icon.removeClass('fa-heart-o').addClass('fa-heart');
+                        $(btnObj).css('background', 'linear-gradient(45deg, #27ae60, #2ecc71)');
+                    } else {
+                        icon.removeClass('fa-heart').addClass('fa-heart-o');
+                        $(btnObj).css('background', 'linear-gradient(45deg, #e74c3c, #c0392b)');
+                    }
+                    alert(res.message);
+                } else {
+                    alert(res.message);
+                }
+            },
+            error: function () {
+                alert('Không thể kết nối tới server Neo4j!');
+            }
+        });
+    }
+</script>
 
 <style>
     /* Background */

@@ -229,8 +229,8 @@ namespace doan3.Controllers
                     khachHangId = kh?.KhachHangID ?? userSession.UserID;
                 }
 
-                // 2. Khóa ghế nguyên tử trên Redis (SETNX + TTL 60 giây)
-                bool lockSuccess = SeatLockService.LockSeats(lichChieuId, listSeatIds, khachHangId, durationSeconds: 60);
+                // 2. KHÓA GHẾ NGUYÊN TỬ VỚI REDIS (SETNX + TTL 90 GIÂY - 1.5 PHÚT)
+                bool lockSuccess = SeatLockService.LockSeats(lichChieuId, listSeatIds, khachHangId, durationSeconds: 90);
 
                 if (!lockSuccess)
                 {
